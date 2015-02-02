@@ -1,0 +1,618 @@
+/* RESPONSIVE CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+
+@media (max-width: 979px) {
+
+}
+
+@media (max-width: 767px) {
+    .landing-page .landing-search-bar .refleco-search-box-container{
+        background: none!important;
+        height: auto!important;
+    }
+}
+
+@media (max-width: 640px){
+    .landing-page .footer-section .misc-section{
+        width: 100%!important;
+        display: block!important;
+        vertical-align: top!important;
+        margin: auto!important;
+        padding: 20px 0 20px 0!important;
+        float: none!important;
+    }
+    .landing-page .footer-section .misc-section *{
+        text-align: center!important;
+        padding: 0!important;
+        margin: auto!important;
+    }
+
+    .landing-page .description{
+        direction: ltr!important;
+    }
+
+    .landing-page .description-image-container{
+        width: 100%!important;
+        text-align: center!important;
+        display: block!important;
+    }
+
+    .landing-page .description .description-image{
+        float: none!important;
+    }
+
+    .landing-page .description .description-text-container{
+        display: block!important;
+        max-width: 100%!important;
+    }
+}
+
+@media (max-width: 370px){
+    .refleco-brand{
+        display: none!important;
+    }
+}
+
+@media (max-width: 560px){
+    .refleco-brand h1{
+        display: none!important;
+    }
+    .page-link{
+        margin-right: 15px!important;
+    }
+
+}
+
+/* FONT SETS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+
+@font-face {
+    font-family: marcellus;
+    src: url(/static/fonts/Marcellus-Regular.ttf)
+}
+
+@font-face {
+    font-family: libreSaskerville;
+    src: url(/static/fonts/LibreBaskerville-Regular.ttf)
+}
+
+html *{
+    font-size: 16px;
+    font-family: marcellus!important;
+}
+
+/* MAIN CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+
+
+/*BASE PAGE CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px white inset;
+}
+
+html{
+    overflow-y: scroll;
+    height: 100%;
+}
+
+body{
+    min-height: 100%;
+}
+
+footer{
+
+}
+
+#content{
+    max-width: 3396px;
+    margin: auto;
+    height: 100%;
+    width: 100%;
+}
+
+#footer-container{
+    max-width: 3396px;
+    margin: auto;
+}
+
+.refleco-header{
+    background: rgba(19,19,19,0.5);
+    border-bottom: rgba(189,189,189,0.3) 1px solid;
+    position: absolute;
+    z-index: 1;
+    height: 43px;
+    width: 100%;
+    padding-top: 10px;
+    margin-bottom: 0;
+}
+
+.refleco-brand{
+    display: inline-block;
+    position: relative;
+    margin-top: -8px;
+    height: 50px;
+}
+.refleco-brand img{
+    height: 50px;
+}
+
+.refleco-brand h1{
+    display: inline-block;
+    position: relative;
+    margin: 0;
+    top: 4px;
+    font-size: 24px;
+    font-weight: 100;
+    color: rgb(255,255,255);
+}
+
+.nav-buttons{
+    display: inline;
+    float:right;
+    margin-top: 5px;
+    margin-left: 15px;
+    white-space: nowrap;
+}
+
+.logo-small{
+    display: inline-block;
+    margin-left: 10px;
+    margin-right: 2px;
+    margin-top: 2px;
+    background-size: 100%;
+    padding: 10px;
+    vertical-align: top;
+}
+
+.page-link{
+    text-decoration: none;
+    vertical-align: middle;
+    color: rgb(255,255,255);
+    position: relative;
+    margin-right: 50px;
+    font-size: 18px;
+}
+.page-link:after{
+    position: absolute;
+    content: "";
+    width:0;
+    height:2px;
+    border-radius: 4px;
+    background: rgb(75,130,130);
+    bottom:-5px;
+    left: 50%;
+    margin-left: 0;
+    transition: all 0.25s;
+}
+
+.page-link:hover,.page-link:focus{
+     text-decoration: none;
+     color: rgb(255, 255, 255);
+ }
+
+.page-link:hover:after,.page-link:focus:after{
+    position: absolute;
+    content: "";
+    width:50px;
+    height:2px;
+    border-radius: 4px;
+    background: rgb(75,130,130);
+    bottom:-5px;
+    left: 50%;
+    margin-left: -25px;
+ }
+
+
+
+/*LANDING PAGE CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+.landing-page{
+    background: rgb(36,36,36);
+}
+
+#sign-up-again:hover{
+    cursor: pointer;
+}
+
+/*SEARCH BAR SECTION
+-------------------------------------------------- */
+.landing-page .search-bar-section{
+    margin: auto;
+    height: 800px;
+    max-height: 800px;
+    max-width: 1600px;
+    position: relative;
+    background: url("/static/img/home-background.png") no-repeat center;
+}
+
+.landing-page .search-bar-section h2{
+    text-align: center;
+    color: #ffffff;
+    margin-top: 150px;
+    margin-bottom: 75px;
+}
+
+.landing-page .search-bar-section #refleco-search{
+    margin: auto;
+    padding-bottom: 10px;
+    max-width: 700px;
+    height: 80px;
+    background-size: 100%;
+}
+
+.landing-page .search-bar-section .refleco-search-box-container{
+    width: 100%;
+    height: 90px;
+    position: relative;
+    margin: auto;
+    max-width: 700px;
+}
+
+.landing-page .search-bar-section .email-box{
+    max-width: 690px;
+    width: 100%;
+    height: 52px;
+    padding: 10px 10px 10px 10px;
+    margin: 12px 0 12px 0;
+    position: relative;
+    font-size: 16px;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+.landing-page .search-bar-section .refleco-search-box-container .sign-up-btn{
+    position: absolute;
+    right: 2px;
+    top: 14px;
+    height: 48px;
+    width: 100px;
+    font-size: 18px;
+}
+
+.sign-up-btn,.sign-up-btn:focus{
+    font-weight: bold;
+    color: rgb(75,130,130);
+}
+.sign-up-btn:hover,.sign-up-btn:focus{
+    color: rgb(247, 150, 31);
+    font-weight: bold;
+}
+
+/*COMPANY SECTION
+-------------------------------------------------- */
+.landing-page .company-section{
+    background: rgb(241, 241, 241);
+    border-bottom: rgb(200,200,200) solid 2px;
+}
+
+ .landing-page .company-section{
+    padding: 50px;
+}
+
+.landing-page .company-section .table-separator{
+    background: rgb(168, 186, 148);
+    width: 60%;
+    height: 1px;
+    margin: auto;
+}
+
+.landing-page .company-section .description{
+    padding-bottom: 20px;
+    padding-top: 20px;
+    white-space: nowrap;
+}
+
+.landing-page .company-section table{
+    width: 100%;
+}
+
+.landing-page .company-section .description .description-image{
+    display: inline-block;
+    height: 120px;
+    width: 130px;
+    float: right;
+    margin: 20px;
+    padding: 20px;
+    background: rgb(255,255,255);
+    border: rgb(168, 186, 148) 2px solid;
+}
+
+.landing-page .company-section .description .description-image-container{
+    width:50%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.landing-page .company-section .description .description-text-container{
+    display: inline-block;
+    max-width: 50%;
+}
+
+.landing-page .company-section .description .description-text{
+    margin: 20px;
+    max-width: 400px;
+    text-align: justify;
+}
+
+.landing-page .company-section h1{
+    position: relative;
+    font-size: 38px;
+    text-align: center;
+    font-weight: 100;
+    color: rgb(65,65,65);
+    margin-bottom: 25px;
+}
+.landing-page .company-section h1:after{
+    position: absolute;
+    content: "";
+    width:50px;
+    height:4px;
+    background: rgb(75,130,130);
+    bottom:-10px;
+    left: 50%;
+    margin-left: -25px;
+
+}
+.landing-page .company-section h2{
+    font-size: 28px;
+    font-weight: 100;
+    color: rgb(38,38,38);
+}
+.landing-page .company-section p{
+    color: rgb(38,38,38);
+}
+
+ /*TEAM SECTION
+-------------------------------------------------- */
+.landing-page .team-section{
+    background: rgb(255, 255, 255)
+}
+
+.landing-page .team-section{
+    padding: 50px;
+}
+
+.landing-page .team-section .description{
+    margin: 0 auto;
+}
+
+.landing-page .team-section .description .description-image-container{
+    width:45%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.landing-page .team-section .description .description-text-container{
+    display: inline-block;
+    max-width: 50%;
+}
+
+.landing-page .team-section .description .description-image{
+    display: inline-block;
+    margin: 20px;
+    padding: 20px;
+    background: rgb(168, 186, 148);
+    max-width: 400px;
+    max-height: 300px;
+}
+
+.landing-page .team-section .description .description-text{
+    display: inline-block;
+    margin: 20px;
+    text-align: justify;
+}
+
+.landing-page .team-section h1{
+    position: relative;
+    font-size: 38px;
+    text-align: center;
+    font-weight: 100;
+    color: rgb(65,65,65);
+    margin-bottom: 25px;
+}
+
+.landing-page .team-section h1:after{
+    position: absolute;
+    content: "";
+    width:50px;
+    height:4px;
+    background: rgb(75,130,130);
+    bottom:-10px;
+    left: 50%;
+    margin-left: -25px;
+
+}
+
+.landing-page .team-section h2{
+    font-size: 28px;
+    font-weight: 100;
+    color: rgb(38,38,38);
+}
+.landing-page .team-section p{
+    color: rgb(38,38,38);
+}
+
+/*FOOTER-SECTIOn
+-------------------------------------------------- */
+.landing-page .footer-section{
+    background: rgb(38,38,38);
+    padding: 15px;
+}
+
+.landing-page .footer-section h2{
+    color: rgb(60,60,60);
+    padding-bottom: 20px;
+}
+
+.landing-page .footer-section p{
+    color: rgb(255,255,255);
+    display: block;
+    margin: 0;
+}
+
+.landing-page .footer-section a{
+    color: rgb(255,255,255);
+    display: block;
+}
+
+.landing-page .footer-section .social-link{
+    padding: 5px;
+    display: inline-block;
+    width: 60px;
+    height: 40px;
+    position: relative;
+}
+
+.landing-page .footer-section .social-link a{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.landing-page .footer-section .misc-section{
+    width: 30%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+/*RESULTS PAGE CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+.sugested-search-queries{
+    width: 50%;
+    margin: auto;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.suggestions{
+    line-height: 1;
+    text-align: center;
+}
+
+.search-results{
+    background: rgb(241, 241, 241)
+}
+
+.search-results-container{
+    min-height: 600px;
+    padding: 100px 50px 20px 50px;
+}
+/*SEARCH BAR
+-------------------------------------------------- */
+
+.nav-search-bar{
+    width: 50%;
+    vertical-align: top;
+    display: inline-block;
+    margin: 0px 0px 0px 15px;
+}
+.nav-search-bar #refleco-search{
+    margin: 0;
+    max-width: 500px;
+}
+
+.nav-search-bar .refleco-search-box-container{
+    width: 100%;
+    display: inline-block;
+}
+
+.nav-search-bar .refleco-search-box{
+    width: 100%;
+    padding: 5px;
+    border-radius: 0;
+}
+
+/*REPORT BOX CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+.report-box{
+    background: #ffffff;
+    padding: 4px;
+    margin: 10px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.fake-report-box{
+    max-width: 250px;
+    display: inline-block;
+    margin: 10px;
+    border: 3px solid white;
+}
+
+/*TABLE BOX CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+.table-box{
+    padding: 5px;
+    max-width: 600px;
+    background: #FEB81F;
+}
+
+.box-table-title{
+    margin: 0;
+}
+
+.box-table{
+    width: 100%
+}
+
+.box-table-header-row{
+
+}
+
+.box-table-header{
+
+}
+
+.box-table-data-row{
+    border-bottom: solid 1px rgba(255,255,255,0.15);
+}
+
+.box-table-data-name{
+    float: left;
+    max-width: 400px;
+    margin-right: 10px;
+}
+
+.box-table-data-value{
+    float: right;
+    text-align: right;
+    max-width: 200px;
+    margin-left: 10px;
+}
+
+
+/*GRAPH BOX CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+.graph-box{
+    padding: 5px;
+    max-width: 600px;
+    background: #FEB81F;
+}
+/*UI CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+
+.field-error{
+
+}

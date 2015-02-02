@@ -1,0 +1,22 @@
+/**
+ * Functions for handling a search of financial reports
+ */
+$(document).ready(function(){
+	$('#reflechoSearch').submit(function(){
+		$.ajax({
+			url: '/search/',
+			type: 'POST',
+			dataType: 'html',
+			data: {
+                csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+                queryText: $('#k').val()
+            },
+			success: searchSuccess
+		});
+		return false;
+	});
+});
+
+function searchSuccess (data){
+	$('#box1').html(data);
+}

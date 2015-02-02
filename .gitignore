@@ -1,0 +1,38 @@
+
+*.class
+*.log
+.gitignore~
+
+# sbt specific
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.settings/
+
+# Eclipse specific
+.classpath
+.project
+.cache
+.pydevproject
+.metadata
+
+# Pycharm specific
+.idea
+
+# Elasticsearch specific
+data/
+
+# Python specific
+*.pyc
+
+# Reflecho specific
+indexFiles/*
+reports/*
+refdata/*
+dbpedia/*

@@ -1,0 +1,16 @@
+{% load ratioExtras %}
+<div class="ratio-result">
+    {% for item in report|getRatioList %}
+        <div class="ratio-group">
+            <p style="font-weight: bolder; text-decoration: underline">{{ item|getRatioName }}</p>
+            {% for ratio in item|getRatioChildren %}
+                {% if ratio|getRatioValue %}
+                    <div class="ratio">
+                        <p style="font-weight: bold">{{ ratio|getRatioName }} :</p>
+                        <p>{{ ratio|getRatioValue }}</p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>

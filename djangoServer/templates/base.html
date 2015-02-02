@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Refleco</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="/static/css/bootstrap.css" rel="stylesheet">
+        <link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+        <link href="/static/css/baseStyle.css" rel="stylesheet" type="text/css" />
+        <link rel="stylesheet" href="/static/js/jquery-ui-1.11.1.custom/jquery-ui.css">
+
+        <!-- FAVICON LINKS -->
+        <link rel="apple-touch-icon" sizes="57x57" href="/static/img/favicon/apple-touch-icon-57x57.png">
+        <link rel="apple-touch-icon" sizes="60x60" href="/static/img/favicon/apple-touch-icon-60x60.png">
+        <link rel="icon" type="image/png" href="/static/img/favicon/favicon-16x16.png" sizes="16x16">
+        <link rel="icon" type="image/png" href="/static/img/favicon/favicon-32x32.png" sizes="32x32">
+        <meta name="msapplication-TileColor" content="#da532c">
+
+
+        <script src="/static/js/jquery-2.1.0.js"></script>
+        <script src="/static/js/jquery-ui-1.11.1.custom/jquery-ui.min.js"></script>
+        <script src="/static/js/bootstrap.js"></script>
+
+    </head>
+    <body>
+        <div id="content" style="position: relative;">
+             <div class="refleco-header" id="refleco-header">
+                <div class="refleco-header-inner container">
+                    <div class="refleco-brand">
+                            <a href="{% url "home" %}" style="position:absolute;width:100%;height:100%;top:0; z-index: 1;"></a>
+                            <img src="/static/img/logo-white.png"/>
+                            <h1>refleco</h1>
+                            <p style="display:inline-block;color:red;font-size:16px;top:10px;position:relative;">beta</p>
+                    </div>
+                    {% block search-bar %}
+
+                    {% endblock %}
+                    <div class="nav-buttons">
+                        {% block nav%}
+
+
+                        {% endblock %}
+                    </div>
+                </div>
+             </div>
+            {% block body %}
+
+            {% endblock %}
+        </div>
+    </body>
+    <footer>
+        <div id="footer-container">
+            {% block footer %}
+
+
+            {% endblock %}
+        </div>
+    </footer>
+    <script src="/static/js/refleco.js"></script>
+</html>

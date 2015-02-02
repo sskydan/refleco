@@ -1,0 +1,12 @@
+{% load industryExtras %}
+<div class="industry-result">
+    <div class="industry">
+        {% for item in report %}
+            {% if item|companyInIndustry:args %}
+                <p>
+                    {{ item|getCompanyName }}
+                </p>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>

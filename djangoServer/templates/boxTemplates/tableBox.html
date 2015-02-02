@@ -1,0 +1,24 @@
+{% extends "boxTemplates/reportBox.html" %}
+
+{% load tableExtras %}
+
+{% block box-contents %}
+    <div class="table-box">
+        <h2  class="box-table-title">{{ args|getTableTitle }}</h2>
+        <table class="box-table">
+            <col>
+            <col>
+            <tr class="box-table-header-row">
+            {% for header in args|getTableHeaders %}
+                <th class="box-table-header">{{header}}</th>
+            {% endfor %}
+            </tr>
+            {% for fact in args|getTableData %}
+                <tr class="box-table-data-row">
+                    <td class="box-table-data-name">{{fact|getFactName}}</td>
+                    <td class="box-table-data-value">{{fact|getFactValue}}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

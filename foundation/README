@@ -1,0 +1,4 @@
+
+## Foundation
+
+Base project that all other projects should extend. Contains useful utilities.

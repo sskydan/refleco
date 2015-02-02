@@ -1,0 +1,40 @@
+{% extends "boxTemplates/reportBox.html" %}
+
+{% load graphExtras %}
+
+{% block box-contents %}
+    <script src="/static/js/highcharts/js/highcharts.js"></script>
+    <div class="graph-box">
+        <div id="line-graph" style="min-width: 510px; height: 400px; margin: 0 auto"> </div>
+    </div>
+    <script>
+            $(function () {
+                cat = {{ args|getXLabels|safe }}
+                ser = {{ args|getSeries|safe }}
+                $('#line-graph').highcharts({
+                    title: {
+                        text: "{{ args|getTitle }}",
+                        x: -20 //center
+                    },
+                    xAxis: {
+                        categories: cat
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'USD'
+                        },
+                        plotLines: [{
+                            value: 0,
+                            width: 1,
+                            color: '#808080'
+                        }]
+                    },
+                    tooltip: {
+                        valueSuffix: '$'
+                    },
+                    series: ser
+                });
+            });
+        </script>
+{% endblock %}
+

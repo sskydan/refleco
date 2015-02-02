@@ -1,0 +1,14 @@
+.statementTable{
+
+}
+.statementHeaders th{
+	border: 1px solid;	
+}
+.statementItem td{
+	border: 1px solid;	
+}
+
+.panel-body{
+	height: auto!important;
+	min-height: 350px;
+}

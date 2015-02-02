@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block nav %}
+        <a href="#company-description" data-id="company-description" class="page-link scroll-link">Company</a>
+        <a href="#team-description" data-id="team-description" class="page-link scroll-link">Team</a>
+        <a href="#contact-info" data-id="contact-info" class="page-link scroll-link" style="margin-right:15px;">Contact Us</a>
+{% endblock %}
+
+
+{% block body %}
+    <div id="landing-page" class="landing-page">
+        <div class="search-bar-section">
+            <div class="container" style="height: 100%;">
+                <div class="refleco-search-box-container" style="margin-top:200px;">
+                    <p id="join-us" style="color: rgb(255,255,255); margin: 0px 0px 0px 24px;">
+                        Join us on our journey. Send us your email to get our updates!
+                    </p>
+                    <div style="display: none; margin-left: 24px;" id="signed-up">
+                        <h1 style="display: inline-block; color:rgb(255,255,255); font-size: 28px;">Thank you!</h1>
+                        <p id="sign-up-again" style="display: inline-block; color:rgb(75,130,130);">Sign up with another email.</p>
+                    </div>
+                    <div style="position: relative; margin: 0 10px;">
+                        <form action="signup/" method="post" id="email-form">
+                            {% csrf_token %}
+                            <input type="text" class="email-box" name="email" id="email-box" placeholder="your.email@domain.com"/>
+                            <button id="submit-email" type="submit" class="btn btn-default sign-up-btn">Sign Up!</button>
+                        </form>
+                        <p id="email-error" style="color:red; margin: -25px 0px 0px 24px; display: none;">
+                            Please enter a valid email.
+                        </p>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 15%;">
+                        <img style="cursor: pointer;" data-id="info-carousel" class="scroll-link" src="/static/img/arrow-down.png"/>
+                </div>
+            </div>
+        </div>
+        <div id="info-carousel" class="carousel slide" style="margin-bottom: 0px">
+            <div class="carousel-inner">
+                <div class="item active">
+                    <image src="/static/img/question-slide.png" style="width:100%; vertical-align: top;"></image>
+                    <div class="container">
+                        <div class="carousel-caption" style="margin-bottom: 50px;">
+                            <h1 style="font-size: 38px; color: rgb(255,255,255); text-align: center;">Ask any question, any way you like.</h1>
+                            <p class="lead"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item">
+                    <image src="/static/img/question-slide.png" style="width:100%; vertical-align: top;"></image>
+                    <div class="container">
+                        <div class="carousel-caption" style="margin-bottom: 50px;">
+                            <h1 style="font-size: 38px; color: rgb(255,255,255);">Ask any question, any way you like.</h1>
+                            <p class="lead"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item">
+                    <image src="/static/img/question-slide.png" style="width:100%; vertical-align: top;"></image>
+                    <div class="container">
+                        <div class="carousel-caption" style="margin-bottom: 50px;">
+                            <h1 style="font-size: 38px; color: rgb(255,255,255);">Ask any question, any way you like.</h1>
+                            <p class="lead"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item">
+                    <image src="/static/img/question-slide.png" style="width:100%; vertical-align: top;"></image>
+                    <div class="container">
+                        <div class="carousel-caption" style="margin-bottom: 50px;">
+                            <h1 style="font-size: 38px; color: rgb(255,255,255);">Ask any question, any way you like.</h1>
+                            <p class="lead"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--a class="left carousel-control" href="#info-carousel" data-slide="prev">&lsaquo;</a-->
+            <!--a class="right carousel-control" href="#info-carousel" data-slide="next">&rsaquo;</a-->
+        </div>
+
+        <div id="company-description" class="company-section">
+            <div class="container marketing page-section">
+                <h1>Company</h1>
+                <div class="description">
+                    <div class="description-image-container">
+                        <div class="description-image" style="">
+                            <img src="/static/img/fin-research.png"/>
+                        </div>
+                    </div>
+                    <div class="description-text-container">
+                        <div class="description-text" style="white-space: normal">
+                            <p>RESEARCH is a never ending task among most business professional. On average people spend 17 hours a week on data collection alone. This means an average of $37,000 a year go towards simply getting the data needed to perform the tasks at hand. Refleco provides users with the ability to find and filter all the information they need in a matter of seconds. This means more time for the important stuff - taking action.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-separator"></div>
+                <div class="description" style="direction: rtl;">
+                    <div class="description-image-container">
+                        <div class="description-image" style="float: left;">
+                            <img src="/static/img/data-comp.png"/>
+                        </div>
+                    </div>
+                    <div class="description-text-container">
+                        <div class="description-text" style="white-space: normal">
+                            <p>AGGREGATED INFORMATION is a key part of the internet's full potential. With a constantly expanding information market it can be difficult to keep up with all the different data outlets available. Refleco mines countless data sources to ensure its users don’t have to go looking. We provide all the information needed in one place, with one search. Don’t trust a single source? Don’t worry, refleco allows users to compare different information sets in endless configurations to maximize the actionable insights gained from research.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-separator"></div>
+                <div class="description">
+                    <div class="description-image-container">
+                        <div class="description-image" style="">
+                            <img src="/static/img/data-vis.png"/>
+                        </div>
+                    </div>
+                    <div class="description-text-container">
+                        <div class="description-text" style="white-space: normal">
+                            <p>‘BIG’ VISUALS. Refleco wants to ‘Bridge the Information Gap’ when it comes to understanding data. Spreadsheets and static reports are a thing of the past. Often reading data is just as tedious as finding it. Refleco aims to bring the important information front and center redefine how people ‘see’ information all together.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-separator"></div>
+                <div class="description" style="direction: rtl;">
+                    <div class="description-image-container">
+                        <div class="description-image" style="float: left;">
+                            <img src="/static/img/nat-lang.png"/>
+                        </div>
+                    </div>
+                    <div class="description-text-container">
+                        <div class="description-text" style="white-space: normal">
+                            <p>ASK NATURALLY. Being able to express yourself freely is an important part of refleco. Restrictive search mechanisms prevent users from obtaining the knowledge they depend on. Refleco used a natural language query interface to allow any user to make any query in any way they like. This level of customization really allows people to spend more time exploring answers than sifting through numbers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="team-description" class="team-section">
+            <div class="container marketing page-section">
+                <h1>Team</h1>
+                <div class="description">
+                    <div class="description-image-container">
+                        <div class="description-image" style="float:right;">
+                            <img src="/static/img/business-Team.jpg" style="background: rgb(168, 186, 148)"/>
+                        </div>
+                    </div>
+                    <div class="description-text-container">
+                        <div class="description-text" style="float:left;">
+                            <p>Our team is composed of three young recent graduates.  Two of our members of graduates of the university of waterloo computer science program and our third is from the telfer school of business. We have come together to create something the world can benefit from.</p>
+                            <p>We know that it is not easy to change the world. Few companies are able to create the impact that so many strive for. Refleco hopes to create a different way to find and extrapolate information.  We all want to watch Refleco grow  into a company that everyone can benefit from.</p>
+                            <p>We believe that there is no such thing as, 'done.' Our vision drives us to improve how we interact with information. We like to incorporate our work into our lives and live to meet the challenge.  We encourage each other to think outside the box, and to never be afraid to explore.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block footer  %}
+    <div style="height: 80px;">
+        <div id="scroll-to-top" style="display:none; text-align: center; position: relative;">
+                <img style="cursor: pointer;" data-id="landing-page" class="scroll-link" src="/static/img/arrow-up.png"/>
+        </div>
+    </div>
+    <div class="landing-page">
+        <div id="contact-info" class="footer-section">
+            <div class="container marketing page-section">
+                <div style="float:left;" class="info misc-section">
+                    <h2 style="text-align: left; font-size: 36px; padding-left:50px;">Info</h2>
+                    <a style="text-align: left;padding-left:50px;">Terms of Use</a>
+                    <a style="text-align: left;padding-left:50px;">Privacy Policy</a>
+                </div>
+                <div style="float:right;" class="contact misc-section">
+                    <h2 style="text-align: right; font-size: 36px;padding-right:50px;">Contact</h2>
+                    <p style="text-align: right;padding-right:50px;">Refleco Insight Inc.</p>
+                    <p style="text-align: right;padding-right:50px;"> 66 Russell Ave Ottawa, ON K1N7X2</p>
+                    <p style="text-align: right;padding-right:50px;">Copyright &#169 2014 | Refleco Insight Inc.</p>
+                </div>
+                <div style="margin: 0 5% 0 5%;" class="social misc-section">
+                    <h2 style="text-align: center; font-size: 36px;">Social</h2>
+                    <div style="display: block; text-align: center">
+                        <div class="social-link">
+                            <!--a href="http://www.facebook.com" target="_blank"></a-->
+                            <img src="/static/img/email-icon.png"/>
+                        </div>
+                        <div class="social-link">
+                            <!--a href="http://www.facebook.com" target="_blank"></a-->
+                            <img src="/static/img/linkedin-icon.png"/>
+                        </div>
+                    </div>
+                    <div style="display: block; text-align: center">
+                        <div class="social-link">
+                            <a href="https://www.facebook.com/refleco" target="_blank"></a>
+                            <img src="/static/img/facebook-icon.png"/>
+                        </div>
+                        <div class="social-link">
+                            <a href="https://twitter.com/ReflecoInc" target="_blank"></a>
+                            <img src="/static/img/twitter-icon.png"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
