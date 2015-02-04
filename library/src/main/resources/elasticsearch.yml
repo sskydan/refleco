@@ -42,11 +42,11 @@ es.resource: finbase/10-K
 #
 # Allow this node to be eligible as a master node (enabled by default):
 #
-node.master: false
+node.master: true
 #
 # Allow this node to store data (enabled by default):
 #
-node.data: false
+node.data: true
 
 # You can exploit these settings to design advanced cluster topologies.
 #

@@ -48,7 +48,7 @@ object Board extends CEConfig with StrictLogging {
   val sconf = new SparkConf() setAppName sparkName setMaster sparkMaster
   sconf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
   sconf.set("spark.kryo.registrator", "stickerboard.SBRegistrator")
-  sconf.set("spark.ui.enabled", "false")
+//  sconf.set("spark.ui.enabled", "false")
   sconf.set("spark.akka.timeout", 10000)
   sconf.set("spark.akka.frameSize", 100)
   sconf.set("spark.akka.askTimeout", 300)
