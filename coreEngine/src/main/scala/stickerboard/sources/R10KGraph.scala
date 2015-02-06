@@ -78,8 +78,8 @@ object SparkFNs10K {
 }
 
 object R10KGraph extends CEConfig with StrictLogging {
-  val R10K_FILE = "../library/refdata/10-K"
-  val R10K_STICKER_FILE = "refdata/10KStickers"
+  val R10K_FILE = config getString "r10KFile"
+  val R10K_STICKER_FILE = config getString "r10KStickerFile"
   
   def getGraph(implicit spark: SparkContext): RDD[Sticker] = {
     val graph =
