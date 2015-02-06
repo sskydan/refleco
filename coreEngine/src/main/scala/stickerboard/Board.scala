@@ -43,21 +43,22 @@ object SparkFNs {
  *  FIXME Await.result issues
  */
 object Board extends CEConfig with StrictLogging {
-  val sparkName = config getString "sparkAppName"
-  val sparkMaster = config getString "sparkMaster"
-  val sconf = new SparkConf() setAppName sparkName setMaster sparkMaster
-  sconf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-  sconf.set("spark.kryo.registrator", "stickerboard.SBRegistrator")
-  sconf.set("spark.akka.timeout", 10000)
-  sconf.set("spark.akka.frameSize", 100)
-  sconf.set("spark.akka.askTimeout", 300)
+	val GRAPH_STICKER_FILE = config getString "graphStickerFile"
+  val SPARK_NAME = config getString "sparkAppName"
+  val SPARK_MASTER = config getString "sparkMaster"
+  val sconf = new SparkConf() setAppName SPARK_NAME setMaster SPARK_MASTER
+  sconf set ("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+  sconf set ("spark.kryo.registrator", "stickerboard.SBRegistrator")
+  sconf set ("spark.ui.enabled", config getString "sparkUI")
+  sconf set ("spark.akka.timeout", 10000)
+  sconf set ("spark.akka.frameSize", 100)
+  sconf set ("spark.akka.askTimeout", 300)
   implicit val spark = new SparkContext(sconf)
 
   val COMPANY = "refleco:company"
   val R10K = "refleco:10-K"
   val XBRL = "refleco:xbrl"
   val VALUE = "refleco:value"
-  val GRAPH_STICKER_FILE = "refdata/graph"
   
   val rddGraph = getGraph persist StorageLevel.MEMORY_AND_DISK_SER
 

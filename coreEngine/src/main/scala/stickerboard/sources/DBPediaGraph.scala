@@ -25,6 +25,7 @@ import facts._
 import org.apache.spark.storage.StorageLevel
 import scala.util.Try
 import scala.util.Success
+import utilities.CEConfig
 
 /** FIXME cleanup
  */
@@ -50,19 +51,15 @@ object SparkFNsDBP {
   def uriToSticker(uri: String): Sticker = Sticker(uriToAlias(uri))
 }
 
-object DBPediaGraph extends StrictLogging {
+object DBPediaGraph extends StrictLogging with CEConfig {
   import SparkFNsDBP._
-  val DBP_STICKER_FILE = "refdata/dbpStickers"
-  val DBP_VALUES_FILE = "refdata/dbpValues"
+  val DBP_STICKER_FILE = config getString "dbpStickerFile"
+  val DBP_VALUES_FILE = config getString "dbpValuesFile"
+  val PROPERTIES_FILE = config getString "dbpPropertiesFile"
+  val INFOBOX_FILE = config getString "dbpInfoboxFile"
+  val TYPES_FILE = config getString "dbpTypesFile"
+  val OWL_FILE = config getString "dbpOWLFile"
   
-  val PROPERTIES_FILE = "dbpedia/mappingbased_properties_en.nt"
-  val INFOBOX_FILE = "dbpedia/infobox_properties_en.nt"
-  val TYPES_FILE = "dbpedia/instance_types_en.nt"
-//  val PROPERTIES_FILE = "dbpedia/test_mappingbased_properties_en.nt"
-//  val INFOBOX_FILE = "dbpedia/test_infobox_properties_en.nt"
-//  val TYPES_FILE = "dbpedia/test_instance_types_en.nt"
-  
-  val OWL_FILE = "dbpedia/dbpedia_2014.owl"
   val RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   val RDFS_NS = "http://www.w3.org/2000/01/rdf-schema#"
   val XML_NS = "http://www.w3.org/XML/1998/namespace"
@@ -191,7 +188,6 @@ object DBPediaGraph extends StrictLogging {
             val valueChildren = valuesToFacts(values)
             
             // concatenate all prettynames for this entity
-
             val companyID = id takeWhile (_ != ':')
             val cik = if (companyID == "") FactNone else FactString(companyID)
             
@@ -225,9 +221,6 @@ object DBPediaGraph extends StrictLogging {
         val factVals = values map (v => Group(FactString(v.alias.id)))
         Fact(relation, "dbp:value", FactCol(factVals.toList), relation)
     }
-//    case (relation, values) if values.size > 1 => 
-//    case (relation, values) => 
-//      Fact(relation, "dbp:value", FactString(values.head.alias.id), relation)
     
   /** parse the dbp ontology file, to get a mapping of relation pretty labels
    *    to relation URIs
@@ -355,7 +348,6 @@ object Triple {
       // Variant 4
       if (rem2 startsWith "<") rem2 replaceAll ("<","") replaceAll ("> .", "")
       // Variant 2
-//    else if (rem2 contains "<") rem2 dropWhile (_ != '<') drop 1 takeWhile (_ != '>')
       // Variant 1,3
       else rem2 drop 1 takeWhile (_ != '"')
     
