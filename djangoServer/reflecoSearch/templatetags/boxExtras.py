@@ -3,17 +3,13 @@ register = template.Library()
 import logging
 devLogger = logging.getLogger('development')
 
-@register.filter(name='getTableTitle')
-def getTableTitle(args):
-    return args['title']
 
-@register.filter(name='getTableHeaders')
-def getTableHeaders(args):
-    return args['headers']
-
-@register.filter(name='getTableData')
-def getTableData(args):
-    return args['data']
+@register.filter(name='getBoxArg')
+def getBoxArg(args, arg):
+    if args[arg]:
+        return args[arg]
+    else:
+        return False
 
 @register.filter(name='getFactName')
 def getFactName(fact):
@@ -52,3 +48,7 @@ def getFactValue(fact):
     else:
         value = ""
     return value
+
+@register.filter(name='getFactChildren')
+def getFactChildren(fact):
+    return fact['children']

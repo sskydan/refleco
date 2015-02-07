@@ -1,28 +1,35 @@
-from reflecoSearch.classes.filterClasses.CashFlowFilter import CashFlowFilter
+import nltk
+from nltk import ChartParser
 from reflecoSearch.classes.filterClasses.BalanceSheetFilter import BalanceSheetFilter
 from reflecoSearch.classes.filterClasses.IncomeStatementFilter import IncomeStatementFilter
-from reflecoSearch.classes.filterClasses.StatementFilter import StatementFilter
+from reflecoSearch.classes.filterClasses.CashFlowFilter import CashFlowFilter
+from reflecoSearch.classes.filterClasses.DefaultDataFilter import DefaultDataFilter
 from reflecoSearch.pyparsing.pyparsing import *
-from reflecoSearch.classes.nlpClasses.Parser import Parser
+from reflecoSearch.classes.DSLString import DSLString
 import logging
 devLogger = logging.getLogger('development')
 
-class DSLParser(Parser):
-    """ EXTENDS PARSER
-        DSLParser uses the DSL grammar rules to parse a
-        DSL query
-
-        attributes:
-            grammar:
-                reads the nltk dsl grammar
-
-        NOTE* THE PYPARSING GRAMMAR RULES ARE DEFINED HERE.
-    """
-
-    with open ("/var/www/reflecho.com/djangoServer/static/nlp/dslGrammar.txt", "r") as grammarFile:
+tokenGrammar = ""
+try:
+    with open ("static/nlp/dslGrammar.txt", "r") as grammarFile:
         grammar = grammarFile.read()
+    grammarFile.close()
 
+    with open ("static/nlp/POSPreterminals.txt", "r") as POSPreterminalsFile:
+        POSpreterminals = POSPreterminalsFile.read()
+    POSPreterminalsFile.close()
 
+    with open ("static/nlp/reflecoPreterminals.txt", "r") as reflecoPreterminalsFile:
+        reflecoPreterminals = reflecoPreterminalsFile.read()
+    reflecoPreterminalsFile.close()
+
+    tokenGrammar = grammar
+    tokenGrammar += "\n" + reflecoPreterminals
+    tokenGrammar += "\n" + POSpreterminals
+except Exception as e:
+    devLogger.error("Could not load grammar: " + str(e))
+
+class QueryParser(object):
     #PYPARSING - preterminal definitions
     LBRACE = Suppress(Literal('('))
     RBRACE = Suppress(Literal(')'))
@@ -145,131 +152,90 @@ class DSLParser(Parser):
     QUESTION = Group(LBRACE + Suppress(Literal('QUESTION')) + (WHICHQ ^ HOWQ ^ WHATQ ^ QBODY) + RBRACE)
     QUERY = LBRACE + Suppress(Literal('QUERY')) + OneOrMore(QUESTION) + RBRACE
 
-
     DSLOBJ = Suppress(SkipTo(company ^ FILTER)) + (company ^ FILTER)
 
-    def parseAST(self):
+    def __init__(self, tokens):
+        """init parser with tokens and parser build from CFG
+        :param tokens: tagged query tokens
         """
-        parseAST parses the NLTK AST into a dsl qeury string
+        self.tokens = tokens
+        self.CFGParser = ChartParser(self.__getCFG())
 
-        Returns:
-            string dsl query
+    def _getAST(self):
+        """Gets the words from the token list and passes them
+        through the parser to build an AST
+        :return nltk AST
+        """
+        parseTokens = [(lambda t: t[0])(t) for t in self.tokens]
+        try:
+            syntaxTrees = self.CFGParser.parse(parseTokens)
+            ASTs = []
+            for tree in syntaxTrees:
+                ASTs.append(tree)
+                devLogger.info("AST generated: " + str(tree))
+            if not(len(ASTs)):
+                devLogger.warn("Did not generate any AST. AST list empty.")
+        except Exception as e:
+            ASTs = []
+            devLogger.error("Could not parse tokens into AST: " + str(e))
+        return ASTs
+
+    def __getCFG(self):
+        """Creates the CFG by combining the class defined rules,
+        the standard preterminal rules for POS tags -> e, and
+        finally the POS to word rules for the given query
+        :return nltk CFG
+        """
+        tg = tokenGrammar
+        for t in self.tokens:
+            tg += "\n" + t[1] + ' -> ' + "'" + t[0] + "'"
+            devLogger.info("Preterminal added to grammar: " + str(t))
+        return nltk.CFG.fromstring(tg)
+
+    def parseAST(self):
+        """Parses the NLTK AST into a DSL string and view filters
+        :return (List(DSL String),List(Filter references))
         """
         ast = self._getAST()
         dslItems = []
         filterObjects = []
 
-        # def processASTItem(x):
-        #     return{
-        #         'DSLPE' : dslItems.append(self.getDSLStrings(x)),
-        #         'FILTEROBJECT' : filterObjects.append(self.getFilterObjects(x)),
-        #     }.get(x[0], None)
+        #TODO right now only consider the first AST. In furutre we will have to pick best AST
+        if len(ast) > 1:
+            ast = ast[0]
 
-        for tree in ast[:1]:
-            parsedAST = self.QUERY.parseString(tree.pprint())
-            devLogger.info("DSLParser.py - parsed AST: " + str(parsedAST))
+        for tree in ast:
+            try:
+                parsedAST = self.QUERY.parseString(tree.pprint())
+                devLogger.info("Parsed AST: " + str(parsedAST))
+            except Exception as e:
+                parsedAST = []
+                devLogger.error("Could not parse AST: " + str(e))
             for parsed in parsedAST.asList():
-                dslObj = dslString()
+                filterObjects = [self.getFilterObjects(item) for item in parsed if item[0] == 'FILTEROBJECT']
+                dslObj = DSLString(filterObjects)
                 for item in parsed:
                     if item[0] == 'DSLPE':
                         dslObj.addDSLE(item[1:])
-                    if item[0] == 'FILTEROBJECT':
-                        filterObjects.append(self.getFilterObjects(item))
                 dslItems.append(dslObj.getString())
-        devLogger.info('DSLParser - DSL query list is: ' + str(dslItems))
-        devLogger.info('DSLParser - FilterObjects list is: ' + str(filterObjects))
+        if len(filterObjects) < 1:
+                filterObjects = [DefaultDataFilter]
 
-        #return only first ast parse. we will have to rank and choose 'best' one later
+        devLogger.info('DSL query list is: ' + str(dslItems))
+        devLogger.info('Filter reference list is: ' + str(filterObjects))
         return dslItems, filterObjects
 
 
     def getFilterObjects(self, parsedItem):
-        """
-        getFilterObject gets the filter objects
-
-        Args:
-            parsedItems:
-                list of parsed query items
-        Returns:
-            filter items
+        """Links to the appropriate filter class
+        :param parsedItems: List(List()) of parsed query items
+        :return Filter reference
         """
         def filterSwitch(x):
             return {
                 'CASHFLOW': CashFlowFilter,
                 'BALANCESHEET': BalanceSheetFilter,
                 'INCOMESTMT': IncomeStatementFilter,
-            }.get(x, None)
+            }.get(x, False)
 
         return filterSwitch(parsedItem[1][0])
-
-
-
-
-
-class dslString(object):
-
-    def __init__(self):
-        self.string = "company "
-        self.subject = "*"
-        self.mods = []
-
-    def getString(self):
-        if len(self.mods):
-            return self.string + " ".join(list(map(lambda e: self.subject + e, self.mods)))
-        else:
-            return self.string + self.subject
-
-    def addSubject(self, DSLEntity):
-        s = list(map(lambda e: e.replace('{', '(').replace('}', ')'), DSLEntity))
-        self.subject = '"' + ' '.join(s[1:]) + '"'
-        self.string = s[0].lower() + " "
-
-    def addDSLE(self, DSLEntity):
-        def getFilter(d):
-            s = list(map(lambda e: e.replace('{', '(').replace('}', ')'), d))
-            def filterSwitch(x):
-                return {
-                    'attribute': '@',
-                    'relation': '.',
-                }.get(x, False)
-
-            m = filterSwitch(s[1])
-            if m:
-                return m + '"' + ' '.join(s[2:]) + '"'
-            return ""
-
-        def getModifier(d):
-            def modifierSwitch(x):
-                return {
-                    'GREATERTHAN': '>',
-                    'LESSTHAN': '<',
-                    'EQUAL': '<>',
-                    'GTEQUAL': '>>',
-                    'LTEQUAL': '<<',
-                }.get(x, False)
-
-            m = modifierSwitch(d[1])
-            if m:
-                cleanNum = d[2].replace(",", "").split(".", 1)[0]
-                return m + cleanNum
-            return ""
-
-        s = ""
-        a = ""
-        for d in DSLEntity:
-            if d[0] == 'company' or d[0] == 'entity':
-                self.addSubject(d)
-            elif d[0] == 'FILTER':
-                a = getFilter(d)
-                s = s + a
-            elif d[0] == 'MODIFIER':
-                s = s + getModifier(d)
-
-        if len(s):
-            self.mods.append(s)
-            self.mods.append(a)
-
-
-
-
-

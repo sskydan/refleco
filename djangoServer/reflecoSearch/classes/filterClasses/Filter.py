@@ -3,17 +3,7 @@ import logging
 devLogger = logging.getLogger('development')
 
 class Filter(object):
-    """
-    Filter is the abstract class for filtering out specific values from
-    data sets retrieved from the data server in order to create Box
-    objects.
-
-    Attributes:
-        keys:
-            A key mapping from keywords to data keys.
-
-        dataSet:
-            json data
+    """Abstract class for filtering fact data
     """
     __metaclass__ = ABCMeta
 
@@ -22,41 +12,35 @@ class Filter(object):
 
     @property
     def keys(self):
-        """
-        dict mapping for different lists of keys to filter by
+        """dict mapping for different lists of keys to filter by
         """
         pass
 
     @abstractmethod
     def createBoxList(self, *reportArgs):
-        """
-        Generates the list of appropriate box objects
-
-        Args:
-            filterArg:
-                Optional filter for reports
+        """Generates the list of appropriate box objects
+        :param *reportArgs: Optional filter args
         """
         pass
 
     def loadData(self, data):
+        """Loads a filter with a json data set
+        :param data: Json data to be loaded
+        """
         self.dataSet = data
 
     def filterData(self, dataSet, filterFunc, *filterArgs):
+        """filters a data set given a predicate
+        :param dataSet: Json data set
+        :param filterFunc: Boolean predicate function
+        :param *filterArgs: optional filter arguments
+        :return: a filtered json data set
         """
-        filters a data set for fields with given values
+        try:
+            filtered = list(filter(filterFunc, dataSet))
+        except Exception as e:
+            filtered = list()
+            devLogger.error("Could not filter data: " + str(e))
+        return filtered
 
-        Args:
-            key:
-                string field to filter by (i.e 'ID')
-
-            values:
-                list of acceptable string values for the given key
-
-            dataSet:
-                json data set to filter
-
-        Return:
-            returns a filtered json data set
-        """
-        return list(filter(filterFunc, dataSet))
 

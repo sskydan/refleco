@@ -3,28 +3,13 @@ import logging
 devLogger = logging.getLogger('development')
 
 class TextBox(Box):
-    """EXTENDS BOX
-    TextBox is used to display text data
-    """
-    #constructor
+
     @staticmethod
     def makeBox(textData, textTitle):
-        """
-        makeTableBox is a constructor for TextBox. It creates
-        a Box object with the appropriate args
-
-        Attributes:
-            TextData:
-                json data used to build table entries
-
-            tableTitle:
-                string title of the table
-
-            tableHeaders:
-                list of string headers for the table columns
-
-        Return:
-            Box object
+        """Constructor for TextBox. It creates a Box object with the appropriate args
+        :param textData: Json data for text box
+        :param textTitle: String title for box
+        :return: TextBox()
         """
         box = TextBox(textData, "textBox.html", title=textTitle)
         return box
