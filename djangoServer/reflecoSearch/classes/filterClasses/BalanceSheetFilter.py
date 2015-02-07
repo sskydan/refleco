@@ -4,19 +4,8 @@ import logging
 devLogger = logging.getLogger('development')
 
 class BalanceSheetFilter(Filter):
-    """EXTENDS FILTER
-    BalanceSheetFilter is the class for filtering out balance sheet data to create
-    Box objects for balance sheet reports
 
-    Attributes:
-        statementTypes:
-            dict mapping statement keywords to statement key sets
-
-        keys:
-            dict key mapping from ratios keywords to lists of
-            appropriate statement names / key sets
-    """
-
+    #Keys that build a balance sheet report
     keys = [
             'Assets Abstract',
             'Current Assets Abstract',
@@ -68,11 +57,8 @@ class BalanceSheetFilter(Filter):
     ]
 
     def createBoxList(self):
-        """
-        createBoxList creates a list of Box objects for a balance sheet report
-
-        Return:
-            balance sheet Box object
+        """Creates a list of Box objects for a balance sheet report
+        :return: List(TableBox())
         """
         boxList = []
         if len(self.dataSet):
@@ -87,5 +73,6 @@ class BalanceSheetFilter(Filter):
                             name = item.replace("Abstract", "")
                             statementData.append({u'prettyLabel': name, u'value': None})
 
-                    boxList.append(TableBox.makeBox(statementData, "Balance Sheet" + " (" + f[u'value'] + ")", []))
+                    if len(statementData):
+                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'] + " Balance Sheet" + " (" + f[u'value'] + ")", []))
         return boxList

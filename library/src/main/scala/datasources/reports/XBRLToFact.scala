@@ -5,6 +5,7 @@ import scala.util.Success
 import scala.util.Try
 import org.joda.time.DateTime
 import extensions.ImplicitConversions._
+import extensions.Extensions._
 import facts._
 import spray.json._
 import utilities.JsonUtil._
@@ -66,53 +67,27 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
   /** Remember, all top-level entries in the normalized json are JsObjects
    */
   private def parseEntry(key: String, elem: JsValue): FactVal = elem match {
-    case JsObject(fields) if fields contains "contextRef" => entryToPeriodic(elem, key)
-    case _ => entryToFactVal(elem, key)
+    case JsObject(fields) if fields contains "contextRef" => entryToPeriodicFactVal(key, elem)
+    case _ => entryToFactVal(key, elem)
   }
+ 
+  private def entryToPeriodicFactVal(key: String = "", elem: JsValue): Period = elem \\ "contextRef" match {
+    case JsString(context) =>
+      val (start, end) = resolveContext(context)
+      Period(start, end, entryToFactVal(key, elem))
 
-  private def parseEntryChildren(key: String, elem: JsValue): List[Fact] =
-    if (key contains "TextBlock") unstructuredToFactChildren(key, elem)
-    else Nil
-
-  private def entryToFactVal(elem: JsValue, key: String): FactVal =
-    if (key contains "TextBlock") unstructuredToFactVal(key, elem)
+    case _ => throw new Exception("Periodic fact value did not have a context")
+  }
+    
+  private def entryToFactVal(key: String, elem: JsValue): FactVal =
+    if (key contains "TextBlock") getDummyFactVal("Unstructed facts do not yet have a defined factVal")
     else structuredToFactVal(elem)
-
-  private def unstructuredToFactVal(key: String, elem: JsValue): FactVal = getDummyFactVal("stephan is an error")
-
-  private def unstructuredToFactChildren(key: String, elem: JsValue): List[Fact] = {
-    def groupPrefix[T](xs: List[T], p: T => Boolean): List[List[T]] = xs match {
-      case List()         => List()
-      case h :: t if p(h) => groupPrefix(t, p)
-      case h :: t =>
-        val (y, z) = t span (!p(_))
-        (h :: y) :: groupPrefix(z, p)
-    }
-
-    def parseHTML(htmlString: String): List[String] = {
-      val doc = Jsoup.parse(htmlString)
-      doc.select("table").remove();
-      val htmlText = doc.body.select("*").iterator().map(_.ownText.trim).filter(_.length > 0)
-      groupPrefix(htmlText, (x: String) => x == "\u00a0").map(_.mkString(" "))
-    }
-
-    elem match {
-      case JsObject(fields) => fields.get("content") match {
-        case Some(JsString(unstructured)) => {
-          parseHTML(unstructured)
-          .filter(_.matches(".*\\."))
-          .map(s => Fact(key, "xbrl", FactString(s)))
-        }
-        case other => List()
-      }
-    }
-  }  
 
   private def structuredToFactVal(elem: JsValue): FactVal = elem match {
     // Match periodic facts => FactPeriod
     case JsObject(fields) if fields contains "contentArray" => fields("contentArray") match {
-      case JsArray(items) => FactCol(items.toList map (i => entryToPeriodic(i)))
-      case other          => getDummyFactVal(other)
+      case JsArray(items) => FactCol(items.toList map (entryToPeriodicFactVal("", _)))
+      case other => getDummyFactVal(other)
     }
 
     // Match monetary facts => FactMoney
@@ -130,19 +105,37 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
     // Match facts which are zeroed => FactMoney
     case obj: JsObject => obj.getFields("xsi:nil", "unitRef") match {
       case Seq(_: JsBoolean, JsString(uref)) => FactMoney(0, uref)
-
-      case other                             => getDummyFactVal(other)
+      case other => getDummyFactVal(other)
     }
   }
 
-  private def entryToPeriodic(elem: JsValue, key: String = ""): Period = elem \\ "contextRef" match {
-    case JsString(context) =>
-      val (start, end) = resolveContext(context)
-      Period(start, end, entryToFactVal(elem, key))
+  private def parseEntryChildren(key: String, elem: JsValue): List[Fact] =
+    if (key contains "TextBlock") unstructuredToFactChildren(key, elem)
+    else Nil
+  
+  private def unstructuredToFactChildren(key: String, elem: JsValue): List[Fact] = {
+    def parseHTML(htmlString: String): List[String] = {
+      val doc = Jsoup.parse(htmlString)
+      //TODO - ignore the tables
+      doc.select("table").remove()
+      val htmlText = doc.body.select("*").iterator map(_.ownText.trim) filter(_.length > 0)
+      htmlText.toList splitFilter (_ == "\u00a0") map(_ mkString " ")
+    }
 
-    case _ => throw new Exception("Periodic fact value did not have a context")
-  }
-
+    elem match {
+      case JsObject(fields) => fields.get("content") match {
+        case Some(JsString(unstructured)) => {
+          parseHTML(unstructured)
+            //TODO only get text blocks ending in a period (removes headers and blocks
+            // ending in colons which usually refer to a table - ignoring tables at the moment)
+            .filter(_.matches(".*\\."))
+            .map(s => Fact(key, "xbrl", FactString(s)))
+        }
+        case other => Nil
+      }
+      case _ => Nil
+    }
+  }  
   /** Resolves the "context" keys in the xbrl
    *  This function should not throw exceptions
    */
@@ -158,12 +151,12 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
         val startName = ns + "startDate"
         val endName = ns + "endDate"
 
-        val context = jsonTransform.\\[JsObject](contextName) fields ("contentArray")
+        val context = jsonTransform \\[JsObject] contextName fields ("contentArray")
         val date = context.childrenWith("id", JsString(key)).head
-        val period = date.\\[JsObject](periodName)
+        val period = date \\[JsObject] periodName
 
         period.getFields(instantName, startName, endName) match {
-          case Seq(JsString(inst))                 => Success(new DateTime(inst) -> new DateTime(inst))
+          case Seq(JsString(inst)) => Success(new DateTime(inst) -> new DateTime(inst))
           case Seq(JsString(start), JsString(end)) => Success(new DateTime(start) -> new DateTime(end))
         }
       } catch { case NonFatal(any) => Failure(any) }

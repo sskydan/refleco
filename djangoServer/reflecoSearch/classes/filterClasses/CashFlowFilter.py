@@ -4,18 +4,8 @@ import logging
 devLogger = logging.getLogger('development')
 
 class CashFlowFilter(Filter):
-    """EXTENDS FILTER
-    StatementFilter is the class for filtering out statement data to create
-    Box objects for financial statement reports
 
-    Attributes:
-        statementTypes:
-            dict mapping statement keywords to statement key sets
-
-        keys:
-            dict key mapping from ratios keywords to lists of
-            appropriate statement names / key sets
-    """
+    #Keys that create a cash flow statement
     keys = [
         'Net Operating Cash Abstract',
         [
@@ -82,11 +72,8 @@ class CashFlowFilter(Filter):
     ]
 
     def createBoxList(self):
-        """
-        createBoxList creates a list of Box objects for a cash flow report
-
-        Return:
-            cash flow Box object
+        """Creates a list of Box objects for a cash flow report
+        :return: List(TableBox())
         """
         boxList = []
         if len(self.dataSet):
@@ -100,8 +87,8 @@ class CashFlowFilter(Filter):
                         elif "Abstract" in item:
                             name = item.replace("Abstract", "")
                             statementData.append({u'prettyLabel': name, u'value': None})
-
-                    boxList.append(TableBox.makeBox(statementData, "Cash Flow" + " (" + f[u'value'] + ")", []))
+                    if len(statementData):
+                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'] + " Cash Flow" + " (" + f[u'value'] + ")", []))
         return boxList
 
 
