@@ -1,51 +1,14 @@
-import string
+from django.conf import settings
 import re
 import requests
 import nltk
 from pickle import dump,load
 import nltk.tag
 from dateutil.parser import _timelex, parser
-from dateutil.tz import *
-from datetime import *
-from nltk.corpus import wordnet as wn
-from itertools import chain
-from nltk.chunk import RegexpParser
-from nltk import ChartParser
 import logging
 devLogger = logging.getLogger('development')
 
-"""
-posWordnetMapping:
-    maps pos tagger tags to wordnet tags (a - adjective, n - noun, v - verb, r - adverb).
-    This helps with synonym tagging
-
-keyTokenTags:
-    used during the post tagging process to tag refleco specific terms
-
-brillTagger:
-    tagger used for POS tagging.
-
-    *NOTE* this tagger is built of an initial BUD tagger
-
-stemmer:
-    NOT USED - NLTK word stemmer
-
-lemmatizer:
-    NOTE USED - NLTK lemmatizer
-
-LIBRARY_HOST:
-    root url for library api
-
-CORE_HOST:
-    root url for core api
-"""
-
-#LIBRARY_HOST = "http://localhost:7800/finbase/"
-#CORE_HOST = "http://54.148.120.55:8080/coreEngine/engine/"
-#LOCAL_CORE_HOST = "http://localhost:7801/engine/"
-LOCAL_CORE_HOST = "http://localhost:8080/coreEngine/engine/"
-#LOCAL_LIBRARY_HOST = "http://localhost:7800/finbase/"
-
+#TODO include wordet for fuzzy string matching
 posWordnetMapping = {
     'JJ': 'a',
     'JJS': 'a',
@@ -169,83 +132,57 @@ try:
 except Exception as e:
     devLogger.error('Could not load brillTagger: ' + str(e))
 
-stemmer = nltk.PorterStemmer()
-lemmatizer = nltk.WordNetLemmatizer()
+#stemmer = nltk.PorterStemmer()
+#lemmatizer = nltk.WordNetLemmatizer()
 
 class QueryTagger(object):
-    """
-    QueryTagger inserts POS tags into a given text query.
-    It is responsible for the POS tagger as well as post
-    processing. Post processing furth tags refleco specific
-    terms to be used during parsing.
+    """Creates a list of (word, tag) pairs
     """
 
     @classmethod
     def tagQuery(cls, queryString):
         """
-        tagQuery identifies all known entities in a query
-        Args:
-            queryString:
-                string query
-        Return:
-            list tagged Query
+        :param queryString: String query to tag
+        :return: List((word, tag))
         """
         posTags = cls.tagPOS(queryString)
-        #temp pass pos to tagNER until we have a true list of all tags
+        FilterTags = cls.tagFilters(posTags)
+        #dateTags = cls.tagDates(reportTags)
+        #TODO right now we don't have a reliable list of all base pos tag. NER needs base tags
         pos = [t for w,t in posTags[:]]
-
-        reportTags = cls.tagReports(posTags)
-        dateTags = cls.tagDates(reportTags)
-        #temp pass pos tags until we have a true list of all tags
-        nerTags = cls.tagNER(dateTags, pos)
-
+        nerTags = cls.tagNER(FilterTags, pos)
         taggedTokens = nerTags
-        devLogger.info("QueryTagger - Fully tagged tokens are: " + str(taggedTokens))
 
+        devLogger.info("Fully tagged tokens are: " + str(taggedTokens))
+        #TODO we have to replace brackets because DSL parser used brackets as stop chars
         return list(map(lambda e: (e[0].replace('(', '{').replace(')', '}'), e[1]), taggedTokens))
-
 
     @classmethod
     def tagPOS(cls, queryString):
         """
-        Tag a given sting input with POS tags.
-
-        Args:
-            quertString: a given string. This should be a query sentence.
-
-        Returns:
-            A list of tuples, where each tuple is a (word, tag) pair.
+        :param queryString: String to tag
+        :return: List((word,tag)) base pos tagging
         """
-
         tokens = nltk.word_tokenize(queryString)
         #stems all tokens. Works strangly is some cases. Avoid for now
         #tokens = [cls.stemmer.stem(t) for t in tokens]
         #tokens = [cls.lemmatizer.lemmatize(t) for t in tokens]
-
         classifiedTokens = brillTagger.tag(tokens)
-
-        #classifiedTokens = [(lambda t: (t[0], keyTokenTags.get(t[0], t[1])))(t) for t in brillTokens]
-        devLogger.info("QueryTagger - POS tagged tokens are: " + str(classifiedTokens))
+        devLogger.info("POS tagged tokens are: " + str(classifiedTokens))
         return classifiedTokens
 
     @classmethod
     def tagNER(cls, tokenList, pos):
-        """
-        Tag a given sting input with POS tags while using NER.
-
-        Args:
-            tokenList: a list of POS tagged tokens
-            pos: temp list of pos tags. in future we will have a global
-        Returns:
-            A list of tuples, where each tuple is a (word, tag) pair.
+        """Tag a given sting input with NER tags
+        :param tokenList: List((word,tag)) of POS tagged tokens
+        :param pos: temp list of pos tags. in future we will have a defined list
+        :return: List((word,tag)) NER tagged tokens
         """
 
         def NERSplit(inputTokens):
-            """
-            NERSplit walkes a list of tokens and finds groups
-            of unrecognized tokens
-            Args: inputTokens: list of taged tokens
-            Returns: list of unrecognized tokens
+            """Walkes a list of tokens and finds groups of bas pos tagged tokens i.e non refleco specific
+            :param inputTokens: list of taged tokens
+            :return: List((word, tag)) base pos tagged tokens
             """
             batch = []
             regexp = re.compile(r'[0-9\<\>]')
@@ -260,11 +197,15 @@ class QueryTagger(object):
                 yield batch
 
         def getNER(tokens):
+            """Gets NER from backend
+            :param tokens: List((word,tag)) tokens
+            """
+            #get the original string
             tokenString = re.sub(r' (?=\W)', '', " ".join([w for w,t in tokens]))
-            #get ner tags from dataserver
+
             NERTokens = []
             try:
-                nerItems = requests.get(LOCAL_CORE_HOST + 'ner?search=' + tokenString)
+                nerItems = requests.get(settings.CORE_HOST + 'ner?search=' + tokenString)
                 if nerItems.status_code == 200:
                     r = nerItems.json()
                     if len(r):
@@ -283,31 +224,21 @@ class QueryTagger(object):
             NERTokens = getNER(ur[:])
             cls.__replaceTokens(tokenList, ur, NERTokens)
 
+        devLogger.info("NER tagged tokens are :" + str(tokenList))
         return tokenList
 
     @classmethod
     def tagDates(cls, classifiedTokens):
-        """
-        tagDates finds and tags date tokens while changing the
-        date string into and datetime object
-
-        Args:
-            classifiedTokens:
-                list of tuples of classified tokens
-
-        Returns:
-            list of tuples of classified tokens with dates
-            tagged and datetime objects created
+        """tags date tokens while changing the date string into and datetime object
+        :param classifiedTokens: List((word,tag)) tagged tokens
+        :return: List((word,tag)) tagged tokens with dates tagged
         """
         p = parser()
         info = p.info
         def timetoken(token):
-            """
-            timeToken is true if a given token could be
-            part of a datetime string
-            Args:
-                token: string
-            Return: Boolean
+            """true if a given token could be part of a datetime string
+            :param token: string
+            :return: Boolean
             """
             try:
                 if 1900 < float(token) < 3000:
@@ -317,11 +248,9 @@ class QueryTagger(object):
             return any(f(token) for f in (info.jump,info.weekday,info.month,info.hms,info.ampm,info.pertain,info.utczone,info.tzoffset))
 
         def timesplit(inputString):
-            """
-            timeSplit walkes a string and finds groups
-            of datetime strings
-            Args: inputString: string
-            Returns: list of datetime strings
+            """Walkes a string and finds groups of datetime strings
+            :param inputString: string
+            :return: list of datetime strings
             """
             batch = []
             for token in _timelex(inputString):
@@ -344,42 +273,49 @@ class QueryTagger(object):
         for date in timesplit(" ".join(tokenWords)):
             replaceTokens = cls.__getTokensFromRaw(classifiedTokens, date)
             cls.__replaceTokens(classifiedTokens, replaceTokens, [(p.parse(date).strftime("%Y-%m-%d"), 'DATE')])
+
+        devLogger.info("Date tagged tokens are: " + str(classifiedTokens))
         return classifiedTokens
 
     @classmethod
-    def tagReports(cls, classifiedTokens):
-        """
-        tagReports finds and tags report tokens
-
-        Args:
-            classifiedTokens:
-                list of tuples of classified tokens
-
-        Returns:
-            list of tuples of classified tokens with reports
-            tagged
+    def tagFilters(cls, classifiedTokens):
+        """finds and tags known Filter tokens
+        :param classifiedTokens: List((word,tag)) tagged tokens
+        :return: List((word,tag)) tagged tokens with filters tagged
         """
         query = " ".join([w for w,t in classifiedTokens])
-        reports = [('cash flow','CASHFLOW'), ('balance sheet','BALANCESHEET'), ('income statement', 'INCOMESTMT')]
-        for r in reports:
-            if r[0] in query:
-                replaceTokens = cls.__getTokensFromRaw(classifiedTokens, r[0])
-                cls.__replaceTokens(classifiedTokens, replaceTokens, [r])
+        filters = [('cash flow','CASHFLOW'), ('balance sheet','BALANCESHEET'), ('income statement', 'INCOMESTMT')]
+        for f in filters:
+            if f[0].lower() in query.lower():
+                replaceTokens = cls.__getTokensFromRaw(classifiedTokens, f[0])
+                cls.__replaceTokens(classifiedTokens, replaceTokens, [f])
+
+        devLogger.info("Filter tagged tokens are: " + str(classifiedTokens))
         return classifiedTokens
 
 
     @classmethod
     def __replaceTokens(cls, tokenList, oldTokens, newTokens):
+        """replace a set of tokens with new tokens
+        :param tokenList: List((word, tag)) which will have tokens replaced
+        :param oldTokens: List((word, tag)) tokens to be replaced
+        :param newTokens: List((word, tag)) tokens to replace with
+        """
         try:
             startIndex = tokenList.index(oldTokens[0])
             endIndex = tokenList.index(oldTokens[-1])
             tokenList[startIndex:endIndex+1] = newTokens
-            devLogger.info("QueryTagger - Replaced token: " + str(oldTokens) + " WITH " + str(newTokens))
+            devLogger.info("Replaced token: " + str(oldTokens) + " WITH " + str(newTokens))
         except Exception as e:
-            devLogger.warn("QueryTagger - Could not replace " + str(oldTokens) + ":" + str(e))
+            devLogger.warn("Could not replace " + str(oldTokens) + ":" + str(e))
 
     @classmethod
     def __getTokensFromRaw(cls, tokenList, rawText):
+        """gets a list of tokens given a raw string
+        :param tokenList: List((word,tag)) to get from
+        :param rawText: String text for which we want tokens for
+        :return: List((word,tag)) tokens for the raw string
+        """
         NERWords = [x for x in re.split('(\W+)',rawText) if x]
         startIndex = [i for i, t in enumerate(tokenList) if t[0] == NERWords[0]]
         endIndex = [i for i, t in enumerate(tokenList) if t[0] == NERWords[-1]]

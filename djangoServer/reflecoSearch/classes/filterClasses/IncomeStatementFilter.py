@@ -4,19 +4,7 @@ import logging
 devLogger = logging.getLogger('development')
 
 class IncomeStatementFilter(Filter):
-    """EXTENDS FILTER
-    StatementFilter is the class for filtering out statement data to create
-    Box objects for financial statement reports
-
-    Attributes:
-        statementTypes:
-            dict mapping statement keywords to statement key sets
-
-        keys:
-            dict key mapping from ratios keywords to lists of
-            appropriate statement names / key sets
-    """
-
+    #keys the build an income statement
     keys = [
         'Revenues Abstract',
         [
@@ -64,11 +52,8 @@ class IncomeStatementFilter(Filter):
     ]
 
     def createBoxList(self):
-        """
-        createBoxList creates a list of Box objects for a income statement report
-
-        Return:
-            income statement Box object
+        """Creates a list of Box objects for a income statement report
+        :return: List(TableBox())
         """
         boxList = []
         if len(self.dataSet):
@@ -82,9 +67,6 @@ class IncomeStatementFilter(Filter):
                         elif "Abstract" in item:
                             name = item.replace("Abstract", "")
                             statementData.append({u'prettyLabel': name, u'value': None})
-
-                    boxList.append(TableBox.makeBox(statementData, "Income Statement" + " (" + f[u'value'] + ")", []))
+                    if len(statementData):
+                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'] + " Income Statement" + " (" + f[u'value'] + ")", []))
         return boxList
-
-
-__author__ = 'lboileau'

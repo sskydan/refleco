@@ -47,4 +47,17 @@ object Extensions {
 
   implicit def itPimped[T](it: Iterator[T]) = new IteratorPimp(it)
 
+  class ListPimp[T](l: List[T]) {
+    /** split the list on the provided predicate, and filter out all the empty results
+     *  @param p the function to use as the filter
+     *  @return a list of subsets
+     */
+    def splitFilter(p: T => Boolean): List[List[T]] = l match {
+       case Nil => Nil
+       case x::xs if p(x) => (xs dropWhile p).splitFilter(p)  
+       case _ => l span (!p(_)) match { case (a,b) => a :: b.splitFilter(p) }
+    }
+  }
+  
+  implicit def listPimped[T](l: List[T]): ListPimp[T] = new ListPimp(l)
 }
