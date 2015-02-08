@@ -74,8 +74,6 @@ object Board extends CEConfig with StrictLogging {
   def find(id: String): Option[Sticker] =
     rddGraph.lookup(id).headOption
     
-  def test = KnownEntityManager.createInverseIndex
-
   def getGraph: RDD[(String,Sticker)] = {
     val graph =
       if (!new File(GRAPH_STICKER_FILE).exists) {

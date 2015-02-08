@@ -84,8 +84,12 @@ trait EngineService extends Actor with HttpService with ActorLogging {
     } ~
     path("engine" / "dict") {
       get {
-        KnownEntityManager.createInverseIndex
-        complete("Starting dump of inverse indices")
+        complete{
+        	Future{
+            KnownEntityManager.createInverseIndices
+          }
+          "Starting dump of inverse indices"
+        }
       }
     }
     path("engine") {

@@ -89,7 +89,7 @@ object ASTCodeGen extends StrictLogging {
   def getSearchFilters(paths: Seq[PathNode]) = paths.collect {
     case PathNode(_, Some(AttributeSelectorNode(field, fns))) if !fns.isEmpty =>
       val key = "children."+field.value
-      val values = fns.map(fn => fn.fn.name + fn.args.value).mkString("&") 
+      val values = fns.map(fn => fn.fn.name + fn.args.value).mkString(",") 
       
       key -> (REPORT_PREFIX + values)
   }.toMap
@@ -101,7 +101,7 @@ object ASTCodeGen extends StrictLogging {
         else COMPANY_STR_PREFIX
       
       val key = "children."+field.value 
-      val values = fns.map(fn => fn.fn.name + fn.args.value).mkString("&")
+      val values = fns.map(fn => fn.fn.name + fn.args.value).mkString(",")
       
       key -> (prefix + values)
       

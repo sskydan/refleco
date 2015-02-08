@@ -161,8 +161,11 @@ trait ESManager extends DataServerManager with StrictLogging {
    *    ("debt and liabilities", "valList.inner.valDouble.>10,<40")
    */
   def cleanRangeQuery(k: String, v: String): QueryBuilder = {
+    val PATH_SEPARATOR = '.'
+    val INNER_VALUE_SEPARATOR = ','
+    
     def extractValuePath(v: String) = {
-      val (value, rawPrefix) = v.reverse.span(_ != '.')
+      val (value, rawPrefix) = v.reverse span (_ != PATH_SEPARATOR)
       val prefix = if (rawPrefix.isEmpty) "" else s".${rawPrefix.drop(1).reverse}"
       prefix -> value.reverse
     }
@@ -170,10 +173,10 @@ trait ESManager extends DataServerManager with StrictLogging {
     val (vPrefix, vValue) = extractValuePath(v)
     val rangeQ = QueryBuilders.rangeQuery("children.value"+vPrefix)
     
-    vValue split '&' map ( part =>
-      if (part startsWith ">=") rangeQ.from((part drop 2).toDouble).includeLower(true)
+    vValue split INNER_VALUE_SEPARATOR map ( part =>
+      if (part startsWith ">>") rangeQ.from((part drop 2).toDouble).includeLower(true)
       else if (part startsWith ">") rangeQ.from((part drop 1).toDouble).includeLower(false)
-      else if (part startsWith "<=") rangeQ.to((part drop 2).toDouble).includeUpper(true)
+      else if (part startsWith "<<") rangeQ.to((part drop 2).toDouble).includeUpper(true)
       else if (part startsWith "<") rangeQ.to((part drop 1).toDouble).includeUpper(false)
     )
     

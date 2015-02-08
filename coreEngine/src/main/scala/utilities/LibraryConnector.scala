@@ -58,7 +58,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
     case _ =>
       CoreParams(
         searchParam = Some(query), 
-        fieldParam = Some("prettyLabel,interest,id"),
+        fieldParam = Some("prettyLabel;interest;id"),
         limParam = Some(10)
       )
   }

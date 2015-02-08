@@ -33,11 +33,11 @@ class SearchRequest(
  *  TODO move paramMap to BaseParams?
  */
 trait URIParamsAdapter[+T<:SearchRequest] {
-  implicit def toRequest:T
-  def toParamsMap:Map[String,String]
+  implicit def toRequest: T
+  def toParamsMap: Map[String,String]
 }
 object URIParamsAdapter {
-  implicit def toRequest[T<:SearchRequest](params:URIParamsAdapter[T]):T = 
+  implicit def toRequest[T<:SearchRequest](params: URIParamsAdapter[T]): T = 
     params.toRequest
 }
 
@@ -54,25 +54,26 @@ class BaseParams(
   val limParam: Option[Int] = None,
   val pageParam: Option[Int] = None
 ) extends URIParamsAdapter[SearchRequest] {
+  val SEPARATOR = ';'
   
   def toRequest = {
     val request: Map[String, String] = {
-      val keys = keyParam getOrElse "prettyLabel" split ',' 
-      val values = searchParam.toList flatMap (_ split ',')
+      val keys = keyParam getOrElse "prettyLabel" split SEPARATOR 
+      val values = searchParam.toList flatMap (_ split SEPARATOR)
       (keys zip values).toMap
     }
     val sort = sortParam map { case "date" => "value" }
-    val doctype = doctypeParam map (_.split(',').toList) getOrElse Seq("10-K", "10-Q") map {
+    val doctype = doctypeParam map (_.split(SEPARATOR).toList) getOrElse Seq("10-K") map {
       case "S-1" => "company"
       case "13F-HR" => "investments"
       case other => other
     }
-    val fields = fieldParam map (_.split(",").toSeq) getOrElse Nil
+    val fields = fieldParam map (_.split(SEPARATOR).toSeq) getOrElse Nil
   
     new SearchRequest(request, sort, fields, doctype, limParam, pageParam)
   }
   
-  def toParamsMap:Map[String,String] = Map(
+  def toParamsMap: Map[String,String] = Map(
 	  "key" -> keyParam,
 	  "search" -> searchParam,
 	  "sort" -> sortParam,

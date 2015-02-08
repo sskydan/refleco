@@ -11,6 +11,7 @@ import scala.io.Source
 import utilities.XMLUtil._
 import com.typesafe.scalalogging.StrictLogging
 import stickerboard.sources.DBPediaGraph
+import utilities.CEConfig
 
 object EDTransforms {
   // all nodes in the graph which are semantically meaningful
@@ -42,24 +43,24 @@ object EDTransforms {
 
 /** handles creation and persistence of inverse indices of surface forms
  */
-object KnownEntityManager extends StrictLogging {
-  val REL_INDEX = "refdata/relindex"
-  val ENT_INDEX = "refdata/entindex"
-  val ATT_INDEX = "refdata/attindex"
-  
-  val OWL_FILE = "dbpedia/dbpedia_2014.owl"
+object KnownEntityManager extends CEConfig with StrictLogging {
+  val REL_INDEX = config getString "relIndexFile"
+  val ENT_INDEX = config getString "entIndexFile"
+  val ATT_INDEX = config getString "attIndexFile"
+  val OWL_FILE = config getString "dbpOWLFile"
+
   val RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   val RDFS_NS = "http://www.w3.org/2000/01/rdf-schema#"
   val XML_NS = "http://www.w3.org/XML/1998/namespace"
 
   /** generic entry point
    */
-  def createInverseIndex = {
-//    implicit val spark = Board.spark
-//    
-//	  createRelationsIndex
-//    createEntityIndex
-//    createAttributeIndex
+  def createInverseIndices = {
+    implicit lazy val spark = Board.spark
+    
+	  createRelationsIndex
+    createEntityIndex
+    createAttributeIndex
   }
   
   private def createEntityIndex(implicit spark: SparkContext) =
