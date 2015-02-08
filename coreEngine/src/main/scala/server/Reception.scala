@@ -32,7 +32,7 @@ object Reception extends CEConfig {
   case class SearchRequest(params:CoreParams) extends RequestType
   case object ScanRequest extends RequestType
   
-  val dsHost = config.getString("dataServerHost")
+  val dsHost = config getString "dataServerHost"
   def props() = Props(new Reception())
 }
 
@@ -86,8 +86,8 @@ class Reception extends Actor with CEConfig with ActorLogging {
     	        Get(Uri(dsHost) withQuery (
     	          "key" -> "id",
   	            "search" -> ("analytics::"+facts.head.id), 
-  	            "type" -> "analytics"))
-  	            
+  	            "type" -> "analytics"
+              ))
     	      } map { 
     	        
     	        case Seq(head, _*) => 
