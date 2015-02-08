@@ -52,7 +52,7 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
    *  FIXME interest/rank extraction in es-provided responses
    *  TODO smarter childFiltering in the whole-fact cases
    */
-  private def parseFinbaseResult(entry: JsValue) = (Try(entry.\\("_source")), Try(entry.\\("fields"))) match {
+  private def parseFinbaseResult(entry: JsValue) = (Try(entry \\ "_source"), Try(entry \\ "fields")) match {
     
     // This case is for whole, direct fact responses
     case (Success(doc: JsObject), _) if (doc \\~ "children") != Set() => 

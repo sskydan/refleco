@@ -19,7 +19,7 @@ import scala.util.Try
 object ASTCodeGen extends StrictLogging {
   implicit val timeout = Timeout(10.hours)
   implicit def listToOpt(list: Iterable[String]): Option[String] = 
-    if (!list.isEmpty) Some(list mkString ",")
+    if (!list.isEmpty) Some(list mkString ";")
     else None
   
   def generate(query: String)(implicit system: ActorSystem): Future[Seq[Fact]] = {
