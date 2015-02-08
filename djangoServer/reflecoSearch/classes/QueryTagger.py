@@ -126,7 +126,7 @@ posWordnetMapping = {
 
 #load trained tagger
 try:
-    input = open('static/nlp/brillTaggerWithModel.pkl', 'rb')
+    input = open(settings.PROJECT_DIR +"/"+ 'static/nlp/brillTaggerWithModel.pkl', 'rb')
     brillTagger = load(input)
     input.close
 except Exception as e:

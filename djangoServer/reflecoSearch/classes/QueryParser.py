@@ -1,5 +1,6 @@
 import nltk
 from nltk import ChartParser
+from django.conf import settings
 from reflecoSearch.classes.filterClasses.BalanceSheetFilter import BalanceSheetFilter
 from reflecoSearch.classes.filterClasses.IncomeStatementFilter import IncomeStatementFilter
 from reflecoSearch.classes.filterClasses.CashFlowFilter import CashFlowFilter
@@ -11,15 +12,15 @@ devLogger = logging.getLogger('development')
 
 tokenGrammar = ""
 try:
-    with open ("static/nlp/dslGrammar.txt", "r") as grammarFile:
+    with open (settings.PROJECT_DIR  +"/"+ "static/nlp/dslGrammar.txt", "r") as grammarFile:
         grammar = grammarFile.read()
     grammarFile.close()
 
-    with open ("static/nlp/POSPreterminals.txt", "r") as POSPreterminalsFile:
+    with open (settings.PROJECT_DIR +"/"+ "static/nlp/POSPreterminals.txt", "r") as POSPreterminalsFile:
         POSpreterminals = POSPreterminalsFile.read()
     POSPreterminalsFile.close()
 
-    with open ("static/nlp/reflecoPreterminals.txt", "r") as reflecoPreterminalsFile:
+    with open (settings.PROJECT_DIR +"/"+ "static/nlp/reflecoPreterminals.txt", "r") as reflecoPreterminalsFile:
         reflecoPreterminals = reflecoPreterminalsFile.read()
     reflecoPreterminalsFile.close()
 

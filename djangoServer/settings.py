@@ -12,12 +12,12 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+#PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 #STABLE
-#PROJECT_DIR = '/var/www/reflecho.com'
+PROJECT_DIR = '/var/www/reflecho.com'
 
-CORE_HOST = "http://localhost:7801/engine/"
-LIBRARY_HOST = "http://localhost:7800/finbase/"
+CORE_HOST = "http://localhost:8080/coreEngine/engine/"
+LIBRARY_HOST = "http://localhost:8080/library/finbase/"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
@@ -26,7 +26,7 @@ LIBRARY_HOST = "http://localhost:7800/finbase/"
 SECRET_KEY = 'eb1ys^n3$^6x*b@a7o%ltq4ysv69+hqi*xu5oqst73@vu&dl=i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 TEMPLATE_DEBUG = False
 
