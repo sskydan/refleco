@@ -228,15 +228,26 @@ trait ESManager extends DataServerManager with StrictLogging {
     val (postReplyFilters, esFilters) = params.fields partition (_ startsWith "children.")
     val (ignoredFields, chosenFields) = esFilters partition (_ startsWith "-")
     
+    val docFilters = postReplyFilters map { f =>
+      val k = "children.prettyLabel"
+      val v = f replaceAll ("children.", "")
+      FilterBuilders nestedFilter ("children", QueryBuilders.matchPhraseQuery(k, v))
+    }
+    if (docFilters.length > 0) req setPostFilter {
+    	val boolF = FilterBuilders.boolFilter()
+			docFilters foreach (boolF should _)
+			boolF
+    }
+    
     if (chosenFields.length > 0)
-      req.addFields(chosenFields: _*)
+      req addFields (chosenFields: _*)
     else if (ignoredFields.length > 0)
-      req.setFetchSource(
+      req setFetchSource (
         Array("*"),
         ("details" +: ignoredFields).toArray map (_ replaceFirst ("-", ""))
       )
     else
-      req.setFetchSource("*", "details")
+      req setFetchSource ("*", "details")
 
     //
     // handle sorts
