@@ -14,7 +14,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 #STABLE
-PROJECT_DIR = '/var/www/reflecho.com'
+PROJECT_DIR = '/var/www/reflecho.com/djangoServer'
 
 CORE_HOST = "http://localhost:8080/coreEngine/engine/"
 LIBRARY_HOST = "http://localhost:8080/library/finbase/"
