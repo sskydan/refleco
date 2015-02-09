@@ -19,35 +19,51 @@ class DSLString(object):
         else:
             return self.string + self.subject
 
-    def addSubject(self, DSLEntity):
+    def addSubject(self, DSLItem):
         """adds a subject (company or entity) to a DSL query
-        :param DSLEntity: A chunk of a dsl string
+        :param DSLItem: A chunk of a dsl string
         :return:
         """
-        s = list(map(lambda e: e.replace('{', '(').replace('}', ')'), DSLEntity))
+        s = list(map(lambda e: e.replace('{', '(').replace('}', ')'), DSLItem))
         self.subject = '"' + ' '.join(s[1:]) + '"'
         self.string = s[0].lower() + " "
 
-    def addDSLE(self, DSLEntity):
+    def addDSLI(self, DSLItem):
         """adds a dsl chunk to a dls string
-        :param DSLEntity: A chunk of a dsl string
+        :param DSLItem: A chunk of a dsl string
         :return:
         """
-        def getFilter(d):
-            s = list(map(lambda e: e.replace('{', '(').replace('}', ')'), d))
+        def getFilter(DSLI):
+            """converts a DSL filter from List() to String
+            :param DSLI: List() DSL item
+            :return: String formatted for DSL
+            """
             def filterSwitch(x):
+                """switch on different filter types
+                :param x: switch input String
+                :return: switch result String
+                """
                 return {
                     'attribute': '@',
                     'relation': '.',
                 }.get(x, False)
 
-            m = filterSwitch(s[1])
-            if m:
-                return m + '"' + ' '.join(s[2:]) + '"'
+            itemString = list(map(lambda e: e.replace('{', '(').replace('}', ')'), DSLI))
+            itemFilter = filterSwitch(itemString[1])
+            if itemFilter:
+                return itemFilter + '"' + ' '.join(itemString[2:]) + '"'
             return ""
 
-        def getModifier(d):
+        def getModifier(DSLI):
+            """converts a DSL modifier from List() to String
+            :param DSLI: List() DSL item
+            :return: String formatted for DSL
+            """
             def modifierSwitch(x):
+                """switch on different modifier types
+                :param x: switch input String
+                :return: switch result String
+                """
                 return {
                     'GREATERTHAN': '>',
                     'LESSTHAN': '<',
@@ -56,26 +72,26 @@ class DSLString(object):
                     'LTEQUAL': '<<',
                 }.get(x, False)
 
-            m = modifierSwitch(d[1])
-            if m:
-                cleanNum = d[2].replace(",", "").split(".", 1)[0]
-                return m + cleanNum
+            modString = modifierSwitch(DSLI[1])
+            if modString:
+                cleanNum = DSLI[2].replace(",", "").split(".", 1)[0]
+                return modString + cleanNum
             return ""
 
-        m = ""
-        f = ""
-        for d in DSLEntity:
-            if d[0] == 'company' or d[0] == 'entity':
-                self.addSubject(d)
-            elif d[0] == 'FILTER':
-                f = getFilter(d)
-            elif d[0] == 'MODIFIER':
-                m = m + getModifier(d)
+        modString = ""
+        filterString = ""
+        for item in DSLItem:
+            if item[0] == 'company' or item[0] == 'entity':
+                self.addSubject(item)
+            elif item[0] == 'FILTER':
+                filterString = getFilter(item)
+            elif item[0] == 'MODIFIER':
+                modString = modString + getModifier(item)
 
 
-        if len(m):
-            self.filters.append(f + m)
+        if len(modString):
+            self.filters.append(filterString + modString)
             if not len(self.filterObjects):
-                self.filters.append(f)
-        elif len(f) and not len(self.filterObjects):
-            self.filters.append(f)
+                self.filters.append(filterString)
+        elif len(filterString) and not len(self.filterObjects):
+            self.filters.append(filterString)
