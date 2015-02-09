@@ -13,14 +13,11 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-#STABLE
-#PROJECT_DIR = '/var/www/reflecho.com'
-
+FILES_DIR = PROJECT_DIR
+LOG_DIR = FILES_DIR + '/static/log/'
+GRAMMAR_DIR = FILES_DIR + '/static/nlp/'
 CORE_HOST = "http://localhost:7801/engine/"
 LIBRARY_HOST = "http://localhost:7800/finbase/"
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'eb1ys^n3$^6x*b@a7o%ltq4ysv69+hqi*xu5oqst73@vu&dl=i'
@@ -70,7 +67,6 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-
 #template files (.html)
 TEMPLATE_URL = '/templates/'
 TEMPLATE_DIRS = (
@@ -83,9 +79,6 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (
     PROJECT_DIR + '/static/',
 )
-
-
-
 
 
 LOGGING = {
@@ -120,14 +113,14 @@ LOGGING = {
             'level': 'DEBUG',
             'filters': ['require_debug_true'],
             'class': 'logging.FileHandler',
-            'filename':  PROJECT_DIR + '/static/log/dev.log',
+            'filename':  LOG_DIR + 'dev.log',
             'formatter': 'verbose'
         },
         'query_logfile': {
             'level': 'DEBUG',
             'filters': ['require_debug_false'],
             'class': 'logging.FileHandler',
-            'filename':  PROJECT_DIR + '/static/log/query.log',
+            'filename':  LOG_DIR + 'query.log',
             'formatter': 'simple'
         }
     },

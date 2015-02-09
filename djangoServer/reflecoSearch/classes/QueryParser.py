@@ -6,20 +6,21 @@ from reflecoSearch.classes.filterClasses.CashFlowFilter import CashFlowFilter
 from reflecoSearch.classes.filterClasses.DefaultDataFilter import DefaultDataFilter
 from reflecoSearch.pyparsing.pyparsing import *
 from reflecoSearch.classes.DSLString import DSLString
+from django.conf import settings
 import logging
 devLogger = logging.getLogger('development')
 
 tokenGrammar = ""
 try:
-    with open ("static/nlp/dslGrammar.txt", "r") as grammarFile:
+    with open(settings.GRAMMAR_DIR + "dslGrammar.txt", "r") as grammarFile:
         grammar = grammarFile.read()
     grammarFile.close()
 
-    with open ("static/nlp/POSPreterminals.txt", "r") as POSPreterminalsFile:
+    with open(settings.GRAMMAR_DIR + "POSPreterminals.txt", "r") as POSPreterminalsFile:
         POSpreterminals = POSPreterminalsFile.read()
     POSPreterminalsFile.close()
 
-    with open ("static/nlp/reflecoPreterminals.txt", "r") as reflecoPreterminalsFile:
+    with open(settings.GRAMMAR_DIR + "reflecoPreterminals.txt", "r") as reflecoPreterminalsFile:
         reflecoPreterminals = reflecoPreterminalsFile.read()
     reflecoPreterminalsFile.close()
 
@@ -29,8 +30,9 @@ try:
 except Exception as e:
     devLogger.error("Could not load grammar: " + str(e))
 
+
 class QueryParser(object):
-    #PYPARSING - preterminal definitions
+    #PYPARSING preterminal definitions
     LBRACE = Suppress(Literal('('))
     RBRACE = Suppress(Literal(')'))
     WRD = Regex("[0-9a-zA-Z_\-\,\.\?\!\>\<\=\/\:\&\{\}\+]+")
@@ -105,28 +107,28 @@ class QueryParser(object):
     WPS = LBRACE + Suppress(Literal('WPS')) + WRD + RBRACE
     WQL = LBRACE + Suppress(Literal('WQL')) + WRD + RBRACE
     WRB = LBRACE + Suppress(Literal('WRB')) + WRD + RBRACE
-    PRETERM =  ABL ^ ABN ^ ABX ^ AP ^ AT ^ BE ^ BED ^ BEDZ ^ BEG ^ BEM ^ BEN ^ BER ^ BEZ ^ CC ^ CD ^ CS ^ DO ^ DOD ^ DOZ ^ DT ^ DTI ^ DTS ^ DTX ^ EX ^ FW ^ HL ^ HV ^ HVD ^ HVG ^ HVN ^ HVZ ^ IN ^ JJ ^ JJR ^ JJS ^ JJT ^ MD ^ NC ^ NN ^ NNS ^ NP ^ NPS ^ NR ^ NRS ^ OD ^ PN ^ PPL ^ PPLS ^ PPO ^ PPS ^ PPSS ^ QL ^ QLP ^ RB ^ RBR ^ RBT ^ RN ^ RP ^ TL ^ TO ^ UH ^ VB ^ VBD ^ VBG ^ VBN ^ VBZ ^ WDT ^ WPO ^ WPS ^ WQL ^ WRB
+    PRETERM = ABL ^ ABN ^ ABX ^ AP ^ AT ^ BE ^ BED ^ BEDZ ^ BEG ^ BEM ^ BEN ^ BER ^ BEZ ^ CC ^ CD ^ CS ^ DO ^ DOD ^ DOZ ^ DT ^ DTI ^ DTS ^ DTX ^ EX ^ FW ^ HL ^ HV ^ HVD ^ HVG ^ HVN ^ HVZ ^ IN ^ JJ ^ JJR ^ JJS ^ JJT ^ MD ^ NC ^ NN ^ NNS ^ NP ^ NPS ^ NR ^ NRS ^ OD ^ PN ^ PPL ^ PPLS ^ PPO ^ PPS ^ PPSS ^ QL ^ QLP ^ RB ^ RBR ^ RBT ^ RN ^ RP ^ TL ^ TO ^ UH ^ VB ^ VBD ^ VBG ^ VBN ^ VBZ ^ WDT ^ WPO ^ WPS ^ WQL ^ WRB
     UKWORD = Group(LBRACE + Literal('WORD') + PRETERM + RBRACE)
 
     #PYPARSING - DSL primary entity
-    company = Group(LBRACE + Literal('company') + OneOrMore((WRD)) + RBRACE)
-    entity = Group(LBRACE + Literal('entity') + OneOrMore((WRD)) + RBRACE)
-    relation = LBRACE + Literal('relation') + OneOrMore((WRD)) + RBRACE
-    attribute = LBRACE + Literal('attribute') + OneOrMore((WRD)) + RBRACE
-    CASHFLOW = LBRACE + Literal('CASHFLOW') + OneOrMore((WRD)) + RBRACE
-    BALANCESHEET = LBRACE + Literal('BALANCESHEET') + OneOrMore((WRD)) + RBRACE
-    INCOMESTMT = LBRACE + Literal('INCOMESTMT') + OneOrMore((WRD)) + RBRACE
+    company = Group(LBRACE + Literal('company') + OneOrMore(WRD) + RBRACE)
+    entity = Group(LBRACE + Literal('entity') + OneOrMore(WRD) + RBRACE)
+    relation = LBRACE + Literal('relation') + OneOrMore(WRD) + RBRACE
+    attribute = LBRACE + Literal('attribute') + OneOrMore(WRD) + RBRACE
+    CASHFLOW = LBRACE + Literal('CASHFLOW') + OneOrMore(WRD) + RBRACE
+    BALANCESHEET = LBRACE + Literal('BALANCESHEET') + OneOrMore(WRD) + RBRACE
+    INCOMESTMT = LBRACE + Literal('INCOMESTMT') + OneOrMore(WRD) + RBRACE
     REPORT = Group(LBRACE + Suppress(Literal('REPORT')) + (CASHFLOW ^ BALANCESHEET ^ INCOMESTMT) + RBRACE)
     DATE = Group(LBRACE + Literal('DATE') + WRD + RBRACE)
     RELATION = LBRACE + Suppress(Literal('RELATION')) + relation + RBRACE
     ATTRIBUTE = LBRACE + Suppress(Literal('ATTRIBUTE')) + attribute + RBRACE
     COMPANY = LBRACE + Suppress(Literal('COMPANY')) + company + RBRACE
     ENTITY = LBRACE + Suppress(Literal('ENTITY')) + entity + RBRACE
-    GREATERTHAN =  LBRACE + Literal('GREATERTHAN') + Suppress(WRD) + RBRACE
-    LESSTHAN =  LBRACE + Literal('LESSTHAN') + Suppress(WRD) + RBRACE
-    EQUAL =  LBRACE + Literal('EQUAL') + Suppress(WRD) + RBRACE
-    GTEQUAL =  LBRACE + Literal('GTEQUAL') + Suppress(WRD) + RBRACE
-    LTEQUAL =  LBRACE + Literal('LTEQUAL') + Suppress(WRD) + RBRACE
+    GREATERTHAN = LBRACE + Literal('GREATERTHAN') + Suppress(WRD) + RBRACE
+    LESSTHAN = LBRACE + Literal('LESSTHAN') + Suppress(WRD) + RBRACE
+    EQUAL = LBRACE + Literal('EQUAL') + Suppress(WRD) + RBRACE
+    GTEQUAL = LBRACE + Literal('GTEQUAL') + Suppress(WRD) + RBRACE
+    LTEQUAL = LBRACE + Literal('LTEQUAL') + Suppress(WRD) + RBRACE
     USD = LBRACE + Literal('USD') + Suppress(Regex("[$]+")) + RBRACE
     UNIT = LBRACE + Literal('UNIT') + USD + RBRACE
     EQUALITY = LBRACE + Suppress(Literal('EQUALITY')) + (GREATERTHAN ^ LESSTHAN ^ EQUAL ^ GTEQUAL ^ LTEQUAL) + RBRACE
@@ -141,9 +143,9 @@ class QueryParser(object):
     FUNCTIONLIST << LBRACE + Suppress('FUNCTIONLIST') + FUNCTION + Optional(FUNCTIONLIST) + RBRACE
     SUBJECT = LBRACE + Suppress(Literal('SUBJECT')) + (ENTITY ^ COMPANY) + RBRACE
     FILTEROBJECT = Group(LBRACE + Literal('FILTEROBJECT') + REPORT + RBRACE)
-    DSLPE = Group(LBRACE + Literal('DSLPE') + (SUBJECT ^ FUNCTION) + RBRACE)
+    DSLI = Group(LBRACE + Literal('DSLI') + (SUBJECT ^ FUNCTION) + RBRACE)
     QBODY = Forward()
-    QUERYOBJ = LBRACE + Suppress(Literal("QUERYOBJ")) + (DSLPE ^ FILTEROBJECT ^ UKWORD) + RBRACE
+    QUERYOBJ = LBRACE + Suppress(Literal("QUERYOBJ")) + (DSLI ^ FILTEROBJECT ^ UKWORD) + RBRACE
     QBODY << LBRACE + Suppress(Literal('QBODY')) + QUERYOBJ + Optional(QBODY) + RBRACE
     IS = LBRACE + Suppress(Literal('IS')) + (BE ^ BED ^ BEDZ ^ BER ^ BEZ) + RBRACE
     WHICHQ = LBRACE + Suppress(Literal('WHICHQ')) + WPS + IS + QBODY + RBRACE
@@ -166,17 +168,16 @@ class QueryParser(object):
         through the parser to build an AST
         :return nltk AST
         """
-        parseTokens = [(lambda t: t[0])(t) for t in self.tokens]
+        parseTokens = [t[0] for t in self.tokens]
+        ASTs = []
         try:
             syntaxTrees = self.CFGParser.parse(parseTokens)
-            ASTs = []
             for tree in syntaxTrees:
                 ASTs.append(tree)
                 devLogger.info("AST generated: " + str(tree))
             if not(len(ASTs)):
                 devLogger.warn("Did not generate any AST. AST list empty.")
         except Exception as e:
-            ASTs = []
             devLogger.error("Could not parse tokens into AST: " + str(e))
         return ASTs
 
@@ -201,23 +202,26 @@ class QueryParser(object):
         filterObjects = []
 
         #TODO right now only consider the first AST. In furutre we will have to pick best AST
-        if len(ast) > 1:
-            ast = ast[0]
+        if len(ast) >= 1:
+            astLimmited = ast[0]
+        else:
+            astLimmited = False
 
-        for tree in ast:
+        if astLimmited:
             try:
-                parsedAST = self.QUERY.parseString(tree.pprint())
+                parsedAST = self.QUERY.parseString(astLimmited.pprint())
                 devLogger.info("Parsed AST: " + str(parsedAST))
             except Exception as e:
                 parsedAST = []
                 devLogger.error("Could not parse AST: " + str(e))
             for parsed in parsedAST.asList():
                 filterObjects = [self.getFilterObjects(item) for item in parsed if item[0] == 'FILTEROBJECT']
-                dslObj = DSLString(filterObjects)
+                dslStr = DSLString(filterObjects)
                 for item in parsed:
-                    if item[0] == 'DSLPE':
-                        dslObj.addDSLE(item[1:])
-                dslItems.append(dslObj.getString())
+                    if item[0] == 'DSLI':
+                        dslStr.addDSLI(item[1:])
+                dslItems.append(dslStr.getString())
+
         if len(filterObjects) < 1:
                 filterObjects = [DefaultDataFilter]
 

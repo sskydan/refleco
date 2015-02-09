@@ -6,85 +6,8 @@ from pickle import dump,load
 import nltk.tag
 from dateutil.parser import _timelex, parser
 import logging
+from django.conf import settings
 devLogger = logging.getLogger('development')
-
-#TODO include wordet for fuzzy string matching
-posWordnetMapping = {
-    'JJ': 'a',
-    'JJS': 'a',
-    'JJR': 'a',
-    'JJT': 'a',
-    'NN': 'n',
-    'NNS': 'n',
-    'NP': 'n',
-    'NPS': 'n',
-    'NR': 'n',
-    'NRS': 'n',
-    'PN': 'n',
-    'PP': 'n',
-    'PPL': 'n',
-    'PPLS': 'n',
-    'PPO': 'n',
-    'PPS': 'n',
-    'PPSS': 'n',
-    'RB': 'r',
-    'RBR': 'r',
-    'RBT': 'r',
-    'RN': 'r',
-    'RP': 'r',
-    'VB': 'v',
-    'VBD': 'v',
-    'VBG': 'v',
-    'VBN': 'v',
-    'VBZ': 'v',
-    'ABL': '',
-    'ABN': '',
-    'ABX': '',
-    'AP': '',
-    'AT': '',
-    'BE': '',
-    'BED': '',
-    'BEDZ': '',
-    'BEG': '',
-    'BEM': '',
-    'BEN': '',
-    'BER': '',
-    'BEZ': '',
-    'CC': '',
-    'CD': '',
-    'CS': '',
-    'DO': '',
-    'DOD': '',
-    'DOZ': '',
-    'DT': '',
-    'DTI': '',
-    'DTS': '',
-    'DTX': '',
-    'EX': '',
-    'FW': '',
-    'HL': '',
-    'HV': '',
-    'HVD': '',
-    'HVG': '',
-    'HVN': '',
-    'HVZ': '',
-    'IN': '',
-    'MD': '',
-    'NC': '',
-    'OD': '',
-    'QL': '',
-    'QLP': '',
-    'RP': '',
-    'TL': '',
-    'TO': '',
-    'UH': '',
-    'WDT': '',
-    'WPO': '',
-    'WPS': '',
-    'WQL': '',
-    'WRB': '',
-}
-
 
 # #
 # #This builds the base BUD tagger.
@@ -126,9 +49,9 @@ posWordnetMapping = {
 
 #load trained tagger
 try:
-    input = open('static/nlp/brillTaggerWithModel.pkl', 'rb')
-    brillTagger = load(input)
-    input.close
+    with open(settings.GRAMMAR_DIR + 'brillTaggerWithModel.pkl', 'rb') as brillFile:
+        brillTagger = load(brillFile)
+        brillFile.close
 except Exception as e:
     devLogger.error('Could not load brillTagger: ' + str(e))
 
@@ -211,7 +134,7 @@ class QueryTagger(object):
                     if len(r):
                         NERTokens = r
                     else:
-                        devLogger.info("No NER results received!")
+                        devLogger.warn("No NER results received!")
             except Exception as e:
                 devLogger.error("Error querying for NER: " + str(e))
 
