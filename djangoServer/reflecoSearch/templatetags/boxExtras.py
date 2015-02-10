@@ -19,30 +19,56 @@ def getFactName(fact):
         name = ""
     return name
 
+@register.filter(name='isPeriodicFact')
+def isPeriodicFact(fact):
+    if fact[u'ftype'] == "xbrl":
+        value = fact.get(u'value', [])
+        if u'valList' in value:
+            return True
+    return False
+
+@register.filter(name='getPeriodicValues')
+def getPeriodicValues(fact):
+    value = fact.get(u'value', [])
+    return value.get(u'valList', [])
+
+@register.filter(name='getPeriodValue')
+def getPeriodValue(period):
+    try:
+        return "${:,.2f}".format(period[u'inner'][u'valDouble'])
+    except Exception as e:
+        devLogger.error("Could not get period value: " + str(e))
+        return ""
+
+@register.filter(name='getPeriodDates')
+def getPeriodDates(period):
+    startDate = ""
+    endDate = ""
+    if u'startDate' in period:
+        startDate = period[u'startDate'][:9].replace('-', '/')
+    if u'endDate' in period:
+        endDate = period[u'endDate'][:9].replace('-', '/')
+    return startDate + " - " + endDate
+
 @register.filter(name='getFactValue')
 def getFactValue(fact):
     try:
         value = fact[u'value']
-    except Exception as e:
-        devLogger.error("there was a problem getting a fact value " + e)
-        value = 0
-    if value is not None:
         if fact[u'ftype'] == "analytic":
-            value = value
             value = "{:,.4f}".format(value)
         if fact[u'ftype'] == "xbrl":
             # Monetary value?
             if u'valDouble' in value:
                 value = value[u'valDouble']
-            # Periodic value?
-            elif u'valList' in value:
-                arr = value[u'valList']
-                value = arr[0][u'inner'][u'valDouble']
-             #not sure whats up with the values...but so many random formats
             elif u'inner' in value:
                 value = value[u'inner'][u'valDouble']
-            value = "${:,.2f}".format(value)
-    else:
+                value = "${:,.2f}".format(value)
+            else:
+                value = ""
+        else:
+            value = ""
+    except Exception as e:
+        devLogger.error("there was a problem getting a fact value " + e)
         value = ""
     return value
 
