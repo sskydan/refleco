@@ -6,8 +6,6 @@
     <div class="table-box">
         {%  if args|getBoxArg:"title" %}
             <h2  class="box-table-title">{{ args|getBoxArg:"title" }}</h2>
-        {% else %}
-            <h2  class="box-table-title">(No Title)</h2>
         {% endif %}
         <table class="box-table">
             <tr class="box-table-header-row">
@@ -23,6 +21,14 @@
                         <td class="box-table-data-name">{{fact|getFactName}}</td>
                         <td class="box-table-data-value">{{fact|getFactValue}}</td>
                     </tr>
+                    {%  if fact|isPeriodicFact %}
+                        {% for period in fact|getPeriodicValues %}
+                            <tr class="box-table-data-row">
+                                <td class="box-table-data-name, data-indent">{{period|getPeriodDates}}</td>
+                                <td class="box-table-data-value">{{period|getPeriodValue}}</td>
+                            </tr>
+                        {% endfor %}
+                    {%  endif %}
                 {% endfor %}
             {% endif %}
         </table>

@@ -585,8 +585,12 @@ footer{
     border-bottom: solid 1px rgba(255,255,255,0.15);
 }
 
+.data-indent{
+    padding-left: 20px;
+    font-size: 80%;
+}
+
 .box-table-data-name{
-    float: left;
     max-width: 400px;
     margin-right: 10px;
 }
@@ -595,7 +599,7 @@ footer{
     float: right;
     text-align: right;
     max-width: 200px;
-    margin-left: 10px;
+    margin-left: 30px;
 }
 
 
