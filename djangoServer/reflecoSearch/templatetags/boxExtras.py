@@ -6,10 +6,7 @@ devLogger = logging.getLogger('development')
 
 @register.filter(name='getBoxArg')
 def getBoxArg(args, arg):
-    if args[arg]:
-        return args[arg]
-    else:
-        return False
+    return args.get(arg, False)
 
 @register.filter(name='getFactName')
 def getFactName(fact):
