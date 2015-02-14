@@ -1,10 +1,8 @@
 package dsl.dlx
 
-case class QLMatrix(root: QuadHeader)
-
 object QLMatrix {
   
-  def construct(cols: Seq[Seq[Int]], names: Seq[String]) = {
+  def constructSimple(cols: Seq[Seq[Int]], names: Seq[String]) = {
     val root = new QuadHeader("root")
     
     // link the columns (vertically)
@@ -53,6 +51,8 @@ object QLMatrix {
     root.l = last
     last.r = root
     
-    QLMatrix(root)
+    root
   }
+  
 }
+

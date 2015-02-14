@@ -1,31 +1,40 @@
 package dsl.dlx
 
-
-case class DLX(matrix: QLMatrix) {
+/** dancing links algo x typeclass interface
+ */
+abstract class DLX[T <: QuadNode](root: QuadHeader) {
+  def search(path: List[QLList] = Nil): Seq[List[QLList]]
+  def chooseColumn: QuadHeader
   
-  lazy val solutions = search() map (_.reverse map getRow)
-  
-  private def search(path: List[QLList] = Nil): Seq[List[QLList]] =
-    if (matrix.root.r != matrix.root) {
-      
-      val c = chooseColumn
-      c.cover
-      
-      val solutions = c.traverseN(_.dn){ r =>
+  def getRowId(node: QLList): List[String] = node.traverse(_.r)(_.c.name)
+  def solve: Seq[List[List[String]]] = search() map (_.reverse map getRowId)
+}
 
-        r.foreachN(_.r)(_.c.cover)
-        val subSolutions = search(r :: path)
-        r.foreachN(_.l)(_.c.uncover)
+object DLX {
+  
+  /** simple DLX implementation from the paper, no frills or whistles
+   */
+  implicit class SimpleDLX(root: QuadHeader) extends DLX[QuadNode](root) {
+    def search(path: List[QLList] = Nil): Seq[List[QLList]] =
+      if (root.r != root) {
         
-        subSolutions
-      }
-      
-      c.uncover
-      solutions.flatten
-      
-    } else Seq(path) 
+        val c = chooseColumn
+        c.cover
+        
+        val solutions = c.traverseRemG(_.dn){ r =>
   
-  def chooseColumn: QuadHeader = matrix.root.r
-  
-  def getRow(node: QLList): List[String] = node.traverse(_.r)(_.c.name)
+          r.foreachRem(_.r)(_.c.cover)
+          val subSolutions = search(r :: path)
+          r.foreachRem(_.l)(_.c.uncover)
+          
+          subSolutions
+        }
+        
+        c.uncover
+        solutions.flatten
+        
+      } else Seq(path) 
+    
+    def chooseColumn: QuadHeader = root.r
+  }
 }
