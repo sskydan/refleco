@@ -10,7 +10,8 @@ scalacOptions ++= Seq(
     "-feature", 
     "-language:implicitConversions", 
     "-deprecation", 
-    "-Xcheckinit")
+    "-Xcheckinit",
+    "-language:existentials")
 //    "-Xprint:typer")
 
 resolvers ++= Seq(

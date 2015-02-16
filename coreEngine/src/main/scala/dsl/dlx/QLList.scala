@@ -1,20 +1,15 @@
 package dsl.dlx
 
+import scala.language.existentials
 
 /** quad-linked list (like a doubly-linked list, but with up and down)
- *  TODO can this be structured better?
- *  FIXME Using "this.type"-annontation on vars (specifically) somehow stops the type 
- *    inferencer from properly understanding the var's type
- *    in the children classes. The current workaround is to use the SELF abstract type
- *    member, but it is kind of ugly to have to overwrite that in every subclass
- *  TODO the traverseRem alternatives should be under a single name
+ *  FIXME should be a way to reduce need to have bounded existentials everywhere
  */
-sealed abstract class QLList {
-  type SELF >: this.type <: QLList
-  var up : QLList = this
-  var dn : QLList = this
-  var l: SELF = this
-  var r: SELF = this
+sealed abstract class QLList[N <: QLList[N]] { self: N =>
+  var up: T forSome {type T <: QLList[T]} = self
+  var dn: T forSome {type T <: QLList[T]} = self
+  var l: N = self
+  var r: N = self
   val c: QuadHeader
   
   /** Traverse the matrix starting from (not including) this node according to step,
@@ -25,7 +20,7 @@ sealed abstract class QLList {
    *  @param fn the mapping fn
    *  @return the results of applying fn to every node visited
    */
-  def traverseRem[T >: this.type <: QLList, R](step: T => T)(fn: T => R): List[R] = {
+  def traverseRem[T >: N <: QLList[_], R](step: T => T)(fn: T => R): List[R] = {
     lazy val way: Stream[T] = step(this) #:: (way map step)
     
     (way takeWhile (_ != this) map fn).toList
@@ -36,8 +31,8 @@ sealed abstract class QLList {
    *  @see traverseRem
    *  @see todo on QLList
    */
-  def traverseRemG[R](step: QLList => QLList)(fn: QLList => R): List[R] = 
-	  traverseRem[QLList,R](step)(fn)
+  def traverseRemG[R](step: QLList[_<:QLList[_]] => QLList[_<:QLList[_]])(fn: QLList[_<:QLList[_]] => R): List[R] = 
+	  traverseRem(step)(fn)
 
   /** Traverse the matrix starting from (including) this node according to step,
    *    while applying fn to every node visited.
@@ -46,42 +41,64 @@ sealed abstract class QLList {
    *  @param fn the mapping fn
    *  @return the results of applying fn to every node visited
    */
-  def traverse[R](step: QLList => QLList)(fn: QLList => R): List[R] = 
-    fn(this) :: traverseRem[QLList,R](step)(fn)
+  def traverse[T >: N <: QLList[T], R](step: T => T)(fn: T => R): List[R] = 
+    fn(this) :: traverseRem(step)(fn)
 
+    
+  /** Efficient implementation of matrix traversal; accepts only side-effecting functions
+   *  Does not apply fn to the starting node
+   *  @param step the traversal function
+   *  @param fn the function to apply on every visited node
+   */
+  def foreachRem[T >: N](step: T => T)(fn: T => Unit): Unit = {
+    var i = step(self)
+    while (i != self) {
+      fn(i)
+      i = step(i)
+    }
+  }
+  
   /** Efficient implementation of matrix traversal; accepts only side-effecting functions
    *  @param step the traversal function
    *  @param fn the function to apply on every visited node
    */
-  def foreachRem(step: QLList => QLList)(fn: QLList => Unit): Unit = {
-    var i = step(this)
-    while (i != this) {
-      fn(i)
-      i = step(i)
-    }
+  def foreach[T >: N](step: T => T)(fn: T => Unit): Unit = {
+    fn(this)
+    foreachRem(step)(fn)
   }
 }
 
 /** interface for all normal (non-header) implementations of the QLList
  */
-trait QuadNodeIntf extends QLList
+trait QuadNodeIntf[N <: QLList[N]] extends QLList[N] { self: N => }
 
 /** quad-linked node
  */
-class QuadNode(val c: QuadHeader) extends QuadNodeIntf { type SELF = QuadNode }
+class QuadNode(val c: QuadHeader) extends QuadNodeIntf[QuadNode] {
+}
 
 /** quad-linked node which has not been confirmed to be wanted in the matrix
+ *  FIXME should be a subtype of QuadNode, or something.
  */
-class UntestedQuadNode(val c: QuadHeader, val rowInfo: String) extends QuadNodeIntf {
-  type SELF = UntestedQuadNode
-//  def evaluate(): Boolean
+abstract class UntestedQuadNode[T](val c: QuadHeader) extends QuadNodeIntf[UntestedQuadNode[T]] {
+  
+  def evaluateFailed = foreach(_.r){ n =>
+    n.dn.up = n.up
+    n.up.dn = n.dn
+    n.c.size = n.c.size - 1
+  }
+  
+  val execute: UntestedQuadNode[T] => T
+  val evaluate: T => Boolean
+  
+  lazy val executionResults = execute(this)
+  lazy val evaluationResults = evaluate(executionResults)
 }
 
 /** quad-linked node which is meant to act as the header of a column
  *  TODO shold cover/uncover be defined somewhere else?
  */
-class QuadHeader(val name: String) extends QLList {
-  type SELF = QuadHeader
+class QuadHeader(val name: String) extends QLList[QuadHeader] {
   val c: QuadHeader = this
   
   var size: Int = 0
@@ -94,7 +111,7 @@ class QuadHeader(val name: String) extends QLList {
     l.r = r
           
     // loop down the column (instances of the element in different sets)
-    foreachRem(_.dn){ i =>
+    foreachRem((n:QLList[_<:QLList[_]]) => n.dn){ i =>
       
       // loop across the subset elements
       i.foreachRem(_.r){ j =>
@@ -110,7 +127,7 @@ class QuadHeader(val name: String) extends QLList {
    *    in this column by splicing them back into their original positions
    */
   def uncover = {
-    foreachRem(_.up){ i =>
+    foreachRem((n:QLList[_<:QLList[_]]) => n.up){ i =>
 
       i.foreachRem(_.l){ j =>
             

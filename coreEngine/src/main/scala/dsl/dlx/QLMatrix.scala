@@ -1,16 +1,22 @@
 package dsl.dlx
 
+import scala.language.existentials
+
 object QLMatrix {
   
-  def constructSimple(cols: Seq[Seq[Int]], names: Seq[String]) = {
+  def constructStreaming(cols: Seq[Seq[Int]], names: Seq[String]) = {
+    
+  }
+  
+  def constructSimple[T <: QuadNodeIntf[T]](cols: Seq[Seq[Int]], names: Seq[String], nodeBuilder: QuadHeader => T) = {
     val root = new QuadHeader("root")
     
     // link the columns (vertically)
     val matrix = (cols zip names) map { case (col, name) =>
       val header = new QuadHeader(name)
-      val contents = col map (_ -> new QuadNode(header))
+      val contents = col map (_ -> nodeBuilder(header))
       
-      contents.foldLeft(header: QLList){
+      contents.foldLeft[S forSome {type S <: QLList[S]}](header){
         case (l, (1, r)) =>
           l.dn = r
           r.up = l
@@ -18,7 +24,7 @@ object QLMatrix {
           r
         case (l, _) => l
       }
-      val last = contents.reverse find (_._1 == 1) map (_._2) getOrElse header
+      val last = contents.reverse find (_._1 == 1) map (_._2: S forSome {type S <: QLList[S]}) getOrElse header
       header.up = last
       last.dn = header
       
@@ -38,6 +44,8 @@ object QLMatrix {
       val last = row.reverse.find(_._1 == 1).get._2
       first.l = last
       last.r = first
+      val x = first.l
+      val y = last.r
     }
     
     // link the special headers row

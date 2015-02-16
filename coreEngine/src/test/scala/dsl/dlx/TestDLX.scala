@@ -36,7 +36,7 @@ class TestDLX extends UnitSpec {
       Seq(1,0,1,0,1,1)
     ).transpose
     val testMNames = List("A","B","C","D","E","F")
-    val root = QLMatrix.constructSimple(testM, testMNames)
+    val root = QLMatrix.constructSimple(testM, testMNames, new QuadNode(_))
     
     assert(root.traverseRem((h:QuadHeader) => h.r)(_.name) == testMNames)
     assert(root.traverseRem((_:QuadHeader).r)(_.size) == List(3,2,3,3,4,2))
@@ -44,7 +44,7 @@ class TestDLX extends UnitSpec {
   }
   
   "DLX search" should "find correct solution" in {
-    val root = QLMatrix.constructSimple(matrix, matrixNames)
+    val root = QLMatrix.constructSimple(matrix, matrixNames, new QuadNode(_))
     val expected = List(List(List("A", "D"), List("B", "G"), List("C", "E", "F")))
     
     assert(expected == root.solve)
