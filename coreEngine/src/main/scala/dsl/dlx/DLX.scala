@@ -1,42 +1,53 @@
 package dsl.dlx
 
-/** dancing links algo x typeclass interface
+import scala.reflect.ClassTag
+
+/** typeclass providing the DLX interface, and  simple DLX implementation
+ *    from the paper, no frills or whistles
+ *  TODO do we really need to pass the classtag around
  */
-abstract class DLX[T <: QuadNodeIntf[T]](root: QuadHeader) {
-  def search(path: List[T] = Nil): Seq[List[T]]
-  def chooseColumn: QuadHeader
+class DLX[N <: QuadNodeIntf[N] : ClassTag] {
   
-  def getRowId(node: T): List[String] = node.traverse[T,String](_.r)(_.c.name)
-  def solve: Seq[List[List[String]]] = search() map (_.reverse map getRowId)
+  /** algo to choose the column (particular element) to iterate over when doing a search pass
+   */
+	def chooseColumn(root: QuadHeader): QuadHeader = root.r
+  
+  /** generate a useful row identifier
+   */
+	def getRowId(node: N): List[String] = node.traverse[N,String](_.r)(_.c.name)
+
+  /** this is the traversal method that actually performs the search steps
+   */
+  def search(root: QuadHeader, path: List[N] = Nil): Seq[List[N]] = 
+    if (root.r != root) {
+      val c = chooseColumn(root)
+      c.cover
+      
+      val solutions = c.traverseRemG(_.dn) { 
+        case r:N =>
+          r.foreachRem(_.r)(_.c.cover)
+          val subSolutions = search(root, r :: path)
+          r.foreachRem(_.l)(_.c.uncover)
+          
+          subSolutions
+          
+        case _ => Nil
+      }
+      
+      c.uncover
+      solutions.flatten
+      
+    } else Seq(path) 
+    
 }
 
 object DLX {
   
-  /** simple DLX implementation from the paper, no frills or whistles
+  /** low-priority dlx implementation
+   *  @note the basic functionality is put into the DLX class itself so that this implicit can be
+   *    defined in terms of T<:QuadNodeIntf[T] - although this forever restricts the default
+   *    implementation that is provided, it was not possible (TODO) to provide a defalt implementation
+   *    (for T<:QuadNodeIntf[T]) that worked propertly 
    */
-  implicit class SimpleDLX(root: QuadHeader) extends DLX[QuadNode](root) {
-    def search(path: List[QuadNode] = Nil): Seq[List[QuadNode]] =
-      if (root.r != root) {
-        
-        val c = chooseColumn
-        c.cover
-        
-        val solutions = c.traverseRemG(_.dn) { 
-          case r:QuadNode =>
-            r.foreachRem(_.r)(_.c.cover)
-            val subSolutions = search(r :: path)
-            r.foreachRem(_.l)(_.c.uncover)
-            
-            subSolutions
-            
-          case _ => Nil
-        }
-        
-        c.uncover
-        solutions.flatten
-        
-      } else Seq(path) 
-    
-    def chooseColumn: QuadHeader = root.r
-  }
+  implicit def defaultDLX[T <: QuadNodeIntf[T] : ClassTag] = new DLX[T]
 }

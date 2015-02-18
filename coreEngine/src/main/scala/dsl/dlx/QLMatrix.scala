@@ -1,14 +1,19 @@
 package dsl.dlx
 
-import scala.language.existentials
+/** class representing a quad-linked matrix
+ */
+class QLMatrix[T <: QuadNodeIntf[T]](val root: QuadHeader) {
+  
+  def solve(implicit ev: DLX[T]) = ev.search(root) map (_.reverse map ev.getRowId)
+}
 
 object QLMatrix {
   
-  def constructStreaming(cols: Seq[Seq[Int]], names: Seq[String]) = {
-    
-  }
-  
-  def constructSimple[T <: QuadNodeIntf[T]](cols: Seq[Seq[Int]], names: Seq[String], nodeBuilder: QuadHeader => T) = {
+  def apply[T <: QuadNodeIntf[T]](
+    cols: Seq[Seq[Int]], 
+    names: Seq[String], 
+    nodeBuilder: QuadHeader => T
+  ): QLMatrix[T] = {
     val root = new QuadHeader("root")
     
     // link the columns (vertically)
@@ -16,7 +21,7 @@ object QLMatrix {
       val header = new QuadHeader(name)
       val contents = col map (_ -> nodeBuilder(header))
       
-      contents.foldLeft[S forSome {type S <: QLList[S]}](header){
+      contents.foldLeft[S forSome { type S <: QLList[S] }](header){
         case (l, (1, r)) =>
           l.dn = r
           r.up = l
@@ -59,8 +64,7 @@ object QLMatrix {
     root.l = last
     last.r = root
     
-    root
+    new QLMatrix(root)
   }
-  
 }
 

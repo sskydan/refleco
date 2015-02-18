@@ -36,7 +36,8 @@ class TestDLX extends UnitSpec {
       Seq(1,0,1,0,1,1)
     ).transpose
     val testMNames = List("A","B","C","D","E","F")
-    val root = QLMatrix.constructSimple(testM, testMNames, new QuadNode(_))
+    val test = QLMatrix(testM, testMNames, new QuadNode(_))
+    val root = test.root
     
     assert(root.traverseRem((h:QuadHeader) => h.r)(_.name) == testMNames)
     assert(root.traverseRem((_:QuadHeader).r)(_.size) == List(3,2,3,3,4,2))
@@ -44,10 +45,21 @@ class TestDLX extends UnitSpec {
   }
   
   "DLX search" should "find correct solution" in {
-    val root = QLMatrix.constructSimple(matrix, matrixNames, new QuadNode(_))
+    val test = QLMatrix(matrix, matrixNames, new QuadNode(_))
     val expected = List(List(List("A", "D"), List("B", "G"), List("C", "E", "F")))
     
-    assert(expected == root.solve)
+    assert(expected == test.solve)
   }
   
+  "DLX search" should "find correct solution with streaming nodes" in {
+    class DummyQN(c:QuadHeader) extends UntestedQuadNode[String, DummyQN](c) {
+      val execute: DummyQN => String = _ => "complete"
+      val evaluate: String => Boolean = _ == "complete"
+    }
+
+    val test = QLMatrix(matrix, matrixNames, new DummyQN(_))
+    val expected = List(List(List("A", "D"), List("B", "G"), List("C", "E", "F")))
+    
+    assert(expected == test.solve)
+  }
 }

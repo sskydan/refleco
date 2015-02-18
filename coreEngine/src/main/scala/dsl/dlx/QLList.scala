@@ -1,13 +1,15 @@
 package dsl.dlx
 
-import scala.language.existentials
 
 /** quad-linked list (like a doubly-linked list, but with up and down)
- *  FIXME should be a way to reduce need to have bounded existentials everywhere
+ *  FIXME proper/standardized type signatures for the QLList methods 
+ *  @note because variance doesn't play well with vars (setters and getters), and self.type
+ *    is a singleton type and had some issues pairing with abstract type parameters (in my exp)
+ *    we resort to existential types for up/dn as a way to provide a LUB (least upper bound)
  */
 sealed abstract class QLList[N <: QLList[N]] { self: N =>
-  var up: T forSome {type T <: QLList[T]} = self
-  var dn: T forSome {type T <: QLList[T]} = self
+  var up: T forSome { type T <: QLList[T] } = self
+  var dn: T forSome { type T <: QLList[T] } = self
   var l: N = self
   var r: N = self
   val c: QuadHeader
@@ -41,7 +43,7 @@ sealed abstract class QLList[N <: QLList[N]] { self: N =>
    *  @param fn the mapping fn
    *  @return the results of applying fn to every node visited
    */
-  def traverse[T >: N <: QLList[T], R](step: T => T)(fn: T => R): List[R] = 
+  def traverse[T >: N <: QLList[_], R](step: T => T)(fn: T => R): List[R] = 
     fn(this) :: traverseRem(step)(fn)
 
     
@@ -50,7 +52,7 @@ sealed abstract class QLList[N <: QLList[N]] { self: N =>
    *  @param step the traversal function
    *  @param fn the function to apply on every visited node
    */
-  def foreachRem[T >: N](step: T => T)(fn: T => Unit): Unit = {
+  def foreachRem[T >: N <: QLList[_]](step: T => T)(fn: T => Unit): Unit = {
     var i = step(self)
     while (i != self) {
       fn(i)
@@ -62,7 +64,7 @@ sealed abstract class QLList[N <: QLList[N]] { self: N =>
    *  @param step the traversal function
    *  @param fn the function to apply on every visited node
    */
-  def foreach[T >: N](step: T => T)(fn: T => Unit): Unit = {
+  def foreach[T >: N <: QLList[_]](step: T => T)(fn: T => Unit): Unit = {
     fn(this)
     foreachRem(step)(fn)
   }
@@ -80,7 +82,7 @@ class QuadNode(val c: QuadHeader) extends QuadNodeIntf[QuadNode] {
 /** quad-linked node which has not been confirmed to be wanted in the matrix
  *  FIXME should be a subtype of QuadNode, or something.
  */
-abstract class UntestedQuadNode[T](val c: QuadHeader) extends QuadNodeIntf[UntestedQuadNode[T]] {
+abstract class UntestedQuadNode[T,N <: QLList[N]](val c: QuadHeader) extends QuadNodeIntf[N] { self: N =>
   
   def evaluateFailed = foreach(_.r){ n =>
     n.dn.up = n.up
@@ -88,7 +90,7 @@ abstract class UntestedQuadNode[T](val c: QuadHeader) extends QuadNodeIntf[Untes
     n.c.size = n.c.size - 1
   }
   
-  val execute: UntestedQuadNode[T] => T
+  val execute: this.type => T
   val evaluate: T => Boolean
   
   lazy val executionResults = execute(this)
