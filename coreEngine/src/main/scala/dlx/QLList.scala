@@ -1,4 +1,4 @@
-package dsl.dlx
+package dlx
 
 
 /** quad-linked list (like a doubly-linked list, but with up and down)
@@ -90,11 +90,15 @@ abstract class UntestedQuadNode[T,N <: QLList[N]](val c: QuadHeader) extends Qua
     n.c.size = n.c.size - 1
   }
   
-  val execute: this.type => T
+  val execute: N => T
   val evaluate: T => Boolean
   
   lazy val executionResults = execute(this)
-  lazy val evaluationResults = evaluate(executionResults)
+  lazy val evaluationResults = {
+    val r = evaluate(executionResults)
+    if (!r) evaluateFailed
+    r
+  }
 }
 
 /** quad-linked node which is meant to act as the header of a column

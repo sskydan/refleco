@@ -1,6 +1,7 @@
-package dsl.dlx
+package dlx
 
 import scala.reflect.ClassTag
+
 
 /** typeclass providing the DLX interface, and  simple DLX implementation
  *    from the paper, no frills or whistles

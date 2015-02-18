@@ -1,4 +1,5 @@
-package dsl.dlx
+package dlx
+
 
 /** class representing a quad-linked matrix
  */

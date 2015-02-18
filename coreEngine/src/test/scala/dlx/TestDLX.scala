@@ -1,4 +1,4 @@
-package dsl.dlx
+package dlx
 
 import testbase.UnitSpec
 import DLX._
