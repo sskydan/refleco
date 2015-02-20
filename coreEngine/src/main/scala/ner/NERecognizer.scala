@@ -23,6 +23,9 @@ import scalaz.Scalaz._
 import scala.annotation.tailrec
 import scalaz.OptionT._
 import scalaz.OptionT
+import dlx.QLMatrix
+import dlx.DLX
+import dlx.QuadHeader
 
 /** represents a recognized named entity
  */
@@ -43,44 +46,86 @@ object NERecognizer extends CEConfig with StrictLogging {
   implicit def toWords(str: String): Words = str.trim.split(" ").map(_.trim)
 
   def apply(chunk: String): Seq[NE] = {
-    logger.info(s"NER starting: $chunk")
-
-    val entities = findAllNE(chunk, Nil)
+    val words = toWords(chunk)
     
-    logger.info(s"NER from $chunk complete: $entities")
-    entities
+    val combinations = (1 to words.size) flatMap (words.combinations(_).toSeq)
+    val combMatrix = QLMatrix.fromSparse(combinations, words, new NERNode(_))
+    
+    val x = combMatrix.solve()(NERDLX)
+    println(x)
+    
+    Nil
   }
-
-  @tailrec
-  def findAllNE(tokens: Words, acc: List[NE]): List[NE] = 
+  
+  /** custom DLX implementation for NER nodes
+   *  - evaluate node before iterating over it
+   */
+  implicit val NERDLX: DLX[NERNode] = new DLX[NERNode] {
     
-    findFirstNE(tokens) match {
-    
-      case Some(ne) =>
-        val rawCount = toWords(ne.raw).length
-        findAllNE(tokens drop rawCount, ne :: acc)
-
-      case None if tokens.length > 1 => 
-        findAllNE(tokens drop 1, acc)
+    override def search(root: QuadHeader, path: List[NERNode] = Nil): Seq[List[NERNode]] = {
+      if (root.r != root) {
+        val c = chooseColumn(root)
+        c.cover
         
-      case _ => acc
+        val solutions = c.traverseRemG(_.dn) { 
+          
+          case r: NERNode if r.evaluationResults =>
+            
+            r.foreachRem(_.r)(_.c.cover)
+            val subSolutions = search(root, r :: path)
+            r.foreachRem(_.l)(_.c.uncover)
+            
+            subSolutions
+            
+          case _ => Nil
+        }
+        
+        c.uncover
+        solutions.flatten
+        
+      } else Seq(path) 
     }
+  }
+  
+//  def apply(chunk: String): Seq[NE] = {
+//    logger.info(s"NER starting: $chunk")
+//
+//    val entities = findAllNE(chunk, Nil)
+//    
+//    logger.info(s"NER from $chunk complete: $entities")
+//    entities
+//  }
+
+//  @tailrec
+//  def findAllNE(tokens: Words, acc: List[NE]): List[NE] = 
+//    
+//    findFirstNE(tokens) match {
+//    
+//      case Some(ne) =>
+//        val rawCount = toWords(ne.raw).length
+//        findAllNE(tokens drop rawCount, ne :: acc)
+//
+//      case None if tokens.length > 1 => 
+//        findAllNE(tokens drop 1, acc)
+//        
+//      case _ => acc
+//    }
 
   /** FIXME smarter logic
    */
-  def findFirstNE(tokens: Words): Option[NE] = {
-    val candidates = tokens.scanLeft("")(_+" "+_).drop(1).reverse.map(_.trim)
-
-    val entities = candidates.toStream flatMap (
-      c => tryNEPass(c) filter (_.score >= SECOND_CUTOFF) sortBy (- _.score)
-    )
-    
-    entities.headOption
-  }
+//  def findFirstNE(tokens: Words): Option[NE] = {
+//    val candidates = tokens.scanLeft("")(_+" "+_).drop(1).reverse.map(_.trim)
+//
+//    val entities = candidates.toStream flatMap (
+//      c => tryNEPass(c) filter (_.score >= SECOND_CUTOFF) sortBy (- _.score)
+//    )
+//    
+//    entities.headOption
+//  }
 
   /** @note blocking
    */
-  def tryNEPass(candidate: String): List[NE] = {
+  def identifyChunk(candidate: String): List[NE] = {
     val finders = List(tryPENT _, tryENT _, tryRELENT _, tryATTENT _)
 
     val results = finders traverseM (_(candidate).run)

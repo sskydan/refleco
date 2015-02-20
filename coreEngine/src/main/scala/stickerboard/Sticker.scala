@@ -6,7 +6,6 @@ import scalaz.Scalaz._
 import scalaz.Semigroup
 import Sticker._
 import scalaz.Monad
-import scala.language.higherKinds
 import java.io.Externalizable
 import java.io.ObjectOutput
 import java.io.ObjectInput
@@ -25,9 +24,11 @@ case class Sticker(
   def get(rt: String) = rels(rt)
   private def follow(clue: Clue): Set[Sticker] = clue(this)
   private def followFirst(clue: Clue): Option[Sticker] = follow(clue).headOption
+  
   def \(clues: Seq[Clue]): Option[Sticker] = collapse(clues)(_ followFirst _)
-  def \~(clues: Seq[Clue]): MergingSet[Sticker] = collapse(clues)(_ follow _)
   def \(clue: Clue): Option[Sticker] = \(Seq(clue))
+  
+  def \~(clues: Seq[Clue]): MergingSet[Sticker] = collapse(clues)(_ follow _)
   def \~(clue: Clue): MergingSet[Sticker] = \~(Seq(clue))
   
   // insert and union style operations on rels
@@ -54,7 +55,7 @@ case class Sticker(
    *  @param chain The path to follow
    *  @param fn Function to apply during fold
    */
-  def collapse[B[Sticker] : Monad](chain: Seq[Clue])(fn: (Sticker,Clue) => B[Sticker]): B[Sticker] =
+  def collapse[B[_] : Monad](chain: Seq[Clue])(fn: (Sticker,Clue) => B[Sticker]): B[Sticker] =
     chain.foldLeft (Monad[B] point this) {
       case (node, nextClue) => node flatMap (fn(_, nextClue))
     }

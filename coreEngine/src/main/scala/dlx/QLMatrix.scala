@@ -1,20 +1,45 @@
 package dlx
 
+import scala.collection.immutable.ListMap
+
 
 /** class representing a quad-linked matrix
+ *  TODO getting row ids feels a bit awkward
  */
 class QLMatrix[T <: QuadNodeIntf[T]](val root: QuadHeader) {
   
-  def solve(implicit ev: DLX[T]) = ev.search(root) map (_.reverse map ev.getRowId)
+  def solve[R](getRow: T => R = (_:T).c.name)(implicit ev: DLX[T]) = 
+    ev.search(root) map (_.reverse map (node => node.traverse[T,R](_.r)(getRow(_))))
 }
 
 object QLMatrix {
   
-  def apply[T <: QuadNodeIntf[T]](
-    cols: Seq[Seq[Int]], 
-    names: Seq[String], 
+  def fromSparse[T <: QuadNodeIntf[T]](
+    rows: Seq[Seq[String]],
+    names: Seq[String],
     nodeBuilder: QuadHeader => T
   ): QLMatrix[T] = {
+    
+    // we keep the name ordering so that element adjacency is preserved
+    val init = ListMap[String,Vector[Int]](names.map(_ -> Vector()): _*)
+    
+    val matrix = rows.foldLeft(init) {
+      case (matrix, row) => matrix map { 
+        case (k,v) if row contains k => k -> (v :+ 1)
+        case (k,v) => k -> (v :+ 0)
+      }
+    }
+
+    QLMatrix(matrix.values.toList, names, nodeBuilder)
+  }
+  
+  def apply[T <: QuadNodeIntf[T]](
+    cols: Seq[Seq[Int]],
+    names: Seq[String],
+    nodeBuilder: QuadHeader => T
+  ): QLMatrix[T] = {
+    
+		type GenericNode = S forSome { type S <: QLList[S] }
     val root = new QuadHeader("root")
     
     // link the columns (vertically)
@@ -22,7 +47,7 @@ object QLMatrix {
       val header = new QuadHeader(name)
       val contents = col map (_ -> nodeBuilder(header))
       
-      contents.foldLeft[S forSome { type S <: QLList[S] }](header){
+      contents.foldLeft[GenericNode](header){
         case (l, (1, r)) =>
           l.dn = r
           r.up = l
@@ -30,7 +55,7 @@ object QLMatrix {
           r
         case (l, _) => l
       }
-      val last = contents.reverse find (_._1 == 1) map (_._2: S forSome {type S <: QLList[S]}) getOrElse header
+      val last = contents.reverse find (_._1 == 1) map (_._2:GenericNode) getOrElse header
       header.up = last
       last.dn = header
       

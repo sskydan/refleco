@@ -13,10 +13,6 @@ class DLX[N <: QuadNodeIntf[N] : ClassTag] {
    */
 	def chooseColumn(root: QuadHeader): QuadHeader = root.r
   
-  /** generate a useful row identifier
-   */
-	def getRowId(node: N): List[String] = node.traverse[N,String](_.r)(_.c.name)
-
   /** this is the traversal method that actually performs the search steps
    */
   def search(root: QuadHeader, path: List[N] = Nil): Seq[List[N]] = 
@@ -25,7 +21,7 @@ class DLX[N <: QuadNodeIntf[N] : ClassTag] {
       c.cover
       
       val solutions = c.traverseRemG(_.dn) { 
-        case r:N =>
+        case r: N =>
           r.foreachRem(_.r)(_.c.cover)
           val subSolutions = search(root, r :: path)
           r.foreachRem(_.l)(_.c.uncover)

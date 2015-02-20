@@ -13,7 +13,7 @@ sealed abstract class QLList[N <: QLList[N]] { self: N =>
   var l: N = self
   var r: N = self
   val c: QuadHeader
-  
+
   /** Traverse the matrix starting from (not including) this node according to step,
    *    while applying fn to every node visited.
    *  @tparam T the type of node we will be traversing
@@ -90,10 +90,10 @@ abstract class UntestedQuadNode[T,N <: QLList[N]](val c: QuadHeader) extends Qua
     n.c.size = n.c.size - 1
   }
   
-  val execute: N => T
+  val execute: () => T
   val evaluate: T => Boolean
   
-  lazy val executionResults = execute(this)
+  lazy val executionResults = execute()
   lazy val evaluationResults = {
     val r = evaluate(executionResults)
     if (!r) evaluateFailed
