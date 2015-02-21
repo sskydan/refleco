@@ -56,6 +56,13 @@ object ASTCodeGen extends StrictLogging {
       
       val fieldParam = getFieldFilters(paths)
       
+      println(fieldParam)
+      
+      val (keyParamUS, searchParamUS) = (getNameFilter(paths) ++ getUnstructuredFilters(paths)).unzip
+      val unstructuredReq = CoreParams(keyParamUS, searchParamUS, None, fieldParam, Some("10-K"), lim, None, None)
+      logger info s"DSL search generated (Unstructured): ${unstructuredReq.prettyPrint}"
+      val unstructuredRes = (reception ? SearchRequest(unstructuredReq)).mapTo[Seq[Fact]]
+            
       val (keyParamR, searchParamR) = (getNameFilter(paths) ++ getSearchFilters(paths)).unzip
       val reportReq = CoreParams(keyParamR, searchParamR, None, fieldParam, Some("10-K"), lim, None, None)
       logger info s"DSL search generated (reports): ${reportReq.prettyPrint}"
@@ -66,12 +73,13 @@ object ASTCodeGen extends StrictLogging {
       logger info s"DSL search generated (companies): ${companyReq.prettyPrint}"
       val companyRes = (reception ? SearchRequest(companyReq)).mapTo[Seq[Fact]]
       
-      Future.reduce(reportRes :: companyRes :: Nil)(_ ++ _)
+      Future.reduce(unstructuredRes :: reportRes :: companyRes :: Nil)(_ ++ _)
     } else
       Future.successful(Nil)
   
   def isReportRequested(paths: Seq[PathNode]) = paths exists {
     case PathNode(_, Some(AttributeSelectorNode(_,_))) => true
+    case PathNode(_, Some(UnstructuredSelectorNode(_))) => true
     case PathNode(_, None) => true
     case _ => false
   }
@@ -84,6 +92,7 @@ object ASTCodeGen extends StrictLogging {
   
   def getFieldFilters(paths: Seq[PathNode]) = paths collect {
     case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => "children."+field.value
+    case PathNode(_, Some(UnstructuredSelectorNode(field))) => "children"
   }
   
   def getSearchFilters(paths: Seq[PathNode]) = paths.collect {
@@ -106,6 +115,16 @@ object ASTCodeGen extends StrictLogging {
       key -> (prefix + values)
       
   }.toMap
+    
+  //TODO Fix this shit
+  def getUnstructuredFilters(paths: Seq[PathNode]) = paths.collect {
+    case PathNode(_, Some(UnstructuredSelectorNode(field))) => 
+      val key = "ftype"
+      val values = "xbrl"
+      
+      key -> (values)
+  }.toMap
+  
   
   //--------------------------------------------------------------------------------------------
   

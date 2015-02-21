@@ -17,6 +17,7 @@ trait SelectorNode extends AstNode {
 }
 case class AttributeSelectorNode(name: StringNode, filter: Seq[FunctionNode[_ <: ValueNode]]) extends SelectorNode
 case class RelationSelectorNode(name: StringNode) extends SelectorNode
+case class UnstructuredSelectorNode(name: StringNode) extends SelectorNode
 
 case class FunctionNode[T <: ValueNode](fn: FN[T], args: T) extends AstNode
 
@@ -42,6 +43,7 @@ sealed abstract class FN[-ARGS <: ValueNode : ClassTag](val name: String) extend
     case _ => false
   }
 }
+
 object FN {
   val all = Seq(EQ, LT, GT, LTEQ, GTEQ)
   def getByName(name: String): Seq[FN[_ <: ValueNode]] = all filter (_.name == name)
@@ -89,7 +91,8 @@ object Reflask extends Parser {
   }
   def Selector: Rule1[SelectorNode] = rule {
     ("@" ~ Phrase ~ zeroOrMore(Function) ~~> AttributeSelectorNode) | 
-    ("." ~ Phrase ~~> RelationSelectorNode)
+    ("." ~ Phrase ~~> RelationSelectorNode) |
+    ("^" ~ Phrase ~~> UnstructuredSelectorNode)
   }
   
   // function rules
