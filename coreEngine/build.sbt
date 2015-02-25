@@ -10,7 +10,10 @@ scalacOptions ++= Seq(
     "-feature", 
     "-language:implicitConversions", 
     "-deprecation", 
-    "-Xcheckinit")
+    "-Xcheckinit",
+    "-language:existentials",
+    "-language:higherKinds")
+//    "-Xprint:typer")
 
 resolvers ++= Seq(
     "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",

@@ -43,7 +43,7 @@ object FactSerializers extends DefaultJsonProtocol {
   implicit def valSlicedFormat[T <: FactValSliced[_]]: JsonFormat[T] = new JsonFormat[T] {
     def write(slice: T) = slice match {
       case period: Period => period.toJson
-      case group: Group[FactVal] => group.toJson
+      case group: Group[FactVal] @unchecked => group.toJson
     }
     def read(json: JsValue) = json match {
       case obj: JsObject => obj.fields("facttype") match {
@@ -62,7 +62,7 @@ object FactSerializers extends DefaultJsonProtocol {
       case FactInt(int) => int.toJson
       case FactBD(bd) => bd.toJson
       case money: FactMoney => money.toJson
-      case col: FactCol[T] => col.toJson
+      case col: FactCol[T] @unchecked => col.toJson
       case period: Period => period.toJson
       case group: Group[_] => group.toJson
       case holding: Holding => holding.toJson

@@ -18,6 +18,7 @@ import spray.routing.HttpService
 import spray.http.MediaTypes._
 import serializers.FactSerializers.factFormat
 import serializers.CESerializers.neFormat
+import serializers.CESerializers.neSentenceFormat
 import dsl.Reflask
 import dsl.ASTCodeGen
 import ner.NERecognizer
@@ -77,7 +78,7 @@ trait EngineService extends Actor with HttpService with ActorLogging {
         parameters('search) { chunk =>
           complete {
             log info s"Performing NER on chunk: $chunk"
-            NERecognizer(chunk)
+            new NERecognizer(chunk).solutions
           }
         }
       }
