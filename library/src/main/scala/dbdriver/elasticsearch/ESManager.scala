@@ -196,6 +196,7 @@ trait ESManager extends DataServerManager with StrictLogging {
    */
   override def lookupDS(params: LibSearchRequest): Future[ESReply] = Future {
     logger info s"ES lookup: $params"
+    val postFilters = QueryBuilders.boolQuery()
 
     val req =
       client.prepareSearch(ALL_INDICES:_*)
@@ -215,7 +216,7 @@ trait ESManager extends DataServerManager with StrictLogging {
       if (normal.isEmpty && nestedQ.size < 2)
         req setQuery QueryBuilders.nestedQuery("children", nestedQ.head)
       else
-        nestedQ map (q => req setPostFilter FilterBuilders.nestedFilter("children", q))
+        nestedQ foreach (q => postFilters must q)
     }
 
     // handle regular queries
@@ -233,13 +234,13 @@ trait ESManager extends DataServerManager with StrictLogging {
       val filterList = f split "="
       val k = filterList.head
       val v = filterList.tail.head
-      FilterBuilders nestedFilter ("children", QueryBuilders.matchPhraseQuery(k, v))
+      QueryBuilders.matchPhraseQuery(k, v)
     }
-    if (docFilters.length > 0) req setPostFilter {
-    	val boolF = FilterBuilders.boolFilter()
-			docFilters foreach (boolF should _)
-			boolF
+    if (docFilters.length > 0) {
+			docFilters foreach (postFilters should _)
     }
+    
+    req setPostFilter FilterBuilders.nestedFilter("children", postFilters)
     
     if (chosenFields.length > 0)
       req addFields (chosenFields: _*)
