@@ -207,7 +207,7 @@ trait ESManager extends DataServerManager with StrictLogging {
     // query string handling
     //
     val (nested, normal) = params.request partition { case (k, v) => k startsWith "children." }
-
+    
     // handle nested queries
     if (!nested.isEmpty) {
       val nestedQ = nested map { case (k, v) => cleanQuery(k, v) }
@@ -225,12 +225,14 @@ trait ESManager extends DataServerManager with StrictLogging {
     //
     // select fields to be returned
     //
+
     val (postReplyFilters, esFilters) = params.fields partition (_ startsWith "children.")
     val (ignoredFields, chosenFields) = esFilters partition (_ startsWith "-")
-    
+        
     val docFilters = postReplyFilters map { f =>
-      val k = "children.prettyLabel"
-      val v = f replaceAll ("children.", "")
+      val filterList = f split "="
+      val k = filterList.head
+      val v = filterList.tail.head
       FilterBuilders nestedFilter ("children", QueryBuilders.matchPhraseQuery(k, v))
     }
     if (docFilters.length > 0) req setPostFilter {
