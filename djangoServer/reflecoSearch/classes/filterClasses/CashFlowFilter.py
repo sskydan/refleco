@@ -78,17 +78,28 @@ class CashFlowFilter(Filter):
         boxList = []
         if len(self.dataSet):
             for f in self.dataSet:
-                if f[u'ftype'] == '10-K':
-                    statementData = []
-                    for item in self.keys:
-                        if isinstance(item, list):
-                            for fact in self.filterData(f[u'children'], lambda e: e[u'id'] in item):
-                                statementData.append(fact)
-                        elif "Abstract" in item:
-                            name = item.replace("Abstract", "")
-                            statementData.append({u'prettyLabel': name, u'value': None})
-                    if len(statementData):
-                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'] + " Cash Flow" + " (" + f[u'value'] + ")", []))
+                statementData = []
+                statementTitle = ""
+                try:
+                    if f[u'ftype'] == '10-K':
+                        for item in self.keys:
+                            if isinstance(item, list):
+                                for fact in self.filterData(f[u'children'], lambda e: e[u'id'] in item):
+                                    statementData.append(fact)
+                            elif "Abstract" in item:
+                                name = item.replace("Abstract", "")
+                                statementData.append({
+                                    u'prettyLabel': name,
+                                    u'value': None,
+                                    u'ftype': "blah",
+                                    u'id': "",
+                                })
+                except Exception as e:
+                    devLogger.error("could not get a fact list for CashFlowFilter: " + str(e))
+
+                if len(statementData):
+                    statementTitle =  f[u'prettyLabel'] + " Cash Flow" + " (" + f[u'value'] + ")"
+                    boxList.append(TableBox.makeBox(statementData, statementTitle, []))
         return boxList
 
 

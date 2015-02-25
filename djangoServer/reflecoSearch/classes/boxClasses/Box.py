@@ -17,7 +17,6 @@ class Box(object):
         self.args = kwargs
         self.addArg('data', dataSet)
 
-
     @abstractmethod
     def makeBox(self):
         """MakeBox is a constructor for a box.

@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from itertools import filterfalse, tee
 import logging
 devLogger = logging.getLogger('development')
 
@@ -29,18 +30,30 @@ class Filter(object):
         """
         self.dataSet = data
 
-    def filterData(self, dataSet, filterFunc, *filterArgs):
-        """filters a data set given a predicate
-        :param dataSet: Json data set
-        :param filterFunc: Boolean predicate function
-        :param *filterArgs: optional filter arguments
-        :return: a filtered json data set
+    def filterData(self, iterable, predicate):
+        """filters an interable set given a predicate
+        :param iterable: Json data set
+        :param predicate: Boolean predicate function
+        :return: a filtered iterable
         """
         try:
-            filtered = list(filter(filterFunc, dataSet))
+            filtered = list(filter(predicate, iterable))
         except Exception as e:
             filtered = list()
             devLogger.error("Could not filter data: " + str(e))
         return filtered
 
 
+    def partitionData(self, iterable, predicate):
+        """partitions an interable given a predicate
+        :param iterable: Json data set
+        :param predicate: Boolean predicate function
+        :return: Two iterables (matches, misses)
+        """
+        match, miss = list(), list()
+        try:
+            itr1, itr2 = tee(iterable)
+            match, miss = list(filter(predicate, itr1)), list(filterfalse(predicate, itr2))
+        except Exception as e:
+            devLogger.error("Could not partition data: " + str(e))
+        return match, miss

@@ -6,14 +6,14 @@ devLogger = logging.getLogger('development')
 
 @register.filter(name='getBoxArg')
 def getBoxArg(args, arg):
-    return args.get(arg, False)
+    return args.get(arg, "")
 
 @register.filter(name='getFactName')
 def getFactName(fact):
     try:
-        name = fact[u'prettyLabel']
+        name = fact.get(u'prettyLabel', False)
         if not name:
-            name = fact[u'id']
+            name = fact.get(u'id', "None(This is and error.)")
     except Exception as e:
         devLogger.error("there was a problem getting a fact name: " + e)
         name = ""
@@ -21,7 +21,7 @@ def getFactName(fact):
 
 @register.filter(name='isPeriodicFact')
 def isPeriodicFact(fact):
-    if fact[u'ftype'] == "xbrl":
+    if fact.get(u'ftype', "") == "xbrl":
         value = fact.get(u'value', [])
         if u'valList' in value:
             return True
@@ -45,18 +45,21 @@ def getPeriodDates(period):
     startDate = ""
     endDate = ""
     if u'startDate' in period:
-        startDate = period[u'startDate'][:9].replace('-', '/')
+        startDate = period[u'startDate'][:10].replace('-', '/')
     if u'endDate' in period:
-        endDate = period[u'endDate'][:9].replace('-', '/')
+        endDate = period[u'endDate'][:10].replace('-', '/')
     return startDate + " - " + endDate
 
 @register.filter(name='getFactValue')
 def getFactValue(fact):
     try:
-        value = fact[u'value']
-        if fact[u'ftype'] == "analytic":
+        value = fact.get(u'value', "")
+        ftype = fact.get(u'ftype', "")
+        if ftype == "analytic":
             value = "{:,.4f}".format(value)
-        if fact[u'ftype'] == "xbrl":
+        elif "TextBlock" in fact.get(u'id', ""):
+            value = value
+        elif ftype == "xbrl":
             # Monetary value?
             if u'valDouble' in value:
                 value = value[u'valDouble']
@@ -74,4 +77,4 @@ def getFactValue(fact):
 
 @register.filter(name='getFactChildren')
 def getFactChildren(fact):
-    return fact['children']
+    return fact.get('children', [])
