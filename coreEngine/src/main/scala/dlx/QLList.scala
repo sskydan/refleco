@@ -2,7 +2,9 @@ package dlx
 
 
 /** quad-linked list (like a doubly-linked list, but with up and down)
- *  FIXME proper/standardized type signatures for the QLList methods 
+ *  FIXME proper/standardized type signatures for the QLList methods
+ *  FIXME the traversal methods can easily go into infinite loops if the traversal function
+ *    doesn't form a perfect loop (or the matrix mutates)
  *  @note because variance doesn't play well with vars (setters and getters), and self.type
  *    is a singleton type and had some issues pairing with abstract type parameters (in my exp)
  *    we resort to existential types for up/dn as a way to provide a LUB (least upper bound)
@@ -30,6 +32,7 @@ sealed abstract class QLList[N <: QLList[N]] { self: N =>
 
   /** Like traverseRem, but accepts only traversals on generic QLList - exists only to 
    *    allow not specifying parameter type at the call site
+   *  FIXME make fn a partialfunction?
    *  @see traverseRem
    *  @see todo on QLList
    */
@@ -83,15 +86,14 @@ class QuadNode(val c: QuadHeader) extends QuadNodeIntf[QuadNode] {
  *  FIXME should be a subtype of QuadNode, or something.
  */
 abstract class UntestedQuadNode[T,N <: QLList[N]](val c: QuadHeader) extends QuadNodeIntf[N] { self: N =>
+  val execute: () => T
+  val evaluate: T => Boolean
   
   def evaluateFailed = foreach(_.r){ n =>
     n.dn.up = n.up
     n.up.dn = n.dn
     n.c.size = n.c.size - 1
   }
-  
-  val execute: () => T
-  val evaluate: T => Boolean
   
   lazy val executionResults = execute()
   lazy val evaluationResults = {

@@ -26,106 +26,110 @@ import scalaz.OptionT
 import dlx.QLMatrix
 import dlx.DLX
 import dlx.QuadHeader
+import dlx.QLList
+import extensions.Extensions._
+
 
 /** represents a recognized named entity
+ *  FIXME equals shouldn't be necessary once disticnt check is gone
  */
-case class NE(entity: String, genus: String, score: Double, raw: String)
-
-/** methods for recognizing entities
- *  TODO pull values into ceconfig
- */
-object NERecognizer extends CEConfig with StrictLogging {
-  val PENT_BOOST = 1.6
-  val ENT_BOOST = 1
-  val ATTENT_BOOST = 2
-  val RELENT_BOOST = 1.5
-  val FIRST_CUTOFF = 4.0
-  val SECOND_CUTOFF = 7.5
+case class NE(entity: String, genus: String, score: Double, raw: String) {
+  override def equals(any: Any) = any match {
+    case NE(e,g,_,r) => e==entity && g==genus && r==raw
+    case _ => false
+  }
+}
+case class NESentence(val row: Seq[NE], val whole: String, sc: Option[Double] = None) extends NERanker {
+  val score = sc getOrElse row.foldLeft(0.0)(_+_.score)
+  def updateScore(boost: Double => Double) = NESentence(row, whole, Some(boost(score)))
   
-  type Words = Seq[String]
-  implicit def toWords(str: String): Words = str.trim.split(" ").map(_.trim)
+  lazy val rank: NESentence = rankers.foldLeft(this)( (s, ranker) => ranker(s) )    
+  
+  override def toString() = s"ROW ($score) --\n    ${row.mkString(",\n    ")}"
+}
 
-  def apply(chunk: String): Seq[NE] = {
-    val words = toWords(chunk)
+/** handles named entity recognition from a phrase
+ */
+class NERecognizer(chunk: String) extends StrictLogging {
+
+  /** represents the matrix of possible structural chunk combinations generated from the
+   *    initial string
+   */
+  lazy val matrix: QLMatrix[NERNode] = {
+    val words = chunk.trim.split(" ").map(_.trim).toSeq
     
     val combinations = (1 to words.size) flatMap (words.combinations(_).toSeq)
-    val combMatrix = QLMatrix.fromSparse(combinations, words, new NERNode(_))
+    val adjacentCombinations = combinations filter (subset => chunk contains (subset mkString " "))
     
-    val x = combMatrix.solve()(NERDLX)
-    println(x)
+    val matrix = QLMatrix.fromSparse(adjacentCombinations, words, new NERNode(_))
     
-    Nil
-  }
-  
-  /** custom DLX implementation for NER nodes
-   *  - evaluate node before iterating over it
-   */
-  implicit val NERDLX: DLX[NERNode] = new DLX[NERNode] {
-    
-    override def search(root: QuadHeader, path: List[NERNode] = Nil): Seq[List[NERNode]] = {
-      if (root.r != root) {
-        val c = chooseColumn(root)
-        c.cover
+    // initialize the nodes with their row
+    matrix.root.r.foreach[QuadHeader](_.r){ col =>
+      col.foreachRem[QLList[_<:QLList[_]]](_.dn){
         
-        val solutions = c.traverseRemG(_.dn) { 
-          
-          case r: NERNode if r.evaluationResults =>
+        case n: NERNode => 
+          val row = 
+            if (!n.l.row.isEmpty) n.l.row
+            else n.traverse[NERNode,NERNode](_.r)(x => x)
             
-            r.foreachRem(_.r)(_.c.cover)
-            val subSolutions = search(root, r :: path)
-            r.foreachRem(_.l)(_.c.uncover)
-            
-            subSolutions
-            
-          case _ => Nil
-        }
-        
-        c.uncover
-        solutions.flatten
-        
-      } else Seq(path) 
+          n.row = row
+        case _ =>
+      }
     }
+    
+    matrix
   }
   
-//  def apply(chunk: String): Seq[NE] = {
-//    logger.info(s"NER starting: $chunk")
-//
-//    val entities = findAllNE(chunk, Nil)
-//    
-//    logger.info(s"NER from $chunk complete: $entities")
-//    entities
-//  }
+  lazy val solutions: Seq[NESentence] = {
+    //FIXME shoundn't be necessary
+    val structuredSentences = matrix solve (_.executionResults) map (_ map (_.distinct))
+    
+    val sentences = structuredSentences flatMap (_.cartesianProduct map (NESentence(_, chunk).rank))
+    
+    val topResults = sentences sortBy (- _.score) take 20
+    
+    topResults
+  }
+  
+  implicit val NERDLX = new DLX[NERNode] {
+  	/** custom DLX implementation for NER nodes
+  	 *  - evaluate node before iterating over it
+  	 */
+  	override def search(root: QuadHeader, path: List[NERNode] = Nil): Seq[List[NERNode]] =
+			if (root.r != root) {
+				val c = chooseColumn(root)
+				c.cover
+				
+				val solutions = c.traverseRemG(_.dn) { 
+			
+				  case r: NERNode if r.evaluationResults =>
+						r.foreachRem(_.r)(_.c.cover)
+						val subSolutions = search(root, r :: path)
+						r.foreachRem(_.l)(_.c.uncover)
+						
+						subSolutions
+				
+				  case _ => Nil
+				}
+				
+				c.uncover
+				solutions.flatten
+				
+			} else Seq(path) 
+  }
+}
 
-//  @tailrec
-//  def findAllNE(tokens: Words, acc: List[NE]): List[NE] = 
-//    
-//    findFirstNE(tokens) match {
-//    
-//      case Some(ne) =>
-//        val rawCount = toWords(ne.raw).length
-//        findAllNE(tokens drop rawCount, ne :: acc)
-//
-//      case None if tokens.length > 1 => 
-//        findAllNE(tokens drop 1, acc)
-//        
-//      case _ => acc
-//    }
-
-  /** FIXME smarter logic
-   */
-//  def findFirstNE(tokens: Words): Option[NE] = {
-//    val candidates = tokens.scanLeft("")(_+" "+_).drop(1).reverse.map(_.trim)
-//
-//    val entities = candidates.toStream flatMap (
-//      c => tryNEPass(c) filter (_.score >= SECOND_CUTOFF) sortBy (- _.score)
-//    )
-//    
-//    entities.headOption
-//  }
-
+object NERecognizer extends CEConfig {
+  val ATTENT_BOOST = config getDouble "attributeBoost"
+  val FIRST_CUTOFF = config getDouble "firstCutoff"
+  val SECOND_CUTOFF = config getDouble "secondCutoff"
+  
+  def identifyChunk(candidate: String): List[NE] =
+    tryMatchChunk(candidate) filter (_.score >= SECOND_CUTOFF)
+  
   /** @note blocking
    */
-  def identifyChunk(candidate: String): List[NE] = {
+  def tryMatchChunk(candidate: String): List[NE] = {
     val finders = List(tryPENT _, tryENT _, tryRELENT _, tryATTENT _)
 
     val results = finders traverseM (_(candidate).run)
@@ -134,20 +138,19 @@ object NERecognizer extends CEConfig with StrictLogging {
   }
 
   def tryPENT(candidate: String): ListT[Future, NE] =
-    tryDisambiguation(candidate, "10-K", "company", PENT_BOOST)
+    tryDisambiguation(candidate, "10-K", "company")
    
   def tryENT(candidate: String): ListT[Future, NE] = 
-    tryDisambiguation(candidate, "entity", "entity", ENT_BOOST)
+    tryDisambiguation(candidate, "entity", "entity")
     
   def tryATTENT(candidate: String): ListT[Future, NE] =
     tryDisambiguation(candidate, "attribute", "attribute", ATTENT_BOOST)
     
   def tryRELENT(candidate: String): ListT[Future, NE] = 
-    tryDisambiguation(candidate, "relation", "relation", RELENT_BOOST)
+    tryDisambiguation(candidate, "relation", "relation")
     
   def tryDisambiguation(candidate: String, doctype: String, enttype: String, boost: Double = 1.0) =
     LibraryConnector.checkScored(candidate, doctype, FIRST_CUTOFF) map {
-      case (name, _, weight) => NE(name, enttype, weight * boost, candidate) 
+      case (name, _, weight) => NE(name, enttype, weight*boost, candidate) 
     }
-  
 }

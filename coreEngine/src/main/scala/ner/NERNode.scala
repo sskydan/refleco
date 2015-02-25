@@ -5,14 +5,19 @@ import scala.collection.mutable.HashMap
 
 
 /** class representing named entity nodes
+ *  FIXME handle row managment better (should be a set?)
+ *  FIXME evaluate still returning positively when execute was empty?
  */
+class NERNode(c: QuadHeader) extends UntestedQuadNode[Seq[NE], NERNode](c) {
+  var row: Seq[NERNode] = Nil
+	lazy val rowHeader = RowControl.getRowHeader(row)
+			
+	val execute = () => rowHeader.execute
+	val evaluate: Seq[NE] => Boolean = _ => rowHeader.evaluate
+}
+
 class NERow(val elems: Seq[NERNode]) {
-  
-  lazy val execute = {
-    val allWords = elems map (_.c.name) mkString " "
-    NERecognizer.identifyChunk(allWords)
-  }
-  
+  lazy val execute = NERecognizer.identifyChunk(elems map (_.c.name) mkString " ")
   lazy val evaluate = !execute.isEmpty
 }
 
@@ -20,22 +25,11 @@ class NERow(val elems: Seq[NERNode]) {
  *  FIXME use a proper threadsafe solution (scalaz memo)?
  */
 object RowControl {
-  val rowMap = HashMap[Int, NERow]()
+  val rowMap = HashMap[Double, NERow]()
   
-	def getRowHeader(node: NERNode): NERow = {
-	  val row = node.traverse[NERNode,NERNode](_.r)(x => x)
+  def getRowHeader(row: Seq[NERNode]): NERow = {
+    def hash: Double = row.map(_.c.name.hashCode.toDouble).foldLeft(0.0)(_ + _)
 
-		def hash(node: NERNode): Int = 
-      row.map(_.c.name.hashCode).foldLeft(0)(_ + _)
-
-    rowMap getOrElseUpdate (hash(node), new NERow(row))
-	}  
+    rowMap getOrElseUpdate (hash, new NERow(row))
+  }  
 }
-
-class NERNode(c: QuadHeader) extends UntestedQuadNode[Seq[NE], NERNode](c) {
-  lazy val rowHeader = RowControl.getRowHeader(this)
-  
-  val execute = () => rowHeader.execute
-  val evaluate: Seq[NE] => Boolean = _ => rowHeader.evaluate
-}
-

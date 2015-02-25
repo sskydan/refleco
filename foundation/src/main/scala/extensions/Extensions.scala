@@ -6,6 +6,7 @@ import spray.json.JsValue
 import ImplicitConversions._
 import utilities.JsonUtil._
 import scala.reflect.ClassTag
+import scala.collection.Traversable
 
 /** TODO function composition enrichment to simulate if-else (fallback) behavior with short-circuiting
  */
@@ -15,7 +16,7 @@ object Extensions {
   val cpus = Runtime.getRuntime().availableProcessors()
 	val fixedPool = Executors.newFixedThreadPool((cpus+1) * 2)
 
-  class IteratorPimp[A](it: Iterator[A]) {
+  implicit class IteratorPimp[A](it: Iterator[A]) {
 
     /** Non-strict first-done-first-out parallel map implementation. Iterator backed by an ExecutorCompletionService
      *  @note Not threadsafe
@@ -43,11 +44,34 @@ object Extensions {
         def hasNext = len > 0
       }
     }
+    
   }
 
-  implicit def itPimped[T](it: Iterator[T]) = new IteratorPimp(it)
-
-  class ListPimp[T](l: List[T]) {
+  implicit class SeqPimp[T](xs: Seq[T]) {
+    
+    /** apply a sequence of functions, starting at every position in the object sequence, and
+     *    count the number of successful subsets found this way  
+     */
+    def countSlicesLike(fns: Seq[T => Boolean]): Int = {
+		  val maxSliceSize = Seq(xs.size - 1, xs.size - fns.size).min
+		  val slices = (0 to maxSliceSize) map (xs view (_, xs.size))
+			  
+		  slices map { slice =>
+			  (fns zip slice).foldLeft(true){ case (b, (fn, elem)) => b && fn(elem)}
+		  } count (_ == true)
+    }
+    
+    /** produce the cartesian product of a matrix (2d seq)
+     *  FIXME make lazy
+     */
+    def cartesianProduct[B](implicit asTraversable: (T) => Traversable[B]): Seq[Seq[B]] =
+      xs.foldLeft(Seq(Seq.empty[B])) { 
+        (ll, rr) => for (l <- ll; r <- asTraversable(rr)) yield l :+ r 
+      }
+  }
+  
+  implicit class ListPimp[T](l: List[T]) {
+    
     /** split the list on the provided predicate, and filter out all the empty results
      *  @param p the function to use as the filter
      *  @return a list of subsets
@@ -59,5 +83,4 @@ object Extensions {
     }
   }
   
-  implicit def listPimped[T](l: List[T]): ListPimp[T] = new ListPimp(l)
 }

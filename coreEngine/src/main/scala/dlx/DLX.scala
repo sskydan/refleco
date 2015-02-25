@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
  */
 class DLX[N <: QuadNodeIntf[N] : ClassTag] {
   
-  /** algo to choose the column (particular element) to iterate over when doing a search pass
+  /** algo to choose the column (particular element) when doing a search pass
    */
 	def chooseColumn(root: QuadHeader): QuadHeader = root.r
   
@@ -34,8 +34,7 @@ class DLX[N <: QuadNodeIntf[N] : ClassTag] {
       c.uncover
       solutions.flatten
       
-    } else Seq(path) 
-    
+    } else Seq(path)
 }
 
 object DLX {

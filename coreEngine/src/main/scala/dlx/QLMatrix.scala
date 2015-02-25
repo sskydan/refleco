@@ -4,12 +4,17 @@ import scala.collection.immutable.ListMap
 
 
 /** class representing a quad-linked matrix
+ *  TODO qlmatrix type parameter doesn't actually enforce the type of node linked to the 
+ *    root quadheader
  *  TODO getting row ids feels a bit awkward
  */
 class QLMatrix[T <: QuadNodeIntf[T]](val root: QuadHeader) {
   
-  def solve[R](getRow: T => R = (_:T).c.name)(implicit ev: DLX[T]) = 
-    ev.search(root) map (_.reverse map (node => node.traverse[T,R](_.r)(getRow(_))))
+  val allNames = root.traverseRem((_:QuadHeader).r)(_.name)  
+  val rowNames = (node: T) => node.traverse[T,String](_.r)(_.c.name)
+  
+  def solve[R](getRow: T => R = rowNames)(implicit ev: DLX[T]): Seq[Seq[R]] = 
+    ev.search(root) map (_.reverse map getRow)
 }
 
 object QLMatrix {
@@ -24,7 +29,7 @@ object QLMatrix {
     val init = ListMap[String,Vector[Int]](names.map(_ -> Vector()): _*)
     
     val matrix = rows.foldLeft(init) {
-      case (matrix, row) => matrix map { 
+      case (matrix, row) => matrix map {
         case (k,v) if row contains k => k -> (v :+ 1)
         case (k,v) => k -> (v :+ 0)
       }
@@ -45,9 +50,9 @@ object QLMatrix {
     // link the columns (vertically)
     val matrix = (cols zip names) map { case (col, name) =>
       val header = new QuadHeader(name)
-      val contents = col map (_ -> nodeBuilder(header))
+      val nodeCol = col map (_ -> nodeBuilder(header))
       
-      contents.foldLeft[GenericNode](header){
+      nodeCol.foldLeft[GenericNode](header){
         case (l, (1, r)) =>
           l.dn = r
           r.up = l
@@ -55,15 +60,17 @@ object QLMatrix {
           r
         case (l, _) => l
       }
-      val last = contents.reverse find (_._1 == 1) map (_._2:GenericNode) getOrElse header
+      val last = nodeCol.reverse find (_._1 == 1) map (_._2:GenericNode) getOrElse header
       header.up = last
       last.dn = header
       
-      contents
+      nodeCol
     }
     
+    val matrixT = matrix.transpose
+    
     // link the rows
-    matrix.transpose foreach { row =>
+    matrixT foreach { row =>
       row.tail.foldLeft(row.head._2){
         case (l, (1, r)) =>
           l.r = r
@@ -75,18 +82,16 @@ object QLMatrix {
       val last = row.reverse.find(_._1 == 1).get._2
       first.l = last
       last.r = first
-      val x = first.l
-      val y = last.r
     }
     
     // link the special headers row
-    matrix.transpose.head.foldLeft(root){
+    matrixT.head.foldLeft(root){
       case (l, (_, r)) =>
         l.r = r.c
         r.c.l = l
         r.c
     }
-    val last = matrix.transpose.head.last._2.c
+    val last = matrixT.head.last._2.c
     root.l = last
     last.r = root
     
