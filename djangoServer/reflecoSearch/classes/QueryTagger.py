@@ -69,11 +69,11 @@ class QueryTagger(object):
         :return: List((word, tag))
         """
         posTags = cls.tagPOS(queryString)
-        FilterTags = cls.tagFilters(posTags)
-        #dateTags = cls.tagDates(reportTags)
         #TODO right now we don't have a reliable list of all base pos tag. NER needs base tags
         pos = [t for w,t in posTags[:]]
-        nerTags = cls.tagNER(FilterTags, pos)
+        filterTags = cls.tagFilters(posTags)
+        #dateTags = cls.tagDates(reportTags)
+        nerTags = cls.tagNER(filterTags, pos)
         taggedTokens = nerTags
 
         devLogger.info("Fully tagged tokens are: " + str(taggedTokens))
