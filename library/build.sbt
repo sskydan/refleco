@@ -40,11 +40,12 @@ libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "2.2.0" % "test",
     "com.github.nscala-time" %% "nscala-time" % "1.2.0",
     "org.elasticsearch" % "elasticsearch" % "1.4.0",
+    //"org.apache.lucene" % "lucene-core" % "5.0.0",
     "org.jsoup" % "jsoup" % "1.8.1",
     "javax.ws.rs" % "jsr311-api" % "1.1.1",
     "com.sun.jersey" % "jersey-core" % "1.18.3"
 //    "org.elasticsearch" % "elasticsearch-hadoop" % "2.1.0.Beta3" excludeAll(
-//      ExclusionRule(organization = "com.google"),
+//      ExclusionRule(organi.zation = "com.google"),
 //      ExclusionRule(organization = "org.apache.spark")
 //    )
 ).map(_.excludeAll(
