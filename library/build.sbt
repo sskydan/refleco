@@ -1,6 +1,6 @@
 name := "library"
 
-organization := "reflecho"
+organization := "refleco"
 
 version := "0.5.0"
 

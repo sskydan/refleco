@@ -60,6 +60,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
   }
 
   private def elemToFact(key: String, elem: JsValue): Fact = {
+    println(s"KEY: $key")
     Fact(key, "xbrl", parseEntry(key, elem), resolveLabel(key), 0, parseEntryChildren(key, elem))
   }
     
@@ -92,11 +93,13 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
 
     // Match monetary facts => FactMoney
     case obj @ JsObject(fields) if fields contains "decimals" => obj.getFields("content", "decimals", "unitRef") match {
-      case Seq(JsNumber(con), JsNumber(dec), JsString(uref)) =>
+      case Seq(JsNumber(num), JsNumber(dec), JsString(uref)) =>
         val doublemoney =
-          if (dec != 0) con.toInt / (10 * Math.abs(dec.toInt))
-          else con.toInt
+          if (dec != 0) num / (10 * Math.abs(dec.toInt))
+          else num
 
+        println (s"MONEY $doublemoney -- ($num : $dec : $uref)")
+          
         FactMoney(doublemoney, uref)
 
       case other => getDummyFactVal(other)
@@ -140,7 +143,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    *  This function should not throw exceptions
    */
   private def resolveContext(key: String): (DateTime, DateTime) = {
-    val nss = "" :: "xbrli:" :: Nil
+    val nss = Stream("", "xbrli:")
     val defaultContext = new DateTime("1001-01-01") -> new DateTime("1001-01-01")
 
     def checkDates(ns: String) =
@@ -161,7 +164,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
         }
       } catch { case NonFatal(any) => Failure(any) }
 
-    (nss map checkDates collect { case Success(context) => context }).headOption getOrElse defaultContext
+    nss map checkDates collectFirst { case Success(context) => context } getOrElse defaultContext
   }
 
   /**
