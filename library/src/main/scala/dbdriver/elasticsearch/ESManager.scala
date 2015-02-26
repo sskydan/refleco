@@ -24,6 +24,8 @@ import org.elasticsearch.index.query.FilterBuilders
 import api.EntityIndex
 import facts.FactNone
 import org.elasticsearch.index.query.QueryBuilder
+import org.elasticsearch.index.query.QueryBuilder._
+import org.elasticsearch.index.query.BoolQueryBuilder
 
 /** Class for initializing and managing an elasticsearch node cluster
  *  FIXME make data-node creation explicit; otherwise use dataless-node
@@ -186,6 +188,16 @@ trait ESManager extends DataServerManager with StrictLogging {
   }
 
   
+  case class PostFilters(){
+    var initialized = false 
+    val postFilter = QueryBuilders.boolQuery()
+    
+    def addQueryBuilder(fn: BoolQueryBuilder => BoolQueryBuilder) = {
+      fn(this.postFilter)
+      this.initialized = true
+    }
+  }
+  
   /** TODO error handling
    *  TODO search type: req.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
    *  TODO escape lucene special chars
@@ -193,11 +205,12 @@ trait ESManager extends DataServerManager with StrictLogging {
    *  FIXME use scrolling instead of paging
    *  FIXME multiple queries should be allowed with filters
    *  FIXME .asJson VS .toJson
-   */
+   */ 
   override def lookupDS(params: LibSearchRequest): Future[ESReply] = Future {
     logger info s"ES lookup: $params"
-    val postFilters = QueryBuilders.boolQuery()
-
+    
+    val pf = PostFilters()
+    
     val req =
       client.prepareSearch(ALL_INDICES:_*)
         .setTypes(params.doctype:_*)
@@ -213,10 +226,11 @@ trait ESManager extends DataServerManager with StrictLogging {
     if (!nested.isEmpty) {
       val nestedQ = nested map { case (k, v) => cleanQuery(k, v) }
 
-      if (normal.isEmpty && nestedQ.size < 2)
+      if (normal.isEmpty && nestedQ.size < 2){
         req setQuery QueryBuilders.nestedQuery("children", nestedQ.head)
+      }
       else
-        nestedQ foreach (q => postFilters must q)
+        nestedQ foreach (q => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb must q ))
     }
 
     // handle regular queries
@@ -236,11 +250,10 @@ trait ESManager extends DataServerManager with StrictLogging {
       val v = filterList.tail.head
       QueryBuilders.matchPhraseQuery(k, v)
     }
-    if (docFilters.length > 0) {
-			docFilters foreach (postFilters should _)
-    }
     
-    req setPostFilter FilterBuilders.nestedFilter("children", postFilters)
+    docFilters foreach (df => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb should df))
+    
+    if (pf.initialized)  req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
     
     if (chosenFields.length > 0)
       req addFields (chosenFields: _*)
