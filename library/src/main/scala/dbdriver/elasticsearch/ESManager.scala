@@ -251,6 +251,9 @@ trait ESManager extends DataServerManager with StrictLogging {
       QueryBuilders.matchPhraseQuery(k, v)
     }
     
+    if (normal.isEmpty & nested.isEmpty) 
+      req setQuery (QueryBuilders.nestedQuery("children", docFilters.head))
+    
     docFilters foreach (df => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb should df))
     
     if (pf.initialized)  req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
