@@ -58,6 +58,25 @@ except Exception as e:
 #stemmer = nltk.PorterStemmer()
 #lemmatizer = nltk.WordNetLemmatizer()
 
+
+class NERMatching(object):
+    """NERMatching Object to hold a possible NER tagged query
+    """
+
+    def __init__(self, NERMatch):
+        """
+        :param NERMatch: a NER json string
+        """
+        self.score = NERMatch.get('score', 0)
+        self.entities = NERMatch.get('entities', [])
+        self.tokens = self.getNerTokens()
+
+    def getNerTokens(self):
+        """Sets the tokens of the NERMatching object to be tagged
+        with the NER tags
+        """
+        return []
+
 class QueryTagger(object):
     """Creates a list of (word, tag) pairs
     """
@@ -93,62 +112,6 @@ class QueryTagger(object):
         classifiedTokens = brillTagger.tag(tokens)
         devLogger.info("POS tagged tokens are: " + str(classifiedTokens))
         return classifiedTokens
-
-    @classmethod
-    def tagNER(cls, tokenList, pos):
-        """Tag a given sting input with NER tags
-        :param tokenList: List((word,tag)) of POS tagged tokens
-        :param pos: temp list of pos tags. in future we will have a defined list
-        :return: List((word,tag)) NER tagged tokens
-        """
-
-        def NERSplit(inputTokens):
-            """Walkes a list of tokens and finds groups of bas pos tagged tokens i.e non refleco specific
-            :param inputTokens: list of taged tokens
-            :return: List((word, tag)) base pos tagged tokens
-            """
-            batch = []
-            regexp = re.compile(r'[0-9\<\>]')
-            for token in inputTokens:
-                if token[1] in pos and regexp.search(token[0]) is None:
-                    batch.append(token)
-                else:
-                    if batch:
-                        yield batch
-                        batch = []
-            if batch:
-                yield batch
-
-        def getNER(tokens):
-            """Gets NER from backend
-            :param tokens: List((word,tag)) tokens
-            """
-            #get the original string
-            tokenString = re.sub(r' (?=\W)', '', " ".join([w for w,t in tokens]))
-
-            NERTokens = []
-            try:
-                nerItems = requests.get(settings.CORE_HOST + 'ner?search=' + tokenString)
-                if nerItems.status_code == 200:
-                    r = nerItems.json()
-                    if len(r):
-                        NERTokens = r
-                    else:
-                        devLogger.warn("No NER results received!")
-            except Exception as e:
-                devLogger.error("Error querying for NER: " + str(e))
-
-            for NE in NERTokens:
-                replaceTokens = cls.__getTokensFromRaw(tokens, NE['raw'])
-                cls.__replaceTokens(tokens, replaceTokens, [(NE['entity'], NE['genus'])])
-            return tokens
-
-        for ur in NERSplit(tokenList):
-            NERTokens = getNER(ur[:])
-            cls.__replaceTokens(tokenList, ur, NERTokens)
-
-        devLogger.info("NER tagged tokens are :" + str(tokenList))
-        return tokenList
 
     @classmethod
     def tagDates(cls, classifiedTokens):
@@ -194,8 +157,8 @@ class QueryTagger(object):
 
         tokenWords = [w for w,t in classifiedTokens]
         for date in timesplit(" ".join(tokenWords)):
-            replaceTokens = cls.__getTokensFromRaw(classifiedTokens, date)
-            cls.__replaceTokens(classifiedTokens, replaceTokens, [(p.parse(date).strftime("%Y-%m-%d"), 'DATE')])
+            replacedTokens = getTokensFromRaw(classifiedTokens, date)
+            replaceTokens(classifiedTokens, replacedTokens, [(p.parse(date).strftime("%Y-%m-%d"), 'DATE')])
 
         devLogger.info("Date tagged tokens are: " + str(classifiedTokens))
         return classifiedTokens
@@ -210,36 +173,100 @@ class QueryTagger(object):
         filters = [('cash flow','CASHFLOW'), ('balance sheet','BALANCESHEET'), ('income statement', 'INCOMESTMT')]
         for f in filters:
             if f[0].lower() in query.lower():
-                replaceTokens = cls.__getTokensFromRaw(classifiedTokens, f[0])
-                cls.__replaceTokens(classifiedTokens, replaceTokens, [f])
+                replacedTokens = getTokensFromRaw(classifiedTokens, f[0])
+                replaceTokens(classifiedTokens, replacedTokens, [f])
+
+        numre = re.compile(r'\d{1,3}(,?\d{3})*(\.\d*)?')
+        for token in classifiedTokens:
+            if numre.search(token[0]):
+                newToken = (token[0], 'CD')
+                replaceTokens(classifiedTokens, [token], [newToken])
 
         devLogger.info("Filter tagged tokens are: " + str(classifiedTokens))
         return classifiedTokens
 
-
     @classmethod
-    def __replaceTokens(cls, tokenList, oldTokens, newTokens):
-        """replace a set of tokens with new tokens
-        :param tokenList: List((word, tag)) which will have tokens replaced
-        :param oldTokens: List((word, tag)) tokens to be replaced
-        :param newTokens: List((word, tag)) tokens to replace with
+    def tagNER(cls, tokenList, pos):
+        """Tag a given sting input with NER tags
+        :param tokenList: List((word,tag)) of POS tagged tokens
+        :param pos: temp list of pos tags. in future we will have a defined list
+        :return: List((word,tag)) NER tagged tokens
         """
-        try:
-            startIndex = tokenList.index(oldTokens[0])
-            endIndex = tokenList.index(oldTokens[-1])
-            tokenList[startIndex:endIndex+1] = newTokens
-            devLogger.info("Replaced token: " + str(oldTokens) + " WITH " + str(newTokens))
-        except Exception as e:
-            devLogger.warn("Could not replace " + str(oldTokens) + ":" + str(e))
 
-    @classmethod
-    def __getTokensFromRaw(cls, tokenList, rawText):
-        """gets a list of tokens given a raw string
-        :param tokenList: List((word,tag)) to get from
-        :param rawText: String text for which we want tokens for
-        :return: List((word,tag)) tokens for the raw string
-        """
-        NERWords = [x for x in re.split('(\W+)',rawText) if x]
-        startIndex = [i for i, t in enumerate(tokenList) if t[0] == NERWords[0]]
-        endIndex = [i for i, t in enumerate(tokenList) if t[0] == NERWords[-1]]
-        return  tokenList[startIndex[0]: endIndex[0]+1]
+        def NERSplit(inputTokens):
+            """Walkes a list of tokens and finds groups of bas pos tagged tokens i.e non refleco specific
+            :param inputTokens: list of taged tokens
+            :return: List((word, tag)) base pos tagged tokens
+            """
+            batch = []
+            regexp = re.compile(r'[0-9\<\>]')
+            for token in inputTokens:
+                if token[1] in pos and regexp.search(token[0]) is None:
+                    batch.append(token)
+                else:
+                    if batch:
+                        yield batch
+                        batch = []
+            if batch:
+                yield batch
+
+        def getNER(tokens):
+            """Gets NER from backend
+            :param tokens: List((word,tag)) tokens
+            """
+            #get the original string
+            tokenString = re.sub(r' (?=\W)', '', " ".join([w for w,t in tokens]))
+
+            NERTokens = []
+            try:
+                nerItems = requests.get(settings.CORE_HOST + 'ner?search=' + tokenString)
+                if nerItems.status_code == 200:
+                    r = nerItems.json()
+                    if len(r):
+                        NERList = r
+                    else:
+                        devLogger.warn("No NER results received!")
+            except Exception as e:
+                devLogger.error("Error querying for NER: " + str(e))
+
+            for NE in NERTokens:
+                replacedTokens = getTokensFromRaw(tokens, NE['raw'])
+                replaceTokens(tokens, replacedTokens, [(NE['entity'], NE['genus'])])
+            return tokens
+
+        for ur in NERSplit(tokenList):
+            NERTokens = getNER(ur[:])
+            replaceTokens(tokenList, ur, NERTokens)
+
+        devLogger.info("NER tagged tokens are :" + str(tokenList))
+        return tokenList
+
+
+
+def replaceTokens(tokenList, oldTokens, newTokens):
+    """replace a set of tokens with new tokens
+    :param tokenList: List((word, tag)) which will have tokens replaced
+    :param oldTokens: List((word, tag)) tokens to be replaced
+    :param newTokens: List((word, tag)) tokens to replace with
+    """
+    try:
+        startIndex = tokenList.index(oldTokens[0])
+        endIndex = tokenList.index(oldTokens[-1])
+        tokenList[startIndex:endIndex+1] = newTokens
+        devLogger.info("Replaced token: " + str(oldTokens) + " WITH " + str(newTokens))
+    except Exception as e:
+        devLogger.warn("Could not replace " + str(oldTokens) + ":" + str(e))
+
+
+def getTokensFromRaw(tokenList, rawText):
+    """gets a list of tokens given a raw string
+    :param tokenList: List((word,tag)) to get from
+    :param rawText: String text for which we want tokens for
+    :return: List((word,tag)) tokens for the raw string
+    """
+    NERWords = [x for x in re.split('(\W+)',rawText) if x]
+    startIndex = [i for i, t in enumerate(tokenList) if t[0] == NERWords[0]]
+    endIndex = [i for i, t in enumerate(tokenList) if t[0] == NERWords[-1]]
+    return tokenList[startIndex[0]: endIndex[0]+1]
+
+
