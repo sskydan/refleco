@@ -27,7 +27,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    */
   def factTransform: Fact = {
     logger info s"Turning xbrl into fact $uid"
-    val defaultFact = Fact(uid, "error", FactNone, "error")
+    val defaultFact = Fact(uid, "error", FactNone, Seq("error"))
 
     val elems = jsonTransform.\\[JsObject](TOP_KEY).fields
     val (metaElems, dataElems) = elems partition {
@@ -48,7 +48,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
           uid, //uid
           doctype, //type
           FactString(date), //val
-          cname, //prettyLabel   
+          Seq(cname, uid), //prettyLabel   
           0,
           data,
           None //Some(JsObject(metaElems)))
@@ -59,10 +59,8 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
     }
   }
 
-  private def elemToFact(key: String, elem: JsValue): Fact = {
-    println(s"KEY: $key")
-    Fact(key, "xbrl", parseEntry(key, elem), resolveLabel(key), 0, parseEntryChildren(key, elem))
-  }
+  private def elemToFact(key: String, elem: JsValue): Fact =
+    Fact(key, "xbrl", parseEntry(key, elem), Seq(resolveLabel(key)), 0, parseEntryChildren(key, elem))
     
 
   /** Remember, all top-level entries in the normalized json are JsObjects
@@ -94,20 +92,14 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
     // Match monetary facts => FactMoney
     case obj @ JsObject(fields) if fields contains "decimals" => obj.getFields("content", "decimals", "unitRef") match {
       case Seq(JsNumber(num), JsNumber(dec), JsString(uref)) =>
-        val doublemoney =
-          if (dec != 0) num / (10 * Math.abs(dec.toInt))
-          else num
-
-        println (s"MONEY $doublemoney -- ($num : $dec : $uref)")
-          
-        FactMoney(doublemoney, uref)
+        FactMoney(num, uref, dec.toInt)
 
       case other => getDummyFactVal(other)
     }
 
     // Match facts which are zeroed => FactMoney
     case obj: JsObject => obj.getFields("xsi:nil", "unitRef") match {
-      case Seq(_: JsBoolean, JsString(uref)) => FactMoney(0, uref)
+      case Seq(_: JsBoolean, JsString(uref)) => FactMoney(0, uref, 0)
       case other => getDummyFactVal(other)
     }
   }
@@ -182,7 +174,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    */
   private def getDummyFactVal(errored: Any) = {
     logger debug s"Unknown object fact type\n${errored.toString}"
-    FactMoney(0, "???")
+    FactMoney(0, "???", 0)
   }
 }
 

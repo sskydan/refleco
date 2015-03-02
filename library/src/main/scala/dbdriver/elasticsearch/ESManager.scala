@@ -285,8 +285,14 @@ trait ESManager extends DataServerManager with StrictLogging {
 
     val childMapping = """{
       "properties": {
+        "id": {
+          "index": "not_analyzed"
+        },
         "children": {
           "type": "nested"
+        },
+        "children.id": {
+          "index": "not_analyzed"
         },
         "children.children": {
           "type": "nested"

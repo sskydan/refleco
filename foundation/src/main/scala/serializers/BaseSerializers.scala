@@ -34,11 +34,11 @@ object FactSerializers extends DefaultJsonProtocol {
   implicit def intFormat = jsonFormat1(FactInt)
   implicit def strFormat = jsonFormat1(FactString)
   implicit def bdFormat = jsonFormat1(FactBD)
-  implicit def moneyFormat = jsonFormat3(FactMoney)
+  implicit def moneyFormat = jsonFormat4(FactMoney)
   implicit def periodFormat = jsonFormat4(Period)
-  implicit def groupFormat[T <: FactVal:JsonFormat] = jsonFormat2(Group[T])
+  implicit def groupFormat[T <: FactVal : JsonFormat] = jsonFormat2(Group[T])
   implicit def holdingFormat = jsonFormat10(Holding)
-  implicit def colFormat[T <: FactValSliced[T]:JsonFormat] = jsonFormat2(FactCol[T])
+  implicit def colFormat[T <: FactValSliced[T] : JsonFormat] = jsonFormat2(FactCol[T])
 
   implicit def valSlicedFormat[T <: FactValSliced[_]]: JsonFormat[T] = new JsonFormat[T] {
     def write(slice: T) = slice match {

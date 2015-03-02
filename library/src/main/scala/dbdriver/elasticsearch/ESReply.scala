@@ -44,13 +44,13 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
       entry.\\[JsString]("uri").value,
       "refleco:result",
       FactNone,
-      entry.\\[JsString]("sform").value,
+      entry.\\[JsArray]("sform").elements map (_.toString),
       entry.\\[JsNumber]("_score").value.toDouble
     )
   
   /** only one of "fields" or "_source" may be in the response
    *  FIXME interest/rank extraction in es-provided responses
-   *  TODO smarter childFiltering in the whole-fact cases
+   *  FIXME smarter childFiltering
    */
   private def parseFinbaseResult(entry: JsValue) = (Try(entry \\ "_source"), Try(entry \\ "fields")) match {
     
@@ -62,7 +62,7 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
       if (filterPaths.isEmpty)
         fact
       else
-        fact innerFilter (f => filterPaths contains f.prettyLabel.toLowerCase())
+        fact innerFilter (f => !(filterPaths intersect f.prettyLabel.map(_.toLowerCase())).isEmpty)
     
     // as above, but case when children was ignored. dummy fields need to be added for the Fact
     //   conversion to work properly
@@ -81,8 +81,8 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
         entry.\\~[JsNumber]("interest").headOption.map(_.value.toDouble)
       
       val prettyLabel = (fields get "prettyLabel") orElse (fields get "uri") collect {
-        case JsArray(JsString(h)+:t) => h
-      } getOrElse ""
+        case JsArray(e) => e.toSeq map (_.toString)
+      } getOrElse Nil
       
       val cleanFields = JsObject(fields - ("prettyLabel", "interest"))
       val filteredFields = cleanFields filterAll childFilter

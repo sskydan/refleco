@@ -8,9 +8,8 @@ import scala.reflect.ClassTag
  *   see http://stackoverflow.com/questions/3170821/abstract-types-versus-type-parameters
  *  FIXME standardize "inner value" naming, so all direct values have same key. This should allow some nice
  *   cleanup in the dependencies. The problem is ES indexing mapping key names to static types.
- *  FIXME "optional" FactVal type so that FactVals don't have to be wrapped in Some()
  *  FIXME value classes + jsonFormatX() are not playing nice
- *   http://bloodredsun.com/2011/06/22/doubles-financial-calculations/
+ *  @note http://bloodredsun.com/2011/06/22/doubles-financial-calculations/
  */
 sealed trait FactVal {
   type Inner
@@ -30,6 +29,7 @@ sealed trait FactValSliced[T <: FactValSliced[T]] extends FactVal with Ordered[T
 case class FactMoney(
   valDouble: BigDecimal,
   currency: String,
+  precision: Int,
   facttype: String = "monetary") extends FactVal {
   type Inner = BigDecimal
   def get = valDouble
@@ -120,7 +120,6 @@ case object FactNone extends FactVal {
 }
 
 /** Simple representation of a "fact" that provides some information about an entity
- *  FIXME prettyLabel should be a list of strings
  *  FIXME ftype should be an enum
  *  FIXME FactVal should be a monad?
  *  @param id The fact's more or less unique id
@@ -136,7 +135,7 @@ case class Fact(
   id: String,
   ftype: String,
   value: FactVal = FactNone,
-  prettyLabel: String = "",
+  prettyLabel: Seq[String] = Nil,
   var interest: Double = 0,
   children: Seq[Fact] = Nil,
   details: Option[JsObject] = None,
@@ -156,9 +155,7 @@ case class Fact(
    */
   def integrateFacts(newf: Fact): Fact = {
     val newValue = if (newf.value != FactNone) newf.value else value
-    val newLabel = 
-      if (newf.prettyLabel.isEmpty) prettyLabel 
-      else prettyLabel + ", " + newf.prettyLabel
+    val newLabel = (prettyLabel ++ newf.prettyLabel).distinct 
     val newInterest = if (newf.interest > 0) newf.interest else interest 
     val newChildren = children ++ newf.children
     

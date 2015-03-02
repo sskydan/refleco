@@ -30,13 +30,13 @@ case class Company(override val file:File) extends TextReport(file) with StrictL
   }
   
   def factTransform = {
-    val industry = Try(sic.toInt) map (i => new Fact("SIC", "industry", FactString(sic), Company.lookupSIC(i)))
+    val industry = Try(sic.toInt) map (i => new Fact("SIC", "industry", FactString(sic), Seq(Company.lookupSIC(i))))
     
     Fact(
       uid,
       "company",
       FactNone,
-      cname,
+      Seq(cname),
       0,
       industry.toOption.toSeq
     )

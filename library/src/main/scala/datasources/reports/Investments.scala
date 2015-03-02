@@ -33,7 +33,7 @@ case class Investments(override val file:File) extends TextReport(file) with Str
       uid,
       "investments",
       FactCol(inv.toList),
-      cname,
+      Seq(cname),
       0
     )
   }
