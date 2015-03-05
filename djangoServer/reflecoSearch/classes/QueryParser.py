@@ -35,7 +35,7 @@ class QueryParser(object):
     #PYPARSING preterminal definitions
     LBRACE = Suppress(Literal('('))
     RBRACE = Suppress(Literal(')'))
-    WRD = Regex("[0-9a-zA-Z_\-\—\,\.\?\!\>\<\=\/\:\&\{\}\+]+")
+    WRD = Regex("[0-9a-zA-Z_\-\—\,\.\?\!\>\<\=\/\:\;\&\{\}\+]+")
     ABL = LBRACE + Suppress(Literal('ABL')) + WRD + RBRACE
     ABN = LBRACE + Suppress(Literal('ABN')) + WRD + RBRACE
     ABX = LBRACE + Suppress(Literal('ABX')) + WRD + RBRACE
