@@ -4,8 +4,8 @@ from django.shortcuts import render_to_response
 from django.http import QueryDict
 from django.core.mail import send_mail
 from reflecoSearch.classes.ReportBuilder import ReportBuilder
-from reflecoSearch.classes.QueryTagger import QueryTagger
 from reflecoSearch.classes.QueryParser import QueryParser
+from reflecoSearch.classes.QueryParsing.QueryTagger import QueryTagger
 import logging
 devLogger = logging.getLogger('development')
 
@@ -35,20 +35,22 @@ def results(request, query=""):
             devLogger.info('Received direct DSL query: ' + dslQuery)
         else:
             devLogger.info("Received query: " + query)
+            queryList = list()
             try:
-                taggedTokens = QueryTagger.tagQuery(query)
-                queryParse = QueryParser(taggedTokens)
-                dslList, filterObjects = queryParse.parseAST()
-                #TODO - right now we only consider the first dsl query parsed.
-                dslQuery = dslList[0]
+                sq = QueryTagger(query)
+                queryOptions = sq.splitOnNer()
+                for opt in queryOptions:
+                    queryParse = QueryParser([c.toTuple() for c in opt])
+                    dsl, filter = queryParse.parseAST()
+                    newQuery = (dsl, filter)
+                    queryList.append(newQuery)
             except Exception as e:
-                dslQuery = ""
-                filterObjects = []
                 devLogger.error("could not parse query: " + str(e))
         try:
-            boxes = ReportBuilder.buildReport(dslQuery, filterObjects)
+            boxes = ReportBuilder.buildReport(queryList)
         except Exception:
             boxes = []
+
     else:
         boxes = "empty"
         devLogger.warn("No query received")
