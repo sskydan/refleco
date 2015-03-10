@@ -3,6 +3,9 @@
 *.log
 .gitignore~
 
+# dev environment specific
+mgmt/elasticsearch*
+
 # sbt specific
 dist/*
 target/
