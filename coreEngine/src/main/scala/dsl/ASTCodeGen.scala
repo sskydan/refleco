@@ -76,7 +76,7 @@ object ASTCodeGen extends StrictLogging {
   def getUnstructuredFilters(paths: Seq[PathNode]) = paths.collect {
     case PathNode(_, Some(UnstructuredSelectorNode(field))) => 
       val typeKey = "children.children.ftype"
-      val typeValue = "tardfaceMcGee"
+      val typeValue = "xbrl:unstructured"
       val unstructKey = "children.children.value"
       val unstructValue = field.value
       List(typeKey -> typeValue, unstructKey -> unstructValue)

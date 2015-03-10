@@ -29,7 +29,7 @@ class KnownEntityTagger(object):
             numre = re.compile(r'\d{1,3}(,?\d{3})*(\.\d*)?')
             stopre = re.compile(r'[\<\>]')
             for i,chunk in enumerate(chunkList):
-                phrase = chunk.getPhrase()
+                phrase = chunk.phrase
                 if numre.search(phrase):
                     chunkList[i].setTag("CD")
                     chunkList[i].setRecognized(True)
