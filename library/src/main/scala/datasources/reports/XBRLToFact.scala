@@ -59,12 +59,11 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
     }
   }
 
-  private def elemToFact(key: String, elem: JsValue): Option[Fact] = 
-    parseEntryChildren(key, elem) match {
-      case children if children.length > 0 => Some(Fact(key, "xbrl", parseEntry(key, elem), resolveLabel(key), 0, children))
-      case unstructuredFact if (key.contains("TextBlock")) => None
-      case _ =>  Some(Fact(key, "xbrl", parseEntry(key, elem), resolveLabel(key), 0, Nil))
-    }   
+  private def elemToFact(key: String, elem: JsValue): Option[Fact] = {
+    val children = parseEntryChildren(key, elem)
+    if (children.length < 1 & key.contains("TextBlock")) None
+    else Some(Fact(key, "xbrl", parseEntry(key, elem), resolveLabel(key), 0, children))
+  }   
 
   /** Remember, all top-level entries in the normalized json are JsObjects
    */

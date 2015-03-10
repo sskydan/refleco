@@ -77,6 +77,7 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
             }
           }) contains true          
         })
+      
       //fact match {
           //case f if (filterPaths contains "prettyLabel")  => 
           //  filterPaths contains f.prettyLabel.toLowerCase()

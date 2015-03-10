@@ -26,7 +26,7 @@ class Chunker(object):
         :param word: a String to look for in the chunkList
         :return: a list of indices where that word appears in chunkList
         """
-        return [i for i, chunk in enumerate(chunkList) if chunk.getPhrase() == word]
+        return [i for i, chunk in enumerate(chunkList) if chunk.p == word]
 
     @classmethod
     def getContiguousIndex(cls, indexList, lastIndex, sol):
@@ -66,37 +66,28 @@ class Chunker(object):
 class Chunk(object):
 
     def __init__(self,phrase, tag):
-        self.__phrase = phrase
-        self.__tag = tag
-        self.__recognized = False
+        self.phrase = phrase
+        self.tag = tag
+        self.recognized = False
 
 
     def setRecognized(self, bool):
         if bool:
-            self.__recognized = True
+            self.recognized = True
         else:
-            self.__recognized = False
+            self.recognized = False
 
     def setTag(self, tag):
         if tag:
-            self.__tag = tag
+            self.tag = tag
 
     def setPhrase(self, phrase):
         if phrase:
-            self.__phrase = phrase
-
-    def getPhrase(self):
-        return self.__phrase
-
-    def getTag(self):
-        return self.__tag
-
-    def isRecognised(self):
-        return self.__recognized
+            self.phrase = phrase
 
     def toTuple(self):
-        tuple = (self.__phrase, self.__tag)
+        tuple = (self.phrase, self.tag)
         return tuple
 
     def pprint(self):
-        return "(" + self.__phrase + ", " + self.__tag + ")"
+        return "(" + self.phrase + ", " + self.tag + ")"

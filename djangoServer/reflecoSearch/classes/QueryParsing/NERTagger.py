@@ -14,7 +14,7 @@ class NERTagger(object):
         :param chunkList: List(Chunk) to check with NER
         :return:List(Chunk) tagged with NER chunks
         """
-        nerText = " ".join([chunk.getPhrase() for chunk in chunkList if not chunk.isRecognised()])
+        nerText = " ".join([chunk.phrase for chunk in chunkList if not chunk.recognized])
         NERPermutations = []
         try:
             nerItems = requests.get(settings.CORE_HOST + 'ner?search=' + nerText.replace('&', '%26'))
