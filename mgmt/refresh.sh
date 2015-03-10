@@ -6,7 +6,7 @@ green='\033[0;32m'
 NC='\033[0m'
 
 echo -e "\n\n ${green}REFRESHING foundation${NC}\n"
-cd foundation
+cd ../foundation
 sbt compile
 sbt eclipse
 
