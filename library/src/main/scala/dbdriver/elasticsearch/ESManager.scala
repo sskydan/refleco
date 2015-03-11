@@ -4,6 +4,8 @@ import scala.concurrent._
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.Client
+import org.elasticsearch.client.transport._
+import org.elasticsearch.common.transport._
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.node.Node
 import org.elasticsearch.node.NodeBuilder.nodeBuilder
@@ -24,6 +26,7 @@ import org.elasticsearch.index.query.FilterBuilders
 import api.EntityIndex
 import facts.FactNone
 import org.elasticsearch.index.query.QueryBuilder
+import org.elasticsearch.common.transport.TransportAddress
 
 /** Class for initializing and managing an elasticsearch node cluster
  *  FIXME make data-node creation explicit; otherwise use dataless-node
@@ -42,14 +45,11 @@ trait ESManager extends DataServerManager with StrictLogging {
   val ALL_INDICES = List(MAIN_INDEX, DICT_INDEX)
   val CHILD_TYPES = List(R10K, R10Q, ANA, INV)
 
-  // Clusters are composed of nodes; nodes can be either data-carrying or simply router-style
-  private lazy val node = nodeBuilder node ()
-
-  // client is our gateway to the node
+  // TODO: We should really have a config file with all of our production/dev settings
+  // We're only pointing to localhost, this is retarded
   private lazy val client = {
-    val c = node client ()
-    c.admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet()
-    c
+    val c = new TransportClient()
+    c.addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
   }
 
   initializeMappings()
@@ -318,7 +318,7 @@ trait ESManager extends DataServerManager with StrictLogging {
     COMPANY :: CHILD_TYPES map putMapping
   }
 
-  override def shutdownDS() = if (node != null) node close ()
+  override def shutdownDS() = ()
 }
 
 

@@ -21,7 +21,7 @@ fi
 
 # We need edit our es config file
 # We append because we don't want to remove any potentially important configs
-echo cluster.name: $COMPANY-dev >> elasticsearch/config/elasticsearch.yml
+echo cluster.name: orbit >> elasticsearch/config/elasticsearch.yml
 echo index.number_of_shards: 5 >> elasticsearch/config/elasticsearch.yml
 
 echo -e "\n\n ${Green}DISPATCHING elasticsearch${Color_Off}\n"

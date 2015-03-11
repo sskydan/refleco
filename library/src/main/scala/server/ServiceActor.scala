@@ -163,7 +163,7 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
       getFromResourceDirectory("elasticsearch-head-master/dist")
     } ~
     path("eshead") {
-      getFromResource("elasticsearch-head-master/index.html")
+      redirect("http://localhost:9200/_plugin/kopf", StatusCodes.MovedPermanently)
     } ~
     path("") {
       get {
