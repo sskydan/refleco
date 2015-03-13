@@ -131,9 +131,9 @@ object Sticker {
   
   implicit def s2fact(s: Sticker): Fact = {
     val flatRels = s.rels.toList flatMap { case (k,v) => v map (k -> _) }
-    val children = flatRels map { case (k,v) => Fact(v.alias.id, k, FactNone, v.alias.id)}
+    val children = flatRels map { case (k,v) => Fact(v.alias.id, k, FactNone, v.alias.allNames)}
     
-    Fact(s.alias.id, "refleco:entity", FactNone, s.alias.id, 0, children)
+    Fact(s.alias.id, "refleco:entity", FactNone, s.alias.allNames, 0, children)
   }
 }
 

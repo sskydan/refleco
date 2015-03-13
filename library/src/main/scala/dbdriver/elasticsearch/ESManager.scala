@@ -296,6 +296,14 @@ trait ESManager extends DataServerManager with StrictLogging {
         },
         "children.children": {
           "type": "nested"
+        },
+        "children.children.value": {
+          "type": "string",
+          "fields": {
+            "english": {
+              "type": "string",
+              "analyzer": "english"
+          }
         }
       },
       "_parent": {

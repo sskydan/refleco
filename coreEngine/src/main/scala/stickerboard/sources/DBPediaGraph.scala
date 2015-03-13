@@ -191,7 +191,7 @@ object DBPediaGraph extends StrictLogging with CEConfig {
             val companyID = id takeWhile (_ != ':')
             val cik = if (companyID == "") FactNone else FactString(companyID)
             
-            Fact(name, "company", cik, name, 0, valueChildren)
+            Fact(name, "company", cik, Seq(name), 0, valueChildren)
         }
         
         // save a local copy of the changes to be made
@@ -214,12 +214,12 @@ object DBPediaGraph extends StrictLogging with CEConfig {
   def valuesToFacts(rs: RelationMap): Seq[Fact] = 
     rs.toSeq.collect { 
       case (relation, values) if Try(BigDecimal(values.head.alias.id)).isSuccess => 
-        val factVals = values.headOption map (v => FactMoney(BigDecimal(v.alias.id), ""))
-        Fact(relation, "dbp:value", factVals.getOrElse(FactNone), relation)
+        val factVals = values.headOption map (v => FactMoney(BigDecimal(v.alias.id), "", 0))
+        Fact(relation, "dbp:value", factVals.getOrElse(FactNone),Seq(relation))
       
       case (relation, values) =>
         val factVals = values map (v => Group(FactString(v.alias.id)))
-        Fact(relation, "dbp:value", FactCol(factVals.toList), relation)
+        Fact(relation, "dbp:value", FactCol(factVals.toList), Seq(relation))
     }
     
   /** parse the dbp ontology file, to get a mapping of relation pretty labels
