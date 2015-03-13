@@ -58,25 +58,24 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
     case (Success(doc: JsObject), _) if (doc \\~ "children") != Set() => 
       val fact = doc.convertTo[Fact]
         
-      val filterPaths = childFilter map (filter => filter.splitAt(filter.indexOf("="))) // replaceFirst ("children.", ""))
+      val filterPaths = childFilter map (filter => filter splitAt (filter indexOf "=")) // replaceFirst ("children.", ""))
       
-      if (filterPaths.isEmpty)
-        fact
+      if (filterPaths.isEmpty) fact
       else
-        fact innerFilter (fact => {
-          filterPaths.map(filter => {
-            filter match {
-              case (path,value) if (path.toLowerCase contains "children.prettylabel")  => 
-                fact.prettyLabel.toLowerCase == value.tail.toLowerCase
-              case (path,value) if (path.toLowerCase contains "children.children.value") =>
-                fact.children.map{fact => 
-                    val factVal = fact.value.toString.toLowerCase
-                    factVal contains value.tail.toLowerCase
-                  } contains true
-              case _ => false
-            }
-          }) contains true          
-        })
+        fact innerFilter (f =>
+          filterPaths exists { case (path, value) =>
+            
+            if (path startsWith "children.prettylabel") 
+              f.prettyLabel map (_.toLowerCase) contains value.toLowerCase
+              
+            else if (path startsWith "children.children.value")
+              f.children exists (
+                _.value.toString.toLowerCase contains value.toLowerCase
+              )
+            
+            else false
+          }
+        )
     
     // as above, but case when children was ignored. dummy fields need to be added for the Fact
     //   conversion to work properly

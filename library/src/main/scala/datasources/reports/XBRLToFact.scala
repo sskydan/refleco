@@ -27,7 +27,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    */
   def factTransform: Fact = {
     logger info s"Turning xbrl into fact $uid"
-    val defaultFact = Fact(uid, "error", FactNone, "error")
+    val defaultFact = Fact(uid, "error", FactNone, Seq("error"))
 
     val elems = jsonTransform.\\[JsObject](TOP_KEY).fields
     val (metaElems, dataElems) = elems partition {

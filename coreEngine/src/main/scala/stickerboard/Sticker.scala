@@ -127,7 +127,7 @@ object Sticker {
   
   implicit def ktuple2clue(tup: Tuple2[String,String]): Clue = Clue(tup._1, Some(tup._2))
   implicit def dtuple2clue(tup: Tuple2[String,DateTime]): Clue = Clue(tup._1, None, Some(tup._2))
-  implicit def m2clue[T[_], S <% Clue](m: T[S]): T[Clue] = m
+  implicit def m2clue[T[_], S](m: T[S])(implicit clue: S => Clue): T[Clue] = m
   
   implicit def s2fact(s: Sticker): Fact = {
     val flatRels = s.rels.toList flatMap { case (k,v) => v map (k -> _) }
