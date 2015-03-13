@@ -24,6 +24,8 @@ import org.elasticsearch.index.query.FilterBuilders
 import api.EntityIndex
 import facts.FactNone
 import org.elasticsearch.index.query.QueryBuilder
+import org.elasticsearch.index.query.QueryBuilder._
+import org.elasticsearch.index.query.BoolQueryBuilder
 
 /** Class for initializing and managing an elasticsearch node cluster
  *  FIXME make data-node creation explicit; otherwise use dataless-node
@@ -186,6 +188,16 @@ trait ESManager extends DataServerManager with StrictLogging {
   }
 
   
+  case class PostFilters(){
+    var initialized = false 
+    val postFilter = QueryBuilders.boolQuery()
+    
+    def addQueryBuilder(fn: BoolQueryBuilder => BoolQueryBuilder) = {
+      fn(this.postFilter)
+      this.initialized = true
+    }
+  }
+  
   /** TODO error handling
    *  TODO search type: req.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
    *  TODO escape lucene special chars
@@ -193,10 +205,12 @@ trait ESManager extends DataServerManager with StrictLogging {
    *  FIXME use scrolling instead of paging
    *  FIXME multiple queries should be allowed with filters
    *  FIXME .asJson VS .toJson
-   */
+   */ 
   override def lookupDS(params: LibSearchRequest): Future[ESReply] = Future {
     logger info s"ES lookup: $params"
-
+    
+    val pf = PostFilters()
+    
     val req =
       client.prepareSearch(ALL_INDICES:_*)
         .setTypes(params.doctype:_*)
@@ -207,15 +221,16 @@ trait ESManager extends DataServerManager with StrictLogging {
     // query string handling
     //
     val (nested, normal) = params.request partition { case (k, v) => k startsWith "children." }
-
+    
     // handle nested queries
     if (!nested.isEmpty) {
       val nestedQ = nested map { case (k, v) => cleanQuery(k, v) }
 
-      if (normal.isEmpty && nestedQ.size < 2)
+      if (normal.isEmpty && nestedQ.size < 2){
         req setQuery QueryBuilders.nestedQuery("children", nestedQ.head)
+      }
       else
-        nestedQ map (q => req setPostFilter FilterBuilders.nestedFilter("children", q))
+        nestedQ foreach (q => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb must q ))
     }
 
     // handle regular queries
@@ -225,19 +240,23 @@ trait ESManager extends DataServerManager with StrictLogging {
     //
     // select fields to be returned
     //
+
     val (postReplyFilters, esFilters) = params.fields partition (_ startsWith "children.")
     val (ignoredFields, chosenFields) = esFilters partition (_ startsWith "-")
-    
+        
     val docFilters = postReplyFilters map { f =>
-      val k = "children.prettyLabel"
-      val v = f replaceAll ("children.", "")
-      FilterBuilders nestedFilter ("children", QueryBuilders.matchPhraseQuery(k, v))
+      val filterList = f split "="
+      val k = filterList.head
+      val v = filterList.tail.head
+      QueryBuilders.matchPhraseQuery(k, v)
     }
-    if (docFilters.length > 0) req setPostFilter {
-    	val boolF = FilterBuilders.boolFilter()
-			docFilters foreach (boolF should _)
-			boolF
-    }
+    
+    if (normal.isEmpty & nested.isEmpty) 
+      req setQuery (QueryBuilders.nestedQuery("children", docFilters.head))
+    
+    docFilters foreach (df => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb should df))
+    
+    if (pf.initialized)  req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
     
     if (chosenFields.length > 0)
       req addFields (chosenFields: _*)

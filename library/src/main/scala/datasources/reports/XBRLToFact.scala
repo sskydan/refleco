@@ -27,7 +27,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    */
   def factTransform: Fact = {
     logger info s"Turning xbrl into fact $uid"
-    val defaultFact = Fact(uid, "error", FactNone, Seq("error"))
+    val defaultFact = Fact(uid, "error", FactNone, "error")
 
     val elems = jsonTransform.\\[JsObject](TOP_KEY).fields
     val (metaElems, dataElems) = elems partition {
@@ -50,7 +50,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
           FactString(date), //val
           Seq(cname, uid), //prettyLabel   
           0,
-          data,
+          data.flatten[Fact],
           None //Some(JsObject(metaElems)))
           )
       case Failure(ex) =>
@@ -59,9 +59,11 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
     }
   }
 
-  private def elemToFact(key: String, elem: JsValue): Fact =
-    Fact(key, "xbrl", parseEntry(key, elem), Seq(resolveLabel(key)), 0, parseEntryChildren(key, elem))
-    
+  private def elemToFact(key: String, elem: JsValue): Option[Fact] = {
+    val children = parseEntryChildren(key, elem)
+    if (children.length < 1 && key.contains("TextBlock")) None
+    else Some(Fact(key, "xbrl", parseEntry(key, elem), Seq(resolveLabel(key)), 0, children))
+  }
 
   /** Remember, all top-level entries in the normalized json are JsObjects
    */
@@ -124,7 +126,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
             //TODO only get text blocks ending in a period (removes headers and blocks
             // ending in colons which usually refer to a table - ignoring tables at the moment)
             .filter(_.matches(".*\\."))
-            .map(s => Fact(key, "xbrl", FactString(s)))
+            .map(s => Fact(key, "xbrl:unstructured", FactString(s)))
         }
         case other => Nil
       }

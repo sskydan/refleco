@@ -32,7 +32,10 @@ object ASTCodeGen extends StrictLogging {
     
     root.qtype.value match {
       case "company" =>
-        val data = getReportData(root.paths, size) :: getRelationshipData(root.paths) :: Nil
+        val data = getUnstructuredData(root.paths, size) :: 
+                   getReportData(root.paths, size) :: 
+                   getRelationshipData(root.paths) :: 
+                   Nil
         Future.reduce(data)(_ ++ _) 
         
       case "entity" => 
@@ -42,8 +45,45 @@ object ASTCodeGen extends StrictLogging {
       case _ => throw new Exception(s"Unknown arguments in DSL query $root")
     }
   }
+    //--------------------------------------------------------------------------------------------
+  
+  def getUnstructuredData(paths: Seq[PathNode], lim: Option[Int] = None)(implicit system: ActorSystem) = 
+    if (isUnstructuredRequested(paths)) {
+      implicit def ec = system.dispatcher
+      def reception = system.actorOf(Reception.props())
+      
+      val fieldParam = getUnstructuredFieldFilters(paths)
+      
+      val (keyParamUS, searchParamUS) = (getNameFilter(paths) ++ getUnstructuredFilters(paths)).unzip
+      val unstructuredReq = CoreParams(keyParamUS, searchParamUS, None, fieldParam, Some("10-K"), lim, None, None)
+      logger info s"DSL search generated (Unstructured): ${unstructuredReq.prettyPrint}"
+      val unstructuredRes = (reception ? SearchRequest(unstructuredReq)).mapTo[Seq[Fact]]
+      
+      Future.reduce(unstructuredRes :: Nil)(_ ++ _)
+    } else
+      Future.successful(Nil)
+  
+  def isUnstructuredRequested(paths: Seq[PathNode]) = paths exists {
+    case PathNode(_, Some(UnstructuredSelectorNode(_))) => true
+    case _ => false
+  }
+   
+  def getUnstructuredFieldFilters(paths: Seq[PathNode]) = paths collect {
+    case PathNode(_, Some(UnstructuredSelectorNode(field))) => "children.children.value="+field.value
+  }
+  
+  //TODO Fix this shit
+  def getUnstructuredFilters(paths: Seq[PathNode]) = paths.collect {
+    case PathNode(_, Some(UnstructuredSelectorNode(field))) => 
+      val typeKey = "children.children.ftype"
+      val typeValue = "xbrl:unstructured"
+      val unstructKey = "children.children.value"
+      val unstructValue = field.value
+      List(typeKey -> typeValue, unstructKey -> unstructValue)
+  }.flatten.toMap
   
   //--------------------------------------------------------------------------------------------
+ 
   val DEFAULT_PREFIX = "valList.inner."
   val REPORT_PREFIX = DEFAULT_PREFIX + "valDouble."
   val COMPANY_STR_PREFIX = DEFAULT_PREFIX
@@ -55,7 +95,7 @@ object ASTCodeGen extends StrictLogging {
       def reception = system.actorOf(Reception.props())
       
       val fieldParam = getFieldFilters(paths)
-      
+            
       val (keyParamR, searchParamR) = (getNameFilter(paths) ++ getSearchFilters(paths)).unzip
       val reportReq = CoreParams(keyParamR, searchParamR, None, fieldParam, Some("10-K"), lim, None, None)
       logger info s"DSL search generated (reports): ${reportReq.prettyPrint}"
@@ -83,7 +123,7 @@ object ASTCodeGen extends StrictLogging {
   }
   
   def getFieldFilters(paths: Seq[PathNode]) = paths collect {
-    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => "children."+field.value
+    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => "children.prettyLabel="+field.value
   }
   
   def getSearchFilters(paths: Seq[PathNode]) = paths.collect {
@@ -125,8 +165,5 @@ object ASTCodeGen extends StrictLogging {
   
   def getRelationshipFilters(paths: Seq[PathNode]) = paths collect {
     case PathNode(_, Some(RelationSelectorNode(field))) => Clue(field.value)
-  }
-  
-  //--------------------------------------------------------------------------------------------
-  
+  }   
 }
