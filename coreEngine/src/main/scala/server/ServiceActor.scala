@@ -96,10 +96,16 @@ trait EngineService extends Actor with HttpService with ActorLogging {
     path("engine") {
       get {
         parameters(
-            'key.?, 
-            'search.?,
+            'rootFunc.?,
+            'rootKey.?,
+            'rootVal.?,
+            'qFilterFuncs.?,
+            'qFilterKeys.?,
+            'qFilterVals.?,
+            'pFilterFuncs.?,
+            'pFilterKeys.?,
+            'pFilterVals.?,
             'sort.?, 
-            'field.?, 
             'type.?, 
             'lim.as[Int].?,
             'page.as[Int].?,

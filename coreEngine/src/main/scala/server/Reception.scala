@@ -73,7 +73,7 @@ class Reception extends Actor with CEConfig with ActorLogging {
           
           // if ranking is enabled
     	    if (params.ranking != None) {
-    	      log.info("Starting ranking of {}", params.request)
+    	      log.info("Starting ranking of {}", params.queryRoot, params.queryFilters, params.postFilters)
     	      
     	    	val ranker = system.actorOf(Props[Ranker](new Ranker()))
     	      ranker ! Rank(facts)
@@ -95,7 +95,7 @@ class Reception extends Actor with CEConfig with ActorLogging {
     	          head
     	        
     	        case Seq() =>
-        	      log.info("Calculating analytics of {}", params.request)
+        	      log.info("Calculating analytics of {}", params.queryRoot, params.queryFilters, params.postFilters)
         	      
         	      Try(Analytic.generateRatios(params.analytics, facts.head)) match {
         	        case Success(analytics) => 
@@ -113,7 +113,7 @@ class Reception extends Actor with CEConfig with ActorLogging {
     	      } onSuccess { case analytics:Fact => server ! (facts :+ analytics) }
     	      
     	    } else {
-    	      log.info("Getting raw data for {}", params.request)
+    	      log.info(s"Getting raw data for root: ${params.queryRoot} - query filters: ${params.queryFilters} - post filters: ${params.postFilters}")
     	      server ! facts
     	    }
       }

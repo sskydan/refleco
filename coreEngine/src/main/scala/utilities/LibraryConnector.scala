@@ -50,15 +50,17 @@ object LibraryConnector extends CEConfig with StrictLogging {
   def getQueryParams(query: String, doctype: String): CoreParams = doctype match {
     case "relation" | "entity" | "attribute" =>
       CoreParams(
-        keyParam = Some("sform"),
-        searchParam = Some(query), 
+        queryRootFuncs = Some("="),
+        queryRootKeys = Some("ftype"),
+        queryRootVals = Some("sform"),
+        //querFiltersearchParam = Some(query), 
         doctypeParam = Some(doctype),
         limParam = Some(10)
       )
     case _ =>
       CoreParams(
-        searchParam = Some(query), 
-        fieldParam = Some("prettyLabel;interest;id"),
+        //searchParam = Some(query), 
+        //postFilter = Some("prettyLabel;interest;id"),
         limParam = Some(10)
       )
   }

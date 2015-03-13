@@ -66,7 +66,7 @@ trait ESManager extends DataServerManager with StrictLogging {
 
     val futures = facts map { fact => 
       val checkExisting = lookupDS(LibSearchRequest(
-        request = Map("id" -> fact.id), 
+        queryRoot = Seq(("=", "id", fact.id)), 
         doctype = Seq(fact.ftype))
       )
       val newDoc = checkExisting map (
@@ -217,11 +217,24 @@ trait ESManager extends DataServerManager with StrictLogging {
         .setSize(params.lim getOrElse 2)
         .setFrom(params.page getOrElse 0)
 
+        
+    val queryRoot = params.queryRoot
+    val queryFilters = params.queryFilters
+    val postFilters = params.postFilters
+    
+    
+    println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    println(queryRoot)
+    println(queryFilters)
+    println(postFilters)
+    println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     //
     // query string handling
     //
+    /*
     val (nested, normal) = params.request partition { case (k, v) => k startsWith "children." }
     
+
     // handle nested queries
     if (!nested.isEmpty) {
       val nestedQ = nested map { case (k, v) => cleanQuery(k, v) }
@@ -271,6 +284,7 @@ trait ESManager extends DataServerManager with StrictLogging {
     //
     // handle sorts
     //
+    */
     params.sort foreach (req addSort (_, SortOrder.DESC))
 
     //
@@ -279,8 +293,8 @@ trait ESManager extends DataServerManager with StrictLogging {
     logger info req.toString
     val rep = req.execute().actionGet()
 
-    logger info s"ES lookup ${params.request} with fields ${params.fields}, results ${rep.status()}"
-    ESReply(JsonParser(rep.toString()), postReplyFilters.toList)
+    //logger info s"ES lookup ${params.request} with fields ${params.fields}, results ${rep.status()}"
+    ESReply(JsonParser(rep.toString()))//, postReplyFilters.toList)
   }
 
   /** Setup some initial mapping configurationa
