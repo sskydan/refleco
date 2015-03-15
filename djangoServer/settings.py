@@ -118,10 +118,10 @@ LOGGING = {
         },
         'query_logfile': {
             'level': 'DEBUG',
-            'filters': ['require_debug_false'],
+            'filters': [],
             'class': 'logging.FileHandler',
             'filename':  LOG_DIR + 'query.log',
-            'formatter': 'simple'
+            'formatter': 'verbose'
         }
     },
     'loggers': {

@@ -47,6 +47,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
   
   /** FIXME centralize
    */
+  //TODO Not sure what to do here? What does this function do?
   def getQueryParams(query: String, doctype: String): CoreParams = doctype match {
     case "relation" | "entity" | "attribute" =>
       CoreParams(

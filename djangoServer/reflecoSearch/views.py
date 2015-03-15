@@ -8,6 +8,7 @@ from reflecoSearch.classes.QueryParser import QueryParser
 from reflecoSearch.classes.QueryParsing.QueryTagger import QueryTagger
 import logging
 devLogger = logging.getLogger('development')
+queryLogger = logging.getLogger("query")
 
 def landingPage(request):
     args = {}
@@ -30,6 +31,10 @@ def search(request):
 
 def results(request, query=""):
     if query:
+
+        #logging queries
+        queryLogger.info(QueryTagger.getClientIp(request) + " - " + query)
+
         if "dsl::" == query[:5]:
             dslQuery = query[5:]
             devLogger.info('Received direct DSL query: ' + dslQuery)
@@ -37,8 +42,8 @@ def results(request, query=""):
             devLogger.info("Received query: " + query)
             queryList = list()
             try:
-                sq = QueryTagger(query)
-                queryOptions = sq.splitOnNer()
+                qt = QueryTagger(query)
+                queryOptions = qt.splitOnNer()
                 for opt in queryOptions:
                     queryParse = QueryParser([c.toTuple() for c in opt])
                     dsl, filter = queryParse.parseAST()

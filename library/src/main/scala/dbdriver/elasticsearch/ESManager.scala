@@ -29,6 +29,10 @@ import org.elasticsearch.index.query.QueryBuilder
 import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.index.query.QueryBuilder._
 import org.elasticsearch.index.query.BoolQueryBuilder
+import org.elasticsearch.index.query.MatchAllQueryBuilder
+import org.apache.lucene.queryparser.xml.builders.BooleanFilterBuilder
+import org.elasticsearch.index.query.BoolFilterBuilder
+import org.elasticsearch.index.query.QueryFilterBuilder
 
 /** Class for initializing and managing an elasticsearch node cluster
  *  FIXME make data-node creation explicit; otherwise use dataless-node
@@ -188,6 +192,30 @@ trait ESManager extends DataServerManager with StrictLogging {
   }
 
   
+  case class Query(queryRoot: Seq[(String, String, String)]){
+    var qfInitialized = false
+    //TODO only looking at first query root for now. No cases where there are more
+    val qRoot = queryRoot.head match {
+      case ("==", k, v) => QueryBuilders.matchPhraseQuery(k, v)
+      case _ => QueryBuilders.matchAllQuery() 
+    }
+    val qFilters = FilterBuilders.boolFilter()
+
+    
+    def addQueryFilter(fn: BoolFilterBuilder => BoolFilterBuilder) = {
+      this.qfInitialized = true
+      fn(this.qFilters)  
+    }
+    
+    def buildQuery(): QueryBuilder = {
+      if (this.qfInitialized)
+        QueryBuilders.filteredQuery(qRoot, FilterBuilders.nestedFilter("children", qFilters))
+      else
+        qRoot
+    }
+  
+  }
+  
   case class PostFilters(){
     var initialized = false 
     val postFilter = QueryBuilders.boolQuery()
@@ -198,6 +226,7 @@ trait ESManager extends DataServerManager with StrictLogging {
     }
   }
   
+  
   /** TODO error handling
    *  TODO search type: req.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
    *  TODO escape lucene special chars
@@ -206,11 +235,16 @@ trait ESManager extends DataServerManager with StrictLogging {
    *  FIXME multiple queries should be allowed with filters
    *  FIXME .asJson VS .toJson
    */ 
+  
+  //TODO sort out all these prefix
+  val DEFAULT_PREFIX = "children.value.valList.inner"
+  val REPORT_PREFIX = DEFAULT_PREFIX + ".valDouble"
+  val COMPANY_STR_PREFIX = DEFAULT_PREFIX
+  val COMPANY_NUM_PREFIX = "valDouble."
+  
   override def lookupDS(params: LibSearchRequest): Future[ESReply] = Future {
     logger info s"ES lookup: $params"
-    
-    val pf = PostFilters()
-    
+        
     val req =
       client.prepareSearch(ALL_INDICES:_*)
         .setTypes(params.doctype:_*)
@@ -222,16 +256,34 @@ trait ESManager extends DataServerManager with StrictLogging {
     val queryFilters = params.queryFilters
     val postFilters = params.postFilters
     
+    val pf = PostFilters()
+    val q = Query(queryRoot)
     
-    println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    println(queryRoot)
-    println(queryFilters)
-    println(postFilters)
-    println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    queryFilters foreach {
+      case (">", k, v) => {
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.termFilter("children.prettyLabel", k))
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.rangeFilter(REPORT_PREFIX).from(v))
+      }
+      case ("<", k, v) => {
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.termFilter("children.prettyLabel", k))
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.rangeFilter(REPORT_PREFIX).to(v))
+      }
+    }
+    
+    postFilters foreach {
+        case ("==", k, v) => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb must QueryBuilders.matchPhraseQuery(k, v))
+        case _ => println("faled pf")
+    }
+    
+    req setQuery q.buildQuery()
+    if (pf.initialized) req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
+    req setFetchSource ("*", "details")
+     /* }
+    })
     //
     // query string handling
     //
-    /*
+   
     val (nested, normal) = params.request partition { case (k, v) => k startsWith "children." }
     
 
@@ -270,7 +322,7 @@ trait ESManager extends DataServerManager with StrictLogging {
     docFilters foreach (df => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb should df))
     
     if (pf.initialized)  req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
-    
+ 
     if (chosenFields.length > 0)
       req addFields (chosenFields: _*)
     else if (ignoredFields.length > 0)
@@ -280,11 +332,11 @@ trait ESManager extends DataServerManager with StrictLogging {
       )
     else
       req setFetchSource ("*", "details")
-
+   */
     //
     // handle sorts
     //
-    */
+ 
     params.sort foreach (req addSort (_, SortOrder.DESC))
 
     //

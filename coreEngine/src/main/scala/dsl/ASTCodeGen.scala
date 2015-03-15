@@ -42,16 +42,7 @@ object ASTCodeGen extends StrictLogging {
       case _ => throw new Exception(s"Unknown arguments in DSL query $root")
     }
   }
-  
-    /*val F = "children.children.ftype"
-    val typeValue = "xbrl:unstructured"
-    val unstructKey = "children.children.value"
-    val unstructValue = field.value
-    val DEFAULT_PREFIX = "valList.inner."
-    val REPORT_PREFIX = DEFAULT_PREFIX + "valDouble."
-    val COMPANY_STR_PREFIX = DEFAULT_PREFIX
-    val COMPANY_NUM_PREFIX = "valDouble."
-    */  
+     
     def getQueryData(paths: Seq[PathNode], lim: Option[Int] = None)(implicit system: ActorSystem) = {
     if (isQueryRequested(paths)) {
       implicit def ec = system.dispatcher
@@ -101,14 +92,14 @@ object ASTCodeGen extends StrictLogging {
   
   def getQueryFilters(paths: Seq[PathNode]): Seq[(String, String, String)] = paths.collect {
     case PathNode(_, Some(AttributeSelectorNode(field, fns))) if !fns.isEmpty =>
-      val key = "children."+field.value+".value"
+      val key = field.value.toString
       val values = fns.map(fn => (fn.fn.name, key, fn.args.value.toString))
       values
   }.flatten
   
   def getPostFilters(paths: Seq[PathNode]): Seq[(String, String, String)] = paths collect {
-    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => ("==", "children.prettyLabel", field.value)
-    case PathNode(_, Some(UnstructuredSelectorNode(field))) => ("==", "children.children.value", field.value)
+    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => ("==", "prettyLabel", field.value)
+    case PathNode(_, Some(UnstructuredSelectorNode(field))) => ("==", "children.value", field.value)
   }
   /*
     //--------------------------------------------------------------------------------------------

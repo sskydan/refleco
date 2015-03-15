@@ -10,7 +10,7 @@ class QueryTagger(object):
     """Tags a query
     """
     def __init__(self, text):
-        self.rawText = text
+        self.rawText = str(text)
         self.chunks = []
 
     def getPOSChunks(self):
@@ -41,4 +41,11 @@ class QueryTagger(object):
             self.chunks = self.getKnownEntityChunks()
         return NERTagger.getNERChunks(self.chunks)
 
-
+    @classmethod
+    def getClientIp(cls, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
