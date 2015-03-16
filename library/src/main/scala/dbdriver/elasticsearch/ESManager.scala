@@ -195,12 +195,18 @@ trait ESManager extends DataServerManager with StrictLogging {
   case class Query(queryRoot: Seq[(String, String, String)]){
     var qfInitialized = false
     //TODO only looking at first query root for now. No cases where there are more
-    val qRoot = queryRoot.head match {
-      case ("==", k, v) => QueryBuilders.matchPhraseQuery(k, v)
-      case _ => QueryBuilders.matchAllQuery() 
+    
+    val qRoot = {
+      if (queryRoot.length > 0)
+        queryRoot.head match {
+          case ("==", k, v) => QueryBuilders.matchPhraseQuery(k, v) 
+        }
+      else {
+        QueryBuilders.matchAllQuery()
+      }
     }
+    
     val qFilters = FilterBuilders.boolFilter()
-
     
     def addQueryFilter(fn: BoolFilterBuilder => BoolFilterBuilder) = {
       this.qfInitialized = true
@@ -259,14 +265,20 @@ trait ESManager extends DataServerManager with StrictLogging {
     val pf = PostFilters()
     val q = Query(queryRoot)
     
+    //TODO We only allow for AND filters. And Filters need to be implemented
+    // i.e Add should options for q.addQueryFilter
     queryFilters foreach {
       case (">", k, v) => {
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.termFilter("children.prettyLabel", k))
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.rangeFilter(REPORT_PREFIX).from(v))
+        val boolFilter = FilterBuilders.boolFilter()
+        boolFilter must FilterBuilders.termFilter("children.prettyLabel", k)
+        boolFilter must FilterBuilders.rangeFilter(REPORT_PREFIX).from(v)
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must boolFilter)        
       }
       case ("<", k, v) => {
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.termFilter("children.prettyLabel", k))
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.rangeFilter(REPORT_PREFIX).to(v))
+        val boolFilter = FilterBuilders.boolFilter()
+        boolFilter must FilterBuilders.termFilter("children.prettyLabel", k)
+        boolFilter must FilterBuilders.rangeFilter(REPORT_PREFIX).to(v)
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must boolFilter)
       }
     }
     
