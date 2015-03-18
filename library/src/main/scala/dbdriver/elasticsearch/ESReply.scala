@@ -22,7 +22,7 @@ import spray.json.JsNull
  * TODO filters
  * FIXME class is a mess
  */
-case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataServerReply {
+case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil) extends DataServerReply {
   // this is the json array that represents the actual results returned
   private val results = raw.\\[JsArray]("hits").elements
   
@@ -44,13 +44,13 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
       entry.\\[JsString]("uri").value,
       "refleco:result",
       FactNone,
-      entry.\\[JsString]("sform").value,
+      entry.\\[JsString]("sform").toString,
       entry.\\[JsNumber]("_score").value.toDouble
     )
   
   /** only one of "fields" or "_source" may be in the response
    *  FIXME interest/rank extraction in es-provided responses
-   *  TODO smarter childFiltering in the whole-fact cases
+   *  FIXME smarter childFiltering
    */
   private def parseFinbaseResult(entry: JsValue) = (Try(entry \\ "_source"), Try(entry \\ "fields")) match {
     
@@ -58,32 +58,24 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
     case (Success(doc: JsObject), _) if (doc \\~ "children") != Set() => 
       val fact = doc.convertTo[Fact]
         
-      val filterPaths = childFilter map (filter => filter.splitAt(filter.indexOf("="))) // replaceFirst ("children.", ""))
+      val filterPaths = childFilter //map (filter => filter splitAt (filter indexOf "=")) // replaceFirst ("children.", ""))
       
-      if (filterPaths.isEmpty)
-        fact
+      if (filterPaths.isEmpty) fact
       else
-        fact innerFilter (fact => {
-          filterPaths.map(filter => {
-            filter match {
-              case (path,value) if (path.toLowerCase contains "children.prettylabel")  => 
-                fact.prettyLabel.toLowerCase == value.tail.toLowerCase
-              case (path,value) if (path.toLowerCase contains "children.children.value") =>
-                fact.children.map{fact => 
-                    val factVal = fact.value.toString.toLowerCase
-                    factVal contains value.tail.toLowerCase
-                  } contains true
-              case _ => false
-            }
-          }) contains true          
-        })
-      
-      //fact match {
-          //case f if (filterPaths contains "prettyLabel")  => 
-          //  filterPaths contains f.prettyLabel.toLowerCase()
-          //case f if (filterPaths contains("value")) =>
-          //  f.children.map(fact => fact.value.toString.contains("hello")).head
-        //})
+        fact innerFilter (f =>
+          filterPaths exists { case (func, key, value) =>
+            
+            if (key.toLowerCase startsWith "children.prettylabel") 
+              f.prettyLabel.toLowerCase contains value.toLowerCase
+              
+            else if (key.toLowerCase startsWith "children.value")
+              f.children exists (
+                _.value.toString.toLowerCase contains value.toLowerCase
+              )
+            
+            else false
+          }
+        )
     
     // as above, but case when children was ignored. dummy fields need to be added for the Fact
     //   conversion to work properly
@@ -101,12 +93,10 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
       val reflechoScore =
         entry.\\~[JsNumber]("interest").headOption.map(_.value.toDouble)
       
-      val prettyLabel = (fields get "prettyLabel") orElse (fields get "uri") collect {
-        case JsArray(JsString(h)+:t) => h
-      } getOrElse ""
+      val prettyLabel = ((fields get "prettyLabel") orElse (fields get "uri")).toString
       
       val cleanFields = JsObject(fields - ("prettyLabel", "interest"))
-      val filteredFields = cleanFields filterAll childFilter
+      val filteredFields = cleanFields filterAll childFilter.map(t => (t._2, t._1, t._3).toString)
         
       Fact(
         id,
@@ -123,4 +113,3 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
   }
   
 }
-

@@ -95,10 +95,11 @@ object ASTCodeGen extends StrictLogging {
       val key = field.value.toString
       val values = fns.map(fn => (fn.fn.name, key, fn.args.value.toString))
       values
+    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => Seq(("==", "children.prettyLabel", field.value))
   }.flatten
   
   def getPostFilters(paths: Seq[PathNode]): Seq[(String, String, String)] = paths collect {
-    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => ("==", "prettyLabel", field.value)
+    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => ("==", "children.prettyLabel", field.value)
     case PathNode(_, Some(UnstructuredSelectorNode(field))) => ("==", "children.value", field.value)
   }
   /*

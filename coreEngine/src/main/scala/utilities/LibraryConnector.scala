@@ -47,24 +47,36 @@ object LibraryConnector extends CEConfig with StrictLogging {
   
   /** FIXME centralize
    */
-  //TODO Not sure what to do here? What does this function do?
-  def getQueryParams(query: String, doctype: String): CoreParams = doctype match {
+  //TODO Not sure what to do here. not currently working for NER
+  def getQueryParams(query: String, doctype: String): CoreParams = {
+    doctype match {
     case "relation" | "entity" | "attribute" =>
       CoreParams(
-        queryRootFuncs = Some("="),
+        queryRootFuncs = Some("=="),
         queryRootKeys = Some("ftype"),
         queryRootVals = Some("sform"),
-        //querFiltersearchParam = Some(query), 
+        queryFilterFuncs = Some("=="),
+        queryFilterKeys = Some("prettyLabel"),
+        queryFilterVals = Some(query),
         doctypeParam = Some(doctype),
         limParam = Some(10)
       )
-    case _ =>
+    case "10-K" =>
       CoreParams(
+        queryRootFuncs = Some("=="),
+        queryRootKeys = Some("ftype"),
+        queryRootVals = Some("10-K"),
+        queryFilterFuncs = Some("=="),
+        queryFilterKeys = Some("prettyLabel"),
+        queryFilterVals = Some(query),
+        postFilterFuncs =  Some("=="),
+        postFilterKeys = Some("prettyLabel"),
+        postFilterVals = Some(query),
         //searchParam = Some(query), 
         //postFilter = Some("prettyLabel;interest;id"),
         limParam = Some(10)
       )
-  }
+  }}
   
   private def getNameLookupResult(doctype: String)(r: Fact): NameLookupResult = doctype match {
     case "relation" | "entity" | "attribute" =>

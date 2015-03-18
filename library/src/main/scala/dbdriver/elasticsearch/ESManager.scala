@@ -215,7 +215,7 @@ trait ESManager extends DataServerManager with StrictLogging {
     
     def buildQuery(): QueryBuilder = {
       if (this.qfInitialized)
-        QueryBuilders.filteredQuery(qRoot, FilterBuilders.nestedFilter("children", qFilters))
+        QueryBuilders.filteredQuery(qRoot, this.qFilters)
       else
         qRoot
     }
@@ -243,6 +243,8 @@ trait ESManager extends DataServerManager with StrictLogging {
    */ 
   
   //TODO sort out all these prefix
+  //FIXME right now we only allow for one value path. We need a way
+  //to specify a correct (or many) file path(s)
   val DEFAULT_PREFIX = "children.value.valList.inner"
   val REPORT_PREFIX = DEFAULT_PREFIX + ".valDouble"
   val COMPANY_STR_PREFIX = DEFAULT_PREFIX
@@ -265,20 +267,44 @@ trait ESManager extends DataServerManager with StrictLogging {
     val pf = PostFilters()
     val q = Query(queryRoot)
     
-    //TODO We only allow for AND filters. And Filters need to be implemented
-    // i.e Add should options for q.addQueryFilter
+    //TODO We only allow for certain AND / OR combinations. Need a way to specify
+    // which sections are to be AND'd and which to be OR'd together. (i.e must and should cases)
+    //TODO Currently we are using the REPORT_PREFIX for all queries. This gives problems when looking
+    //for fields with different value paths. 
+    //FIXME is there a way to make this less redundant?
+
     queryFilters foreach {
       case (">", k, v) => {
-        val boolFilter = FilterBuilders.boolFilter()
-        boolFilter must FilterBuilders.termFilter("children.prettyLabel", k)
-        boolFilter must FilterBuilders.rangeFilter(REPORT_PREFIX).from(v)
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must boolFilter)        
+        val boolQuery = QueryBuilders.boolQuery()
+        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
+        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).gt(v)
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))        
       }
       case ("<", k, v) => {
-        val boolFilter = FilterBuilders.boolFilter()
-        boolFilter must FilterBuilders.termFilter("children.prettyLabel", k)
-        boolFilter must FilterBuilders.rangeFilter(REPORT_PREFIX).to(v)
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must boolFilter)
+        val boolQuery = QueryBuilders.boolQuery()
+        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
+        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).lt(v)
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))  
+      }
+      case ("<<", k, v) => {
+        val boolQuery = QueryBuilders.boolQuery()
+        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
+        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).lte(v)
+         q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))  
+      }
+      case (">>", k, v) => {
+        val boolQuery = QueryBuilders.boolQuery()
+        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
+        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).gte(v)
+         q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))  
+      }
+      case ("==", k, v) => {
+        val boolQuery = QueryBuilders.boolQuery()
+        boolQuery must QueryBuilders.matchPhraseQuery(k, v)
+        if (k contains "children.")
+          q.addQueryFilter((fb: BoolFilterBuilder) => fb should FilterBuilders.nestedFilter("children", boolQuery))
+        else
+          q.addQueryFilter((fb: BoolFilterBuilder) => fb should FilterBuilders.queryFilter(boolQuery))
       }
     }
     
@@ -288,7 +314,8 @@ trait ESManager extends DataServerManager with StrictLogging {
     }
     
     req setQuery q.buildQuery()
-    if (pf.initialized) req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
+    //FIXME not sure if we need query post filters at all. leaving them out for now.
+    if (false && pf.initialized) req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
     req setFetchSource ("*", "details")
      /* }
     })
@@ -358,7 +385,7 @@ trait ESManager extends DataServerManager with StrictLogging {
     val rep = req.execute().actionGet()
 
     //logger info s"ES lookup ${params.request} with fields ${params.fields}, results ${rep.status()}"
-    ESReply(JsonParser(rep.toString()))//, postReplyFilters.toList)
+    ESReply(JsonParser(rep.toString()), postFilters.toList)
   }
 
   /** Setup some initial mapping configurationa
