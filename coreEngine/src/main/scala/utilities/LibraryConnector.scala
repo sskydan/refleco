@@ -52,23 +52,17 @@ object LibraryConnector extends CEConfig with StrictLogging {
     doctype match {
     case "relation" | "entity" | "attribute" =>
       CoreParams(
-        queryRootFuncs = Some("=="),
-        queryRootKeys = Some("ftype"),
-        queryRootVals = Some("sform"),
-        queryFilterFuncs = Some("=="),
-        queryFilterKeys = Some("prettyLabel"),
-        queryFilterVals = Some(query),
+        queryRootFuncs = Some("==;=="),
+        queryRootKeys = Some("ftype;prettyLabel;"),
+        queryRootVals = Some("sform;" + query.toString ),
         doctypeParam = Some(doctype),
         limParam = Some(10)
       )
     case "10-K" =>
       CoreParams(
-        queryRootFuncs = Some("=="),
-        queryRootKeys = Some("ftype"),
-        queryRootVals = Some("10-K"),
-        queryFilterFuncs = Some("=="),
-        queryFilterKeys = Some("prettyLabel"),
-        queryFilterVals = Some(query),
+        queryRootFuncs = Some("==;=="),
+        queryRootKeys = Some("ftype;prettyLabel"),
+        queryRootVals = Some("10-K;" + query.toString),
         postFilterFuncs =  Some("=="),
         postFilterKeys = Some("prettyLabel"),
         postFilterVals = Some(query),

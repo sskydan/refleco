@@ -93,7 +93,7 @@ object ASTCodeGen extends StrictLogging {
   def getQueryFilters(paths: Seq[PathNode]): Seq[(String, String, String)] = paths.collect {
     case PathNode(_, Some(AttributeSelectorNode(field, fns))) if !fns.isEmpty =>
       val key = field.value.toString
-      val values = fns.map(fn => (fn.fn.name, key, fn.args.value.toString))
+      val values = fns.map(fn => (fn.fn.name, "children.prettyLabel." + key, fn.args.value.toString))
       values
     case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => Seq(("==", "children.prettyLabel", field.value))
   }.flatten

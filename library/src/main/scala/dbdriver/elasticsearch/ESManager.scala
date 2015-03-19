@@ -197,10 +197,13 @@ trait ESManager extends DataServerManager with StrictLogging {
     //TODO only looking at first query root for now. No cases where there are more
     
     val qRoot = {
-      if (queryRoot.length > 0)
-        queryRoot.head match {
-          case ("==", k, v) => QueryBuilders.matchPhraseQuery(k, v) 
+      if (queryRoot.length > 0) {
+        val rootBool = QueryBuilders.boolQuery()
+        queryRoot foreach {
+           case ("==", k, v) => rootBool must QueryBuilders.matchPhraseQuery(k, v) 
         }
+        rootBool
+      }
       else {
         QueryBuilders.matchAllQuery()
       }
@@ -273,38 +276,45 @@ trait ESManager extends DataServerManager with StrictLogging {
     //for fields with different value paths. 
     //FIXME is there a way to make this less redundant?
 
-    queryFilters foreach {
-      case (">", k, v) => {
-        val boolQuery = QueryBuilders.boolQuery()
-        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
-        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).gt(v)
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))        
+    val (nested, normal) = queryFilters partition { case (f, k, v) => k startsWith "children." }
+    
+    def buildQueryFilter(t: (String, String, String)): BoolQueryBuilder = {
+      val boolQuery = QueryBuilders.boolQuery()
+      val nameKey = t._2.reverse.takeWhile(_.toString != ".").reverse
+      val namePath = t._2.reverse.dropWhile(_.toString != ".").reverse.dropRight(1)
+      t match {
+        case (">", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).gt(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case ("<", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).lt(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case ("<<", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).lte(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case (">>", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).gte(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case ("==", k, v) => {
+          boolQuery must QueryBuilders.matchPhraseQuery(k, v)
+        }
       }
-      case ("<", k, v) => {
-        val boolQuery = QueryBuilders.boolQuery()
-        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
-        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).lt(v)
-        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))  
+      boolQuery
+    }
+    
+    nested foreach { case (f,k,v) => {
+        val boolQuery = buildQueryFilter((f,k,v)) 
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))
       }
-      case ("<<", k, v) => {
-        val boolQuery = QueryBuilders.boolQuery()
-        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
-        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).lte(v)
-         q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))  
-      }
-      case (">>", k, v) => {
-        val boolQuery = QueryBuilders.boolQuery()
-        boolQuery must  QueryBuilders.matchPhraseQuery("children.prettyLabel", k)
-        boolQuery must  QueryBuilders.rangeQuery(REPORT_PREFIX).gte(v)
-         q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))  
-      }
-      case ("==", k, v) => {
-        val boolQuery = QueryBuilders.boolQuery()
-        boolQuery must QueryBuilders.matchPhraseQuery(k, v)
-        if (k contains "children.")
-          q.addQueryFilter((fb: BoolFilterBuilder) => fb should FilterBuilders.nestedFilter("children", boolQuery))
-        else
-          q.addQueryFilter((fb: BoolFilterBuilder) => fb should FilterBuilders.queryFilter(boolQuery))
+    }
+    
+    normal foreach { case (f,k,v) => {
+        val boolQuery = buildQueryFilter((f,k,v))
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.queryFilter(boolQuery))
       }
     }
     
