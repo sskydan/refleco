@@ -6,7 +6,11 @@
     <div class="box">
         <h2  class="box-title">{{ args|getBoxArg:"title" }}</h2>
         {% for textBlock in args|getBoxArg:"data"|getFactChildren %}
-            <p>{{ textBlock|getFactValue }}</p>
+            <ul>
+                {% for semFact in textBlock|getFactValue %}
+                    <li>{{ semFact }}</li>
+                {% endfor %}
+            </ul>
         {% endfor %}
     </div>
 {% endblock %}
