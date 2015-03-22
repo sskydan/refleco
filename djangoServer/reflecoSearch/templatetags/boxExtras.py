@@ -68,9 +68,13 @@ def getFactValue(fact):
         ftype = fact.get(u'ftype', "")
         if ftype == "analytic":
             value = "{:,.4f}".format(value)
+<<<<<<< HEAD
         elif ftype == "xbrl:unstructured:text":
             value = value
         elif ftype == "xbrl:unstructured:table":
+=======
+        elif "TextBlock" in fact.get(u'id', ""):
+>>>>>>> refs/remotes/origin/master
             value = value
         elif ftype == "xbrl":
             # Monetary value?

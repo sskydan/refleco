@@ -21,7 +21,10 @@ class KnownEntityTagger(object):
             for entity in cls.knownEntities.keys():
                 chunkIndex = Chunker.getChunkIndex(chunkList, entity)
                 for range in chunkIndex:
+<<<<<<< HEAD
 
+=======
+>>>>>>> refs/remotes/origin/master
                     if range:
                         newChunk = Chunk(entity, cls.knownEntities.get(entity, "NN"))
                         newChunk.setRecognized(True)

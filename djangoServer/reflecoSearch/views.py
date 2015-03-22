@@ -42,8 +42,13 @@ def results(request, query=""):
             devLogger.info("Received query: " + query)
             queryList = list()
             try:
+<<<<<<< HEAD
                 qt = QueryTagger(query)
                 queryOptions = qt.splitOnNer()
+=======
+                sq = QueryTagger(query)
+                queryOptions = sq.splitOnNer()
+>>>>>>> refs/remotes/origin/master
                 for opt in queryOptions:
                     queryParse = QueryParser([c.toTuple() for c in opt])
                     dsl, filter = queryParse.parseAST()
