@@ -44,7 +44,7 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
       entry.\\[JsString]("uri").value,
       "refleco:result",
       FactNone,
-      entry.\\[JsString]("sform").toString,
+      entry.\\[JsArray]("sform").elements map (_.toString),
       entry.\\[JsNumber]("_score").value.toDouble
     )
   
@@ -66,13 +66,12 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
           filterPaths exists { case (func, key, value) =>
             
             if (key.toLowerCase startsWith "children.prettylabel") 
-              f.prettyLabel.toLowerCase contains value.toLowerCase
+              f.prettyLabel map (_.toLowerCase) contains value.toLowerCase
               
             else if (key.toLowerCase startsWith "children.value")
               f.children exists (
                 _.value.toString.toLowerCase contains value.toLowerCase
               )
-            
             else false
           }
         )
@@ -93,7 +92,9 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
       val reflechoScore =
         entry.\\~[JsNumber]("interest").headOption.map(_.value.toDouble)
       
-      val prettyLabel = ((fields get "prettyLabel") orElse (fields get "uri")).toString
+      val prettyLabel = (fields get "prettyLabel") orElse (fields get "uri") collect {
+        case JsArray(e) => e.toSeq map (_.toString)
+      } getOrElse Nil
       
       val cleanFields = JsObject(fields - ("prettyLabel", "interest"))
       val filteredFields = cleanFields filterAll childFilter.map(t => (t._2, t._1, t._3).toString)

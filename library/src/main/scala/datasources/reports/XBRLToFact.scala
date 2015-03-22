@@ -28,7 +28,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    */
   def factTransform: Fact = {
     logger info s"Turning xbrl into fact $uid"
-    val defaultFact = Fact(uid, "error", FactNone, "error")
+    val defaultFact = Fact(uid, "error", FactNone, Seq("error"))
 
     val elems = jsonTransform.\\[JsObject](TOP_KEY).fields
     val (metaElems, dataElems) = elems partition {
@@ -49,7 +49,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
           uid, //uid
           doctype, //type
           FactString(date), //val
-          cname, //prettyLabel   
+          Seq(cname, uid), //prettyLabel   
           0,
           data.flatten[Fact],
           None //Some(JsObject(metaElems)))
@@ -62,9 +62,9 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
 
   private def elemToFact(key: String, elem: JsValue): Option[Fact] = {
     val children = parseEntryChildren(key, elem)
-    if (children.length < 1 & key.contains("TextBlock")) None
-    else Some(Fact(key, "xbrl", parseEntry(key, elem), resolveLabel(key), 0, children))
-  }   
+    if (children.length < 1 && key.contains("TextBlock")) None
+    else Some(Fact(key, "xbrl", parseEntry(key, elem), Seq(resolveLabel(key)), 0, children))
+  }
 
   /** Remember, all top-level entries in the normalized json are JsObjects
    */
@@ -94,19 +94,15 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
 
     // Match monetary facts => FactMoney
     case obj @ JsObject(fields) if fields contains "decimals" => obj.getFields("content", "decimals", "unitRef") match {
-      case Seq(JsNumber(con), JsNumber(dec), JsString(uref)) =>
-        val doublemoney =
-          if (dec != 0) con.toInt / (10 * Math.abs(dec.toInt))
-          else con.toInt
-
-        FactMoney(doublemoney, uref)
+      case Seq(JsNumber(num), JsNumber(dec), JsString(uref)) =>
+        FactMoney(num, uref, dec.toInt)
 
       case other => getDummyFactVal(other)
     }
 
     // Match facts which are zeroed => FactMoney
     case obj: JsObject => obj.getFields("xsi:nil", "unitRef") match {
-      case Seq(_: JsBoolean, JsString(uref)) => FactMoney(0, uref)
+      case Seq(_: JsBoolean, JsString(uref)) => FactMoney(0, uref, 0)
       case other => getDummyFactVal(other)
     }
   }
@@ -159,7 +155,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    *  This function should not throw exceptions
    */
   private def resolveContext(key: String): (DateTime, DateTime) = {
-    val nss = "" :: "xbrli:" :: Nil
+    val nss = Stream("", "xbrli:")
     val defaultContext = new DateTime("1001-01-01") -> new DateTime("1001-01-01")
 
     def checkDates(ns: String) =
@@ -180,7 +176,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
         }
       } catch { case NonFatal(any) => Failure(any) }
 
-    (nss map checkDates collect { case Success(context) => context }).headOption getOrElse defaultContext
+    nss map checkDates collectFirst { case Success(context) => context } getOrElse defaultContext
   }
 
   /**
@@ -198,7 +194,7 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
    */
   private def getDummyFactVal(errored: Any) = {
     logger debug s"Unknown object fact type\n${errored.toString}"
-    FactMoney(0, "???")
+    FactMoney(0, "???", 0)
   }
 }
 

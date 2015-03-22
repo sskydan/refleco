@@ -12,19 +12,19 @@ import scala.util.control.NonFatal
 /** base signature for all analytics over facts
  */
 class Analytic(
-  val name:String, 
+  val name: String, 
   val body: Facts => FactVal = _ => FactNone, 
-  val aliases:Seq[String] = Nil
+  val aliases: Seq[String] = Nil
 ) extends StrictLogging {
   val ANA_FTYPE = "analytic"
   
   val subAnalytics:Seq[Analytic] = Nil
   
-  def apply(data:Facts):Fact = new Fact(
+  def apply(data:Facts): Fact = Fact(
     name, 
     ANA_FTYPE, 
     body(data),
-    aliases.fold("")(_+", "+_), 
+    aliases, 
     0, 
     subAnalytics map (_ apply data)
   )

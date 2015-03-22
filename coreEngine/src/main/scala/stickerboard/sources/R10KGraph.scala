@@ -43,7 +43,7 @@ object SparkFNs10K {
       .map (materialize10KFacts)
     val uuid = m("uuid").toString
 
-    Fact(id, ftype, FactString(value), prettyLabel, interest, children, None, uuid)
+    Fact(id, ftype, FactString(value), Seq(prettyLabel), interest, children, None, uuid)
   }
   
   def fact2relationmap(f: Fact) = f.prettyLabel -> fact2sticker(f)
@@ -57,20 +57,20 @@ object SparkFNs10K {
   def fact2sticker(fact: Fact): Sticker = fact.ftype match {
     case "10-K" => 
       Sticker(
-        Alias(fact.prettyLabel, Seq(fact.id), Some(fact.uuid)),
+        Alias(fact.prettyLabel.head, Seq(fact.id), Some(fact.uuid)),
         Map("refleco:xbrl" -> facts2stickers(fact.children)),
         Some(new DateTime(fact.value.get))
       )
       
     case "company" => 
       Sticker(
-        Alias(fact.prettyLabel, Seq(fact.id), Some(fact.uuid)),
+        Alias(fact.prettyLabel.head, Seq(fact.id), Some(fact.uuid)),
         Map("dbp:values" -> facts2stickers(fact.children))
       )
    
     case _ =>
       Sticker(
-        Alias(fact.prettyLabel, Seq(fact.id), Some(fact.uuid))
+        Alias(fact.prettyLabel.head, Seq(fact.id), Some(fact.uuid))
       )
   }
   
@@ -95,7 +95,7 @@ object R10KGraph extends CEConfig with StrictLogging {
   def generateGraph(implicit spark: SparkContext): RDD[Sticker] = {
     // pull data from companies
     val companiesRDD = spark parallelize (streamDocs("S-1").flatten.toList) map SparkFNs10K.fact2sticker
-    val companiesByName = companiesRDD map (s => s.alias.id -> s)
+    val companiesByName = companiesRDD map (s => s.alias.allNames -> s)
 
     // read raw 10-K facts from file 
     val reportRDD = spark.objectFile[Tuple2[String, LinkedHashMap[String, Any]]](R10K_FILE)
@@ -104,7 +104,7 @@ object R10KGraph extends CEConfig with StrictLogging {
     val relationsByName = factsRDD map SparkFNs10K.fact2relationmap groupByKey() 
     
     val stickersByName = relationsByName map { 
-      case (name, rels) => name -> SparkFNs10K.wrap10KAsSticker(name, rels.toSeq)
+      case (name, rels) => name -> SparkFNs10K.wrap10KAsSticker(name.head, rels.toSeq)
     }
     
     // join company and 10K data
