@@ -19,6 +19,17 @@ def getFactName(fact):
         name = ""
     return name
 
+@register.filter(name='getFactType')
+def getFactType(fact):
+    type = ""
+    try:
+        type = fact.get(u'ftype', False)
+        if not type:
+            type = fact.get(u'id', "None(This is and error.)")
+    except Exception as e:
+        devLogger.error("there was a problem getting a fact name: " + e)
+    return type
+
 @register.filter(name='isPeriodicFact')
 def isPeriodicFact(fact):
     if fact.get(u'ftype', "") == "xbrl":
@@ -57,7 +68,9 @@ def getFactValue(fact):
         ftype = fact.get(u'ftype', "")
         if ftype == "analytic":
             value = "{:,.4f}".format(value)
-        elif "TextBlock" in fact.get(u'id', ""):
+        elif ftype == "xbrl:unstructured:text":
+            value = value
+        elif ftype == "xbrl:unstructured:table":
             value = value
         elif ftype == "xbrl":
             # Monetary value?

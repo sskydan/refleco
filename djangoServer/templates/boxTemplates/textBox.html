@@ -7,9 +7,16 @@
         <h2  class="box-title">{{ args|getBoxArg:"title" }}</h2>
         {% for textBlock in args|getBoxArg:"data"|getFactChildren %}
             <ul>
-                {% for semFact in textBlock|getFactValue %}
-                    <li>{{ semFact }}</li>
-                {% endfor %}
+                {% if textBlock|getFactType == 'xbrl:unstructured:text' %}
+                    {% for semFact in textBlock|getFactValue %}
+                        <li>{{ semFact }}</li>
+                    {% endfor %}
+                {% endif %}
+                {% if textBlock|getFactType == 'xbrl:unstructured:table' %}
+                    <table>
+                        {{ textBlock|getFactValue | safe }}
+                    </table>
+                {% endif %}
             </ul>
         {% endfor %}
     </div>

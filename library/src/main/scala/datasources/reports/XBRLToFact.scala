@@ -17,6 +17,7 @@ import com.typesafe.scalalogging.StrictLogging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import scala.collection.JavaConversions._
+import shapeless.isDefined
 
 /** Transformers for XBRL data
  *  TODO more robust error-catching
@@ -112,31 +113,48 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
 
   private def parseEntryChildren(key: String, elem: JsValue): List[Fact] =
     if (key contains "TextBlock") unstructuredToFactChildren(key, elem)
-    else Nil
-  
+    else Nil      
+    
   private def unstructuredToFactChildren(key: String, elem: JsValue): List[Fact] = {
-    def parseHTML(htmlString: String): List[String] = {
+    
+    def parseHTMLtoFact(htmlString: String): List[Fact] = {
       val doc = Jsoup.parse(htmlString)
       //TODO - ignore the tables
-      doc.select("table").remove()
-      val htmlText = doc.body.select("*").iterator map(_.ownText.trim) filter(_.length > 0)
-      htmlText.toList splitFilter (_ == "\u00a0") map(_ mkString " ")
+      //doc.select("table").remove()
+      val htmlText = doc.body.select("*").iterator collect ({
+          case tableBlock if (("""^<table.*|^<tbody.*""".r.findPrefixOf(tableBlock.toString).isDefined) && (tableBlock.parents.map(_.tagName).filter(x => """table|tbody""".r.pattern.matcher(x).matches).length < 1)) =>
+            tableBlock.toString.replaceAll("\"", "\\\"")   
+          case textBlock if((textBlock.ownText.trim.length > 0) && (textBlock.parents.map(_.tagName).filter(x => """table|tbody""".r.pattern.matcher(x).matches).length < 1)) => {
+            textBlock.ownText.trim.toString
+          }
+      })
+      
+      val test = groupUnstructuredBlocks(htmlText.toList, Nil)
+      test.toList
+    }
+          
+    def groupUnstructuredBlocks(blocks: Seq[String], sol: Seq[Fact]): Seq[Fact] = blocks match{     
+      case Nil => sol
+      case h :: t if ("""^<table.*|^<tbody.*""".r.findPrefixOf(h).isDefined) =>
+        groupUnstructuredBlocks(t, sol :+ Fact(key, "xbrl:unstructured:table", FactString(h)))
+      case h :: t if (h == "\u00a0") => 
+        groupUnstructuredBlocks(t, sol)
+      case textBlocks => {
+        val text = textBlocks takeWhile (x => (x != "\u00a0" && """^<table.*|^<tbody.*""".r.findPrefixOf(x).isEmpty))
+        val newList = textBlocks dropWhile (x => (x != "\u00a0" && """^<table.*|^<tbody.*""".r.findPrefixOf(x).isEmpty))
+        groupUnstructuredBlocks(newList, sol :+ Fact(key, "xbrl:unstructured:text", FactString(text.mkString(" ")))) 
+      }
     }
 
     elem match {
       case JsObject(fields) => fields.get("content") match {
-        case Some(JsString(unstructured)) => {
-          parseHTML(unstructured)
-            //TODO only get text blocks ending in a period (removes headers and blocks
-            // ending in colons which usually refer to a table - ignoring tables at the moment)
-            .filter(_.matches(".*\\."))
-            .map(s => Fact(key, "xbrl:unstructured", FactString(s)))
-        }
+        case Some(JsString(unstructured)) => parseHTMLtoFact(unstructured)
         case other => Nil
       }
       case _ => Nil
     }
-  }  
+  }    
+  
   /** Resolves the "context" keys in the xbrl
    *  This function should not throw exceptions
    */

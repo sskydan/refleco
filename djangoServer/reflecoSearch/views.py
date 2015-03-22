@@ -32,21 +32,6 @@ def search(request):
 def results(request, query=""):
 
     if query:
-        from reflecoSearch.classes.filterClasses.UnstructuredDataFilter import UnstructuredDataFilter
-        import json
-        testFact = ""
-        try:
-            with open('/home/lboileau/testFact.json') as testFactFile:
-                testFact = json.load(testFactFile)
-                testFactFile.close
-        except Exception as e:
-            devLogger.error('Could not load test fact: ' + str(e))
-
-        filterObj = UnstructuredDataFilter()
-        filterObj.loadData(testFact)
-        boxes = filterObj.createBoxList()
-        query = "hello world"
-        '''
         #logging queries
         queryLogger.info(QueryTagger.getClientIp(request) + " - " + query)
 
@@ -70,7 +55,7 @@ def results(request, query=""):
             boxes = ReportBuilder.buildReport(queryList)
         except Exception:
             boxes = []
-        '''
+
     else:
         boxes = "empty"
         devLogger.warn("No query received")

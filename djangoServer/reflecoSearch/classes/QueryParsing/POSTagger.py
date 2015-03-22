@@ -70,7 +70,7 @@ class POSTagger(object):
             #tokens = [cls.stemmer.stem(t) for t in tokens]
             #tokens = [cls.lemmatizer.lemmatize(t) for t in tokens]
             posTokens = brillTagger.tag(tokens)
-            devLogger.info("POS tagged tokens are: " + str(posTokens))
+            #devLogger.info("POS tagged tokens are: " + str(posTokens))
         except Exception as e:
             devLogger.error("Could not tag POS: " + str(e))
         return posTokens

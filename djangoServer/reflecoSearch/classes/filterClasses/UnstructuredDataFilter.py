@@ -27,11 +27,20 @@ class UnstructuredDataFilter(Filter):
 
                 if len(factItems):
                     for item in factItems:
+                        children = list()
+                        include = False
                         for textBlock in item[u'children']:
-                            textBlock[u'value'] = extractPredicates(textBlock[u'value'])
-                            itemTitle = factTitle + "(" + item[u'prettyLabel'] + ")"
-                            if(textBlock[u'value']):
-                                boxList.append(TextBox.makeBox(item, itemTitle))
+                            if textBlock[u'ftype'] == 'xbrl:unstructured:text':
+                                textBlock[u'value'] = extractPredicates(textBlock[u'value'])
+                                itemTitle = factTitle + "(" + item[u'prettyLabel'] + ")"
+                                if len(textBlock[u'value']) > 0:
+                                    include = True
+                                    children.append(textBlock)
+                            elif textBlock[u'ftype'] == 'xbrl:unstructured:table':
+                                children.append(textBlock)
+                        item[u'children'] = children
+                        if (include):
+                            boxList.append(TextBox.makeBox(item, itemTitle))
         return boxList
 
 
