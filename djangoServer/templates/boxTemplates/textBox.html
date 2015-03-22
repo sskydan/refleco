@@ -6,7 +6,6 @@
     <div class="box">
         <h2  class="box-title">{{ args|getBoxArg:"title" }}</h2>
         {% for textBlock in args|getBoxArg:"data"|getFactChildren %}
-<<<<<<< HEAD
             <ul>
                 {% if textBlock|getFactType == 'xbrl:unstructured:text' %}
                     {% for semFact in textBlock|getFactValue %}
@@ -19,9 +18,6 @@
                     </table>
                 {% endif %}
             </ul>
-=======
-            <p>{{ textBlock|getFactValue }}</p>
->>>>>>> refs/remotes/origin/master
         {% endfor %}
     </div>
 {% endblock %}

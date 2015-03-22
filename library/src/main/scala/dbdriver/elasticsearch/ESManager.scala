@@ -323,13 +323,20 @@ trait ESManager extends DataServerManager with StrictLogging {
     
     postFilters foreach {
         case ("==", k, v) => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb must QueryBuilders.matchPhraseQuery(k, v))
-        case _ => println("faled pf")
+        case _ =>
     }
     
+    val fields = postFilters collect {
+      case ("field", k, v) => k
+    }
+    if (fields.length > 0) req addFields (fields: _*)
+    else req setFetchSource ("*", "details")
+    
     req setQuery q.buildQuery()
+    
     //FIXME not sure if we need query post filters at all. leaving them out for now.
-    if (false && pf.initialized) req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
-    req setFetchSource ("*", "details")
+    //if (pf.initialized) req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
+    
      /* }
     })
     //
@@ -440,6 +447,7 @@ trait ESManager extends DataServerManager with StrictLogging {
             "english": {
               "type": "string",
               "analyzer": "english"
+            }
           }
         }
       },

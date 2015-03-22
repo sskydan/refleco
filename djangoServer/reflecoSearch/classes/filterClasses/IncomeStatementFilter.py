@@ -68,5 +68,5 @@ class IncomeStatementFilter(Filter):
                             name = item.replace("Abstract", "")
                             statementData.append({u'prettyLabel': name, u'value': None})
                     if len(statementData):
-                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'] + " Income Statement" + " (" + f[u'value'] + ")", []))
+                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'][0] + " Income Statement" + " (" + f[u'value'] + ")", []))
         return boxList

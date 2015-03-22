@@ -89,22 +89,22 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
       val id = entry.\\[JsString]("_id").value
       
       val esScore = entry.\\[JsNumber]("_score").value.toDouble
-      val reflechoScore =
+      val reflecoScore =
         entry.\\~[JsNumber]("interest").headOption.map(_.value.toDouble)
       
       val prettyLabel = (fields get "prettyLabel") orElse (fields get "uri") collect {
-        case JsArray(e) => e.toSeq map (_.toString)
+        case JsArray(e:Vector[JsString] @unchecked) => e.toSeq map (_.value)
       } getOrElse Nil
-      
+            
       val cleanFields = JsObject(fields - ("prettyLabel", "interest"))
       val filteredFields = cleanFields filterAll childFilter.map(t => (t._2, t._1, t._3).toString)
-        
+      
       Fact(
         id,
         "refleco:result",
         FactNone,
         prettyLabel,
-        reflechoScore getOrElse esScore,
+        reflecoScore getOrElse esScore,
         Nil,
         Some(filteredFields.asJsObject)
       )

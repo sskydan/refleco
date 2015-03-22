@@ -50,26 +50,26 @@ object LibraryConnector extends CEConfig with StrictLogging {
   //TODO Not sure what to do here. not currently working for NER
   def getQueryParams(query: String, doctype: String): CoreParams = {
     doctype match {
-    case "relation" | "entity" | "attribute" =>
-      CoreParams(
-        queryRootFuncs = Some("==;=="),
-        queryRootKeys = Some("ftype;prettyLabel;"),
-        queryRootVals = Some("sform;" + query.toString ),
-        doctypeParam = Some(doctype),
-        limParam = Some(10)
-      )
-    case "10-K" =>
-      CoreParams(
-        queryRootFuncs = Some("==;=="),
-        queryRootKeys = Some("ftype;prettyLabel"),
-        queryRootVals = Some("10-K;" + query.toString),
-        postFilterFuncs =  Some("=="),
-        postFilterKeys = Some("prettyLabel"),
-        postFilterVals = Some(query),
-        //searchParam = Some(query), 
-        //postFilter = Some("prettyLabel;interest;id"),
-        limParam = Some(10)
-      )
+      case "relation" | "entity" | "attribute" =>
+        CoreParams(
+          queryRootFuncs = Some("=="),
+          queryRootKeys = Some("sform"),
+          queryRootVals = Some(query),
+          doctypeParam = Some(doctype),
+          limParam = Some(10)
+        )
+      case _ =>
+        CoreParams(
+          queryRootFuncs = Some("=="),
+          queryRootKeys = Some("prettyLabel"),
+          queryRootVals = Some(query),
+          postFilterFuncs =  Some("field;field;field"),
+          postFilterKeys = Some("prettyLabel;interest;id"),
+          postFilterVals = Some("NA;NA;NA"),
+          //searchParam = Some(query), 
+          //postFilter = Some("prettyLabel;interest;id"),
+          limParam = Some(10)
+        )
   }}
   
   private def getNameLookupResult(doctype: String)(r: Fact): NameLookupResult = doctype match {

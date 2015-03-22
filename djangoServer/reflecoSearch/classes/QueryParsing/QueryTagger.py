@@ -10,7 +10,6 @@ class QueryTagger(object):
     """Tags a query
     """
     def __init__(self, text):
-<<<<<<< HEAD
         self.rawText = str(text)
         self.chunks = []
 
@@ -50,37 +49,4 @@ class QueryTagger(object):
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
-=======
-        self.rawText = text
-        self.chunks = []
 
-    def getPOSChunks(self):
-        """
-        :return: List(Chunks) POS tagged word chunks
-        """
-        POSTokens = POSTagger.tagPOS(self.rawText)
-        chunks = []
-        for token in POSTokens:
-            wrd,tag = token
-            chunks.append(Chunk(wrd,tag))
-        return chunks
-
-    def getKnownEntityChunks(self):
-        """
-        :return: List(Chunks) Known entity tagged chunks
-        """
-        if len(self.chunks) < 1:
-            self.chunks = self.getPOSChunks()
-        return KnownEntityTagger.getKnownEntities(self.chunks)
-
-
-    def splitOnNer(self):
-        """
-        :return:List of all possible permutations of the NER tagged chunks
-        """
-        if len(self.chunks) < 1:
-            self.chunks = self.getKnownEntityChunks()
-        return NERTagger.getNERChunks(self.chunks)
-
-
->>>>>>> refs/remotes/origin/master

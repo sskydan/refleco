@@ -74,5 +74,5 @@ class BalanceSheetFilter(Filter):
                             statementData.append({u'prettyLabel': name, u'value': None})
 
                     if len(statementData):
-                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'] + " Balance Sheet" + " (" + f[u'value'] + ")", []))
+                        boxList.append(TableBox.makeBox(statementData, f[u'prettyLabel'][0] + " Balance Sheet" + " (" + f[u'value'] + ")", []))
         return boxList
