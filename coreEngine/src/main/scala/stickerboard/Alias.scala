@@ -9,7 +9,9 @@ case class Alias(
   aliases: Seq[String] = Nil, 
   factUUID: Option[String] = None, 
   semanticID: Option[String] = None
-)
+) {
+  lazy val allNames = id +: aliases
+}
 
 object Alias {
   implicit val aliasgroup: Semigroup[Alias] = new Semigroup[Alias] {

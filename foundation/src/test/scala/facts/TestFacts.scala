@@ -27,7 +27,7 @@ class TestFacts extends UnitSpec {
        "id": "0001419852::2014-01-28",
        "ftype": "10-K",
        "value": "2014-01-28",
-       "prettyLabel": "MATTRESS FIRM HOLDING CORP.",
+       "prettyLabel": ["MATTRESS FIRM HOLDING CORP."],
        "interest": 0,
        "children":
        [
@@ -42,11 +42,12 @@ class TestFacts extends UnitSpec {
                    {
                        "valDouble": 1814000,
                        "currency": "USD",
+                       "precision":-3,
                        "facttype": "monetary"
                    },
                    "facttype": "period"
                },
-               "prettyLabel": "Debt converted to the Company's common stock",
+               "prettyLabel": ["Debt converted to the Company's common stock"],
                "interest": 0,
                "children":
                [
@@ -67,6 +68,7 @@ class TestFacts extends UnitSpec {
                            {
                                "valDouble": 7302300,
                                "currency": "USD",
+                               "precision":-3,
                                "facttype": "monetary"
                            },
                            "facttype": "period"
@@ -78,6 +80,7 @@ class TestFacts extends UnitSpec {
                            {
                                "valDouble": 7252900,
                                "currency": "USD",
+                               "precision":-3,
                                "facttype": "monetary"
                            },
                            "facttype": "period"
@@ -85,7 +88,7 @@ class TestFacts extends UnitSpec {
                    ],
                    "facttype": "collection"
                },
-               "prettyLabel": "Long-term debt, net of current maturities",
+               "prettyLabel": ["Long-term debt, net of current maturities"],
                "interest": 0,
                "children":
                [
@@ -106,6 +109,7 @@ class TestFacts extends UnitSpec {
                            {
                                "valDouble": -11966,
                                "currency": "USD",
+                               "precision":-3,
                                "facttype": "monetary"
                            },
                            "facttype": "period"
@@ -117,6 +121,7 @@ class TestFacts extends UnitSpec {
                            {
                                "valDouble": 7100,
                                "currency": "USD",
+                               "precision":-3,
                                "facttype": "monetary"
                            },
                            "facttype": "period"
@@ -128,6 +133,7 @@ class TestFacts extends UnitSpec {
                            {
                                "valDouble": 63400,
                                "currency": "USD",
+                               "precision":-3,
                                "facttype": "monetary"
                            },
                            "facttype": "period"
@@ -135,7 +141,7 @@ class TestFacts extends UnitSpec {
                    ],
                    "facttype": "collection"
                },
-               "prettyLabel": "State",
+               "prettyLabel": ["State"],
                "interest": 0,
                "children":
                [

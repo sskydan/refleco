@@ -117,7 +117,7 @@ object Board extends CEConfig with StrictLogging {
 
 // FIXME LOL u srs m8
 class SBRegistrator extends KryoRegistrator {
-   override def registerClasses(kryo: Kryo) {
+   override def registerClasses(kryo: Kryo) = {
      kryo.register(classOf[Alias])
      kryo.register(classOf[Clue])
      kryo.register(classOf[DateTime])

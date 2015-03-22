@@ -70,7 +70,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
 
     case _ =>
       logger.info(s"--> [${r.prettyLabel}] with ${r.interest}")
-      (r.prettyLabel, r.id, r.interest)
+      (r.prettyLabel.head, r.id, r.interest)
   }
   
   /** lookup a company name in a specific index

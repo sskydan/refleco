@@ -17,7 +17,7 @@ class TestFact extends UnitSpec {
   "FactVal initialization" should "support basic types" in {
     val fstring = new FactString("string")
     val fint = new FactInt(1)
-    val fmoney = new FactMoney(10.323, "USD")
+    val fmoney = new FactMoney(10.323, "USD", -3)
     val fperiod1 = new Period(new DateTime(startDate), new DateTime(endDate), fint)
     val fperiod2 = new Period(new DateTime(startDate) + 2.days, new DateTime(endDate) + 1.day, fmoney)
     val fcol = new FactCol(List(fperiod1, fperiod2))
@@ -28,7 +28,7 @@ class TestFact extends UnitSpec {
   "FactVal types" should "support json serialization" in {
     val fstring = new FactString("string")
     val fint = new FactInt(1)
-    val fmoney = new FactMoney(1000.3763, "USD")
+    val fmoney = new FactMoney(1000.3763, "USD", -3)
     val fperiod1 = new Period(new DateTime(startDate), new DateTime(endDate), fint)
     val fperiod2 = new Period(new DateTime(startDate2), new DateTime(endDate2), fmoney)
     val fcol = new FactCol(List(fperiod1, fperiod2))
@@ -39,6 +39,7 @@ class TestFact extends UnitSpec {
     val fmoneyJson = JsObject(
       "valDouble" -> JsNumber(1000.3763),
       "currency" -> JsString("USD"),
+      "precision" -> JsNumber(-3),
       "facttype" -> JsString("monetary")
     )
     val fperiod1Json = JsObject(
@@ -71,13 +72,13 @@ class TestFact extends UnitSpec {
   
   "Facts" should "support json serialization" in {
     val fint = new FactInt(1)
-    val fmoney = new FactMoney(10.2, "USD")
+    val fmoney = new FactMoney(10.2, "USD", -3)
     val fperiod1 = new Period(new DateTime(startDate), new DateTime(endDate), fint)
     val fperiod2 = new Period(new DateTime(startDate2), new DateTime(endDate2), fmoney)
     val fcol = new FactCol(List(fperiod1, fperiod2))
     
-    val children = Seq(new Fact("child", "kind2", fcol, "childLabel", 42.99, Nil, None, "childUUID"))
-    val fact = new Fact("name", "kind", fcol, "prettyLabel", 232.4, children, Some(JsObject("key"->JsString("details"))), "parentUUID")
+    val children = Seq(new Fact("child", "kind2", fcol, Seq("childLabel"), 42.99, Nil, None, "childUUID"))
+    val fact = new Fact("name", "kind", fcol, Seq("prettyLabel"), 232.4, children, Some(JsObject("key"->JsString("details"))), "parentUUID")
     
     val factJson = ("""{
       "id":"name",
@@ -95,6 +96,7 @@ class TestFact extends UnitSpec {
             "inner": {
               "valDouble":10.2,
               "currency":"USD",
+              "precision":-3,
               "facttype":"monetary"
             },
             "facttype":"period"
@@ -102,7 +104,7 @@ class TestFact extends UnitSpec {
         ],
         "facttype":"collection"
       },
-      "prettyLabel":"prettyLabel",
+      "prettyLabel":["prettyLabel"],
       "interest":232.4,
       "children":[{
       "id":"child",
@@ -120,6 +122,7 @@ class TestFact extends UnitSpec {
               "inner": {
                 "valDouble":10.2,
                 "currency":"USD",
+                "precision":-3,
                 "facttype":"monetary"
               },
               "facttype":"period"
@@ -127,7 +130,7 @@ class TestFact extends UnitSpec {
           ],
           "facttype":"collection"
         },
-        "prettyLabel":"childLabel",
+        "prettyLabel":["childLabel"],
         "interest":42.99,
         "children":[],
         "uuid":"childUUID"
