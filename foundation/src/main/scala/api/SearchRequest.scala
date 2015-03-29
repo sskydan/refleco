@@ -1,5 +1,9 @@
 package api
 
+import shapeless._
+import poly._
+import syntax.std.tuple._
+
 /** representation of an internal search request + parameters
  */
 class SearchRequest(
@@ -74,6 +78,10 @@ class BaseParams(
   
   def toRequest = {
     def combine(fns: Option[String], keys: Option[String], vals: Option[String]): Seq[(String,String,String)] = {
+      object splitOnSep extends (Option[String] -> Seq[String])(_ map (_.split(SEPARATOR).toSeq) getOrElse Nil)
+      ((fns, keys, vals) map splitOnSep).zipped.toSeq
+      
+      /*
       val f = fns map(_ split SEPARATOR)
       val k = keys map(_ split SEPARATOR) 
       val v = vals map(_ split SEPARATOR)
@@ -82,7 +90,7 @@ class BaseParams(
       if (f.isDefined && k.isDefined && v.isDefined) {
         (f.get, k.get, v.get).zipped.toList 
       }
-      else Nil
+      else Nil*/
     } 
     
     val queryRoot: Seq[(String,String,String)] = combine(queryRootFuncs, queryRootKeys, queryRootVals) 

@@ -41,7 +41,7 @@ object ReportFetcher extends LibConfig {
   implicit val respTimeout: Timeout = Timeout(12.hours)
 
   val FULL_INDEX_BASE = "edgar/full-index/"
-  val YEARS = "2014/" :: "2013/" :: "2012/" :: "2011/" :: "2010/" :: Nil
+  val YEARS = "2014/" :: Nil //"2013/" :: "2012/" :: "2011/" :: "2010/" ::
   val QUARTERS = "QTR1/" :: "QTR2/" :: "QTR3/" :: "QTR4/" :: Nil
   val HOST = "ftp.sec.gov"
   val MASTER_INDEX_NAME = "master.gz"

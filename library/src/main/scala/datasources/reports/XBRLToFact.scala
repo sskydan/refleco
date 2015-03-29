@@ -17,7 +17,6 @@ import com.typesafe.scalalogging.StrictLogging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import scala.collection.JavaConversions._
-import shapeless.isDefined
 
 /** Transformers for XBRL data
  *  TODO more robust error-catching
@@ -115,8 +114,6 @@ trait XBRLToFact extends StrictLogging { self: XBRL =>
     
     def parseHTMLtoFact(htmlString: String): List[Fact] = {
       val doc = Jsoup.parse(htmlString)
-      //TODO - ignore the tables
-      //doc.select("table").remove()
       val htmlText = doc.body.select("*").iterator collect ({
           case tableBlock if (("""^<table.*|^<tbody.*""".r.findPrefixOf(tableBlock.toString).isDefined) && (tableBlock.parents.map(_.tagName).filter(x => """table|tbody""".r.pattern.matcher(x).matches).length < 1)) =>
             tableBlock.toString.replaceAll("\"", "\\\"")   

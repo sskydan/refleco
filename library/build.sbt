@@ -33,7 +33,7 @@ libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-testkit" % "2.3.4",
     "com.typesafe.akka" %% "akka-slf4j" % "2.3.4",
     "io.spray" %% "spray-servlet" % "1.3.2",
-    "io.spray" %% "spray-routing" % "1.3.2",
+    "io.spray" %% "spray-routing-shapeless2" % "1.3.2",
     "io.spray" %% "spray-json" % "1.3.0",
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.14.v20131031" % "container",
     "org.eclipse.jetty" % "jetty-plus"   % "8.1.14.v20131031" % "container",
