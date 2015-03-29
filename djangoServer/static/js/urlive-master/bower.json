@@ -1,0 +1,24 @@
+{
+  "name": "urlive",
+  "description": "Lightweight jQuery plugin for creating URL preview snippets.",
+  "version": "1.1.1",
+  "authors": [
+    "Mark Serbol <markserbol@outlook.com>"
+  ],
+  "license": "MIT",
+  "main": [
+    "jquery.urlive.js",
+    "jquery.urlive.css"
+  ],
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "bower.json",
+    "urlive.jquery.json",
+    "LICENSE.txt",
+    "README.md"
+  ],
+  "dependencies": {
+    "jquery": "~1.7.0"
+  }
+}
