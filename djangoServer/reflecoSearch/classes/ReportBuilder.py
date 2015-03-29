@@ -17,7 +17,7 @@ class ReportBuilder(object):
         :return List(Box()) resulting display boxes
         """
         boxList = list()
-        for dslString,filterList in queryList:
+        for dslString, filterList in queryList:
             data = cls.__dataRequest(dslString[0])
             if data != '{}':
                 for filter in filterList:

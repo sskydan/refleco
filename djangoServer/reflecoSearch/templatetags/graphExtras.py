@@ -12,6 +12,11 @@ def getTableTitle(args):
 def getTableTitle(args):
     return args['data']
 
+@register.filter(name='getNames')
+def getTableNames(args):
+    return args.get('names', [])
+
+
 @register.filter(name='getSeries')
 def getSeries(args):
     series = {}
@@ -75,3 +80,8 @@ def getFactValue(fact):
     else:
         value = ""
     return value
+
+@register.filter(name='getStockSeries')
+def getStockSeries(args):
+    series = args.get('data', [])
+    return series

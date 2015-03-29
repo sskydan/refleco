@@ -3,38 +3,148 @@
 {% load graphExtras %}
 
 {% block box-contents %}
-    <script src="/static/js/highcharts/js/highcharts.js"></script>
+
+    <script src="http://code.highcharts.com/stock/highstock.js"></script>
+    <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
     <div class="graph-box">
-        <div id="line-graph" style="min-width: 510px; height: 400px; margin: 0 auto"> </div>
+        <div id="stock-graph" class="stock-graph"> </div>
+        <button id="get-news" type="button">Get News</button>
+    </div>
+    <div id="news-links">
     </div>
     <script>
-            $(function () {
-                cat = {{ args|getXLabels|safe }}
-                ser = {{ args|getSeries|safe }}
-                $('#line-graph').highcharts({
-                    title: {
-                        text: "{{ args|getTitle }}",
-                        x: -20 //center
+$(function () {
+    var seriesOptions = [],
+        seriesCounter = 0,
+        names = {{ args|getNames|safe }}
+        // create the chart when all data is loaded
+        createChart = function () {
+
+            $('#stock-graph').highcharts('StockChart', {
+
+                rangeSelector: {
+                    selected: 4
+                },
+
+                yAxis: {
+                    labels: {
+                        formatter: function () {
+                            return (this.value > 0 ? ' + ' : '') + this.value + '%';
+                        }
                     },
-                    xAxis: {
-                        categories: cat
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'USD'
-                        },
-                        plotLines: [{
-                            value: 0,
-                            width: 1,
-                            color: '#808080'
-                        }]
-                    },
-                    tooltip: {
-                        valueSuffix: '$'
-                    },
-                    series: ser
-                });
+                    plotLines: [{
+                        value: 0,
+                        width: 2,
+                        color: 'silver'
+                    }]
+                },
+
+                xAxis: {
+                    type: 'datetime',
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.dateFormat('%y-%m-%d', this.value);
+                        }
+                    }
+                },
+
+                plotOptions: {
+                    series: {
+                        compare: 'percent'
+                    }
+                },
+                legend: {
+                    enabled: true
+                },
+
+                tooltip: {
+                    pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ({point.change}%)<br/>',
+                    valueDecimals: 2
+                },
+
+                series: seriesOptions
             });
-        </script>
+        };
+
+        $.each({{ args|getStockSeries|safe }}, function (i, s) {
+            seriesOptions[i] = {
+                name: names[i],
+                data: s
+            };
+            // As we're loading the data asynchronously, we don't know what order it will arrive. So
+            // we keep a counter and create the chart when all the data is loaded.
+            seriesCounter += 1;
+
+            if (seriesCounter === 6) {
+                createChart();
+            }
+        });
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        $('#get-news').click(function (){
+            var chart = $('#stock-graph').highcharts(),
+                extremes = chart.xAxis[0].getExtremes(),
+                start = new Date(extremes.min),
+                end   = new Date(extremes.max);
+            startymd = (start.getFullYear()*10000) + (start.getMonth()*100) + start.getDay();
+            endymd = (end.getFullYear()*10000) + (end.getMonth()*100) + end.getDay();
+            $.ajax({
+                type : "POST",
+                url : "{% url 'getArticlesByDate' %}",
+                data : {
+                    startDate: startymd,
+                    endDate: endymd,
+                    csrfmiddlewaretoken: getCookie('csrftoken')
+                },
+                success: function(data){
+                    articles = JSON.parse(data).data;
+                    $('#news-links').empty()
+                    $.urliveUpdate(articles, 10)
+                }
+            });
+        });
+    });
+
+    $.urliveUpdate = function (articles, count) {
+        console.log(count)
+        if (count > 0) {
+            article = articles.pop()
+            var newsDiv = $('<div></div>').text(article);
+            var picDiv = $('<div></div>').addClass('article-link');
+            newsDiv.urlive({
+                callbacks: {
+                    onSuccess: function (data) {
+                        $('#news-links').append(picDiv)
+                        $.urliveUpdate(articles, count -= 1)
+                    },
+                    onFail: function (data) {
+                        $.urliveUpdate(articles, count)
+                    },
+                    noData: function (data) {
+                        $.urliveUpdate(articles, count)
+                    },
+                    imgError: function (data) {
+                        $.urliveUpdate(articles, count)
+                    }
+
+                },
+                container: picDiv
+            });
+        }
+    };
+    </script>
 {% endblock %}
 

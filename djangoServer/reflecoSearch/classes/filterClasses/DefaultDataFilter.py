@@ -42,6 +42,7 @@ class DefaultDataFilter(Filter):
                                     include = True
                                     children.append(textBlock)
                             elif textBlock[u'ftype'] == 'xbrl:unstructured:table':
+                                include = True
                                 children.append(textBlock)
                         unstructured[u'children'] = children
                         if (include):

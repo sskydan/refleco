@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.http import QueryDict
@@ -6,6 +6,9 @@ from django.core.mail import send_mail
 from reflecoSearch.classes.ReportBuilder import ReportBuilder
 from reflecoSearch.classes.QueryParser import QueryParser
 from reflecoSearch.classes.QueryParsing.QueryTagger import QueryTagger
+from reflecoSearch.models import Article
+from django.core import serializers
+import json
 import logging
 devLogger = logging.getLogger('development')
 queryLogger = logging.getLogger("query")
@@ -30,7 +33,7 @@ def search(request):
     return HttpResponseRedirect('/results/'+query)
 
 def results(request, query=""):
-
+    boxes = []
     if query:
         #logging queries
         queryLogger.info(QueryTagger.getClientIp(request) + " - " + query)
@@ -78,3 +81,28 @@ def signup(request):
     email = queryData.get('email')
     send_mail('refleco.com sign-up request', email, email, ['info@reflecho.com'], fail_silently=False)
     return HttpResponseRedirect('/')
+
+def sandbox(request, query=""):
+    from reflecoSearch.classes.tickerNewsHack.yahooTickerData import getTickerData
+    from reflecoSearch.classes.boxClasses.GraphBox import GraphBox
+
+    boxes = [GraphBox.makeBox(getTickerData(query), "Test")]
+    return render_to_response("resultBoxes.html", {'query': query, 'results': boxes},  context_instance=RequestContext(request))
+
+def getArticlesByDate(request):
+    articles = []
+    if request.method == 'POST':
+        try:
+            queryData = request.POST
+            startDate = queryData.get('startDate', 9999999999999)
+            endDate = queryData.get('endDate', 9999999999999)
+            #distArticles = Article.objects.values_list('link',flat = True).distinct()[:10]
+            #rankedArticles = Article.objects.order_by('-pageRank')
+            articles = Article.objects.filter(date__range=[startDate, endDate]).filter(link__startswith="http" ).order_by('-pageRank').values_list('link',flat = True).distinct()
+
+        except:
+            print("failed article lookup")
+        data = {}
+        data['data'] = list(articles)
+        response = json.dumps(data)
+    return HttpResponse(response)

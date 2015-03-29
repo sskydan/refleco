@@ -9,7 +9,7 @@ class Filter(object):
     __metaclass__ = ABCMeta
 
     def __init__(self):
-        self.dataSet = "{}"
+        self.dataSet = '{}'
 
     @property
     def keys(self):

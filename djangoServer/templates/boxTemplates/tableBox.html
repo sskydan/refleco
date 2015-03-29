@@ -22,11 +22,13 @@
                         <td class="box-table-data-value">{{fact|getFactValue}}</td>
                     </tr>
                     {%  if fact|isPeriodicFact %}
-                        {% for period in fact|getPeriodicValues %}
-                            <tr class="box-table-data-row">
-                                <td class="box-table-data-name, data-indent">{{period|getPeriodDates}}</td>
-                                <td class="box-table-data-value">{{period|getPeriodValue}}</td>
-                            </tr>
+                        {% for period in fact|getPeriodicTotals %}
+                            {% if period|isPeriodicTotal %}
+                                <tr class="box-table-data-row">
+                                    <td class="box-table-data-name, data-indent">{{period|getPeriodDates}}</td>
+                                    <td class="box-table-data-value">{{period|getPeriodValue}}</td>
+                                </tr>
+                            {% endif %}
                         {% endfor %}
                     {%  endif %}
                 {% endfor %}
