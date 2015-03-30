@@ -2,9 +2,9 @@ name := "library"
 
 organization := "refleco"
 
-version := "0.5.0"
+version := "0.5.1"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.6"
 
 scalacOptions ++= Seq(
     "-feature", 
