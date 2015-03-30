@@ -56,11 +56,13 @@
 .urlive-img-wrapper {
 	float:left;
 	margin-right:10px;
+    padding-top: 10px;
     width: 100px;
 }
 
 .urlive-text-wrapper {
-	overflow:auto;
+	overflow:hidden;
+    height: 100px;
 	padding:10px;
 }
 
@@ -68,6 +70,7 @@
 .urlive-img-small .urlive-img-wrapper {
 	width:auto;
 	max-width:100px;
+    max-height:100px;
 }
 
 /* LARGE IMAGE STYLES */

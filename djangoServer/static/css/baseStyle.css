@@ -644,3 +644,20 @@ footer{
 --------------------------------------------------
 --------------------------------------------------
 -------------------------------------------------- */
+#news-links {
+    width: 1135px;
+}
+
+#load-more-news{
+    margin-top: 50px;
+}
+
+button#get-more-news {
+    display: block;
+    margin: auto;
+}
+
+.no-news{
+    text-align: center;
+    margin-top: 50px;
+}
