@@ -85,6 +85,6 @@ object FactSerializers extends DefaultJsonProtocol {
     }
   }
 
-  implicit def factFormat: RootJsonFormat[Fact] = rootFormat(lazyFormat(jsonFormat8(Fact.apply)))
+  implicit def factFormat: RootJsonFormat[Fact] = rootFormat(lazyFormat(jsonFormat7(Fact.apply)))
 }
 

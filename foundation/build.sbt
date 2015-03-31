@@ -2,7 +2,7 @@ name := "foundation"
 
 organization := "refleco"
 
-version := "0.6.3"
+version := "0.7.0"
 
 scalaVersion := "2.11.6"
 

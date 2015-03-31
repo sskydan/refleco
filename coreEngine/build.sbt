@@ -22,7 +22,7 @@ resolvers ++= Seq(
 
 // shapeless conflict in spray vs. parboiled (?) - use spray-routing-shapeless2 ?
 libraryDependencies ++= Seq(
-    "org.scala-lang.modules" %% "scala-xml" % "1.0.2",
+    "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
     "commons-net" % "commons-net" % "2.0",
     "org.json" % "json" % "20090211",
     "net.lingala.zip4j" % "zip4j" % "1.3.2",

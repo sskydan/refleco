@@ -7,6 +7,8 @@ import scalaz.Scalaz._
 import scalaz.Semigroup
 import utilities.XMLUtil._
 import com.typesafe.scalalogging.StrictLogging
+import scala.xml._
+import facts.Fact
 
 
 object DBPedia extends StrictLogging with UConfig {
@@ -21,8 +23,10 @@ object DBPedia extends StrictLogging with UConfig {
   val RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   val RDFS_NS = "http://www.w3.org/2000/01/rdf-schema#"
   val XML_NS = "http://www.w3.org/XML/1998/namespace"
+  val OWL_NS = "http://www.w3.org/2002/07/owl#"
   // dbp ontology prefix  
-  val DBP_PREFIX = "http://dbpedia.org/ontology/"
+  val DBP_ONT_PREFIX = "http://dbpedia.org/ontology/"
+  
   // prefixes and special properties 
 //  val SYMBOL_URI = "http://dbpedia.org/property/symbol"
 //  val LOCAL_SYMBOL_URI = resourceNameFromURI(SYMBOL_URI)
@@ -74,21 +78,47 @@ object DBPedia extends StrictLogging with UConfig {
     propertiesRDD filter (ipropertyWhitelist contains _.predicate)
   }
   
-  def parseOwl: Seq[(String,String)] = {
+  def parseOwl = {
     val ontologyXML = openXML(OWL_FILE)
         
-    ontologyXML \ "_" flatMap { case elem => 
-      val uri = elem \ s"@{$RDF_NS}about"
+    ontologyXML \ "_" flatMap {
       
-      elem \ "_" find (elem => 
-        elem.label == "label" &&
-        (elem \ s"@{$XML_NS}lang").toString() == "en"
+      case clazz if clazz.label == "Class" => 
+//        Fact()
+        ???
+      
+      case datatypeProp if datatypeProp.label == "DatatypeProperty" => ???
+      
+      case objectProp if objectProp.label == "ObjectProperty" => ???
+      
+      case elem => ??? 
         
-      ) map (uri.text -> _.text) orElse {
-        logger error s"Could not parse owl entry: ${elem.toString}"
-        None
-      }
     }
+
+    // Generic parsing methods
+    def getURI(elem: Node): String = (elem \ s"@{$RDF_NS}about").text
+		def getLabel(elem: Node): Option[String] = 
+      elem \ "_" collectFirst {
+    		case e@Elem(RDFS_NS, "label", PrefixedAttribute(XML_NS, "lang", Text("en"), _), _) => 
+  		    e.text
+    }
+    val propertyType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"
+    
+    def findResourceByLabel(elem: Node, label: String): String =
+      (elem \ label \ s"@{$RDF_NS}resource").text
+    
+    // Class parsing methods
+    def getSubClass(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}subClassOf") 
+    def getEqClass(elem: Node): String = findResourceByLabel(elem, s"{$OWL_NS}equivalentClass")
+    def getDisjoint(elem: Node): String = findResourceByLabel(elem, s"{$OWL_NS}disjointWith")
+      
+    // Property parsing methods
+    def getSubProperty(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}subPropertyOf")
+    def getDomain(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}domain")
+    def getRange(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}range")
+    
+      
+    ???
   }
   
   val mpropertyBlacklist = Seq(
@@ -125,7 +155,8 @@ object DBPedia extends StrictLogging with UConfig {
   
 }
 
-/** Triples supporting both values-with-unit and references as objects
+/** Quads supporting both values-with-unit and references as objects.
+ *  Includes methods for reading from dbpedia "triple" rows
  */
 case class Quad(subject: String, predicate: String, obj: String, unit: Option[String])
 object Quad {

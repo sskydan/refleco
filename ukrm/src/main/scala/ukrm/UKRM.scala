@@ -36,8 +36,8 @@ class UKRMX(
   val entities: RDD[(VertexId, Vertex)],
   val relationships: RDD[Edge[(Long, Option[DateTime])]]
 ) extends UKRM[RDD, Graph, Edge] {
-  
   import UKRM._
+  
   val sconf = new SparkConf()
   implicit val spark = new SparkContext(sconf)
   

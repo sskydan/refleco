@@ -7,6 +7,7 @@ shopt -s globstar
 # delete old jar dependencies
 rm ../library/lib/foundation*
 rm ../coreEngine/lib/foundation*
+rm ../ukrm/lib/foundation*
 
 # backup current jar
 cd "../foundation/target/scala-2.11/"
@@ -19,12 +20,15 @@ sbt package
 cd -
 cp *.jar "../../../library/lib/"
 cp *.jar "../../../coreEngine/lib/"
+cp *.jar "../../../ukrm/lib/"
 
 # update eclipse project structure
 cd "../../../" # /reflecho
 cd library
 sbt eclipse
 cd ../coreEngine
+sbt eclipse
+cd ../ukrm
 sbt eclipse
 
 
