@@ -85,8 +85,10 @@ def signup(request):
 def sandbox(request, query=""):
     from reflecoSearch.classes.tickerNewsHack.yahooTickerData import getTickerData
     from reflecoSearch.classes.boxClasses.GraphBox import GraphBox
+    from reflecoSearch.classes.boxClasses.StatisticBox import makeStatsBox 
 
-    boxes = [GraphBox.makeBox(getTickerData(query), "Test")]
+    fileName = getTickerData(query)
+    boxes = [GraphBox.makeBox(fileName, "Test"), makeStatsBox(fileName)]
     return render_to_response("resultBoxes.html", {'query': query, 'results': boxes},  context_instance=RequestContext(request))
 
 def getArticlesByDate(request):

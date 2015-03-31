@@ -1,0 +1,27 @@
+
+<style>
+    .col {
+          float: left;
+  width: 45%;
+  border-style: groove;
+  background-color: rgb(35, 211, 218);
+  margin-right: 15pt;
+    }
+</style>
+{% load boxExtras %}
+
+{% block box-contents %}
+    <div class="stats">
+        {% for stat in args|getBoxArg:"stats"%}
+        <div class='col'>
+        <center>
+        <b>{{stat.month}}</b></br>
+        AVERAGE RETURN:</br>
+        {{stat.expected | formatFloat}}</br>
+        {{stat.probability | formatFloat}}% POSITIVE</br>
+        <img src={{stat.expected | getArrowImg}}></img></br>
+        </br>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}

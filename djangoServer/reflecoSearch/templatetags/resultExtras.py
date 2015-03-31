@@ -5,7 +5,8 @@ devLogger = logging.getLogger('development')
 
 @register.filter(name='getTemplate')
 def getTemplate(reportBox):
-    return "boxTemplates/"+reportBox.template
+	print(reportBox.template)
+	return "boxTemplates/"+reportBox.template
 
 @register.filter(name='getArgs')
 def getArgs(reportBox):
