@@ -1,27 +1,31 @@
+{% extends "boxTemplates/reportBox.html" %}
 
-<style>
-    .col {
-          float: left;
-  width: 45%;
-  border-style: groove;
-  background-color: rgb(35, 211, 218);
-  margin-right: 15pt;
-    }
-</style>
-{% load boxExtras %}
+{% load graphExtras %}
 
 {% block box-contents %}
+    <style>
+        .col {
+            float: left;
+            width: 150px;
+            margin: 2px;
+            border: 2px solid #828282;
+            border-radius: 4px;
+        }
+    </style>
     <div class="stats">
         {% for stat in args|getBoxArg:"stats"%}
-        <div class='col'>
-        <center>
-        <b>{{stat.month}}</b></br>
-        AVERAGE RETURN:</br>
-        {{stat.expected | formatFloat}}</br>
-        {{stat.probability | formatFloat}}% POSITIVE</br>
-        <img src={{stat.expected | getArrowImg}}></img></br>
-        </br>
-        </div>
+            <div class='col' style="background: linear-gradient(rgb(167, 207, 223) 0%, rgb(35, 83, 138) 100%);">
+                <p style="text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 11px;">{{stat.month}}</p>
+                <p style="text-align: center; margin-bottom: 2px;">Avg. Return:</p>
+                <div style="display: table; margin: auto; margin-top: -15px;">
+                    <div class={{ stat.expected|getArrowClass }} align="bottom"> </div>
+                    <p style="display: inline; padding-left: 5px; vertical-align: super; line-height: 40px;">{{stat.expected|formatFloat}}</p>
+                </div>
+                <div style="margin-top: 5px; color: white; padding-left: 4px;">
+                    <p style="display: inline">Probability:</p>
+                    <p style="display: inline">{{stat.probability|getPP}}%</p>
+                </div>
+            </div>
         {% endfor %}
     </div>
 {% endblock %}

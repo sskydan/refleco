@@ -4,6 +4,10 @@ register = template.Library()
 import logging
 devLogger = logging.getLogger('development')
 
+@register.filter(name='getBoxArg')
+def getBoxArg(args, arg):
+    return args.get(arg, "")
+
 @register.filter(name='getTitle')
 def getTableTitle(args):
     return args['title']
@@ -85,3 +89,32 @@ def getFactValue(fact):
 def getStockSeries(args):
     series = args.get('data', [])
     return series
+
+@register.filter(name='formatFloat')
+def formatFloat(fl):
+    return "%.2f" % (float(fl))
+
+@register.filter(name='getArrowImg')
+def getArrowImg(fl):
+    if float(fl) < 0:
+        return "/static/img/arrow-down.png"
+    return "/static/img/arrow-up.png"
+
+@register.filter(name='getPP')
+def getPP(percent):
+    return "%.1f" % (float(percent*100))
+
+@register.filter(name='getArrowClass')
+def isPositive(num):
+    if (0 < num < 0.1):
+        return 'ticker-arrow-up-small'
+    elif (0.1 < num < 0.5):
+        return 'ticker-arrow-up-med'
+    elif (num > 0.5):
+        return 'ticker-arrow-up-large'
+    elif (-0.1 < num < 0):
+        return 'ticker-arrow-down-small'
+    elif (-0.5 < num < -0.1):
+        return 'ticker-arrow-down-med'
+    else:
+        return 'ticker-arrow-down-large'

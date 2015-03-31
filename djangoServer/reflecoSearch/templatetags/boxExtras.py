@@ -9,16 +9,6 @@ devLogger = logging.getLogger('development')
 def getBoxArg(args, arg):
     return args.get(arg, "")
 
-@register.filter(name='formatFloat')
-def formatFloat(fl):
-    return "%.2f" % (float(fl))
-
-@register.filter(name='getArrowImg')
-def getArrowImg(fl):
-    if float(fl) < 0:
-        return "/static/img/arrow-down.png"
-    return "/static/img/arrow-up.png"
-
 @register.filter(name='getFactName')
 def getFactName(fact):
     try:

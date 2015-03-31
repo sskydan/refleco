@@ -8,11 +8,11 @@
     <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
     <div class="graph-box">
         <div id="stock-graph" class="stock-graph"> </div>
-        <button id="get-news" class="btn btn-success" style="position: absolute; bottom: 10px; left: 10px;" type="button">Get News</button>
-    </div>
-    <div id="news-links">
-    </div>
-    <div id="load-more-news">
+        <button id="get-news" class="btn btn-success" style="position: absolute; top: 10px; right: 50px;" type="button">Get News</button>
+        <div id="news-links">
+        </div>
+        <div id="load-more-news">
+        </div>
     </div>
     <script>
 $(function () {
@@ -73,6 +73,13 @@ $(function () {
                 name: names[i],
                 data: s
             };
+            if (i > 3){
+                seriesOptions[i] = {
+                    name: names[i],
+                    data: s,
+                    visible: false
+                };
+            }
             // As we're loading the data asynchronously, we don't know what order it will arrive. So
             // we keep a counter and create the chart when all the data is loaded.
             seriesCounter += 1;
