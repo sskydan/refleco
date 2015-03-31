@@ -204,6 +204,7 @@ trait ESManager extends DataServerManager with StrictLogging {
         val rootBool = QueryBuilders.boolQuery()
         queryRoot foreach {
            case ("==", k, v) => rootBool must QueryBuilders.matchPhraseQuery(k, v) 
+           case (_,k,v) => rootBool must QueryBuilders.matchQuery(k, v)
         }
         rootBool
       }

@@ -52,7 +52,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
     doctype match {
       case "relation" | "entity" | "attribute" =>
         CoreParams(
-          queryRootFuncs = Some("=="),
+          queryRootFuncs = Some(""),
           queryRootKeys = Some("sform"),
           queryRootVals = Some(query),
           doctypeParam = Some(doctype),
@@ -60,7 +60,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
         )
       case _ =>
         CoreParams(
-          queryRootFuncs = Some("=="),
+          queryRootFuncs = Some(""),
           queryRootKeys = Some("prettyLabel"),
           queryRootVals = Some(query),
           postFilterFuncs =  Some("field;field;field"),
