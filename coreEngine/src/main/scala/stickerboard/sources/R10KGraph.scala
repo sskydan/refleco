@@ -36,14 +36,14 @@ object SparkFNs10K {
     val id = m("id").toString
     val ftype = m("ftype").toString
     val value = m("value").toString
-    val prettyLabel = m("prettyLabel").toString
+    val prettyLabel = m("prettyLabel").asInstanceOf[Seq[String]]
     val interest = m("interest").toString.toDouble
     val children = m("children")
       .asInstanceOf[Seq[LinkedHashMap[String, Any]]]
       .map (materialize10KFacts)
     val uuid = m("uuid").toString
 
-    Fact(id, ftype, FactString(value), Seq(prettyLabel), interest, children, None, uuid)
+    Fact(id, ftype, FactString(value), prettyLabel, interest, children, None, uuid)
   }
   
   def fact2relationmap(f: Fact) = f.prettyLabel -> fact2sticker(f)
