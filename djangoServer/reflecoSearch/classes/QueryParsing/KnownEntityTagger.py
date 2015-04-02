@@ -10,11 +10,12 @@ class KnownEntityTagger(object):
     knownEntities = {'cash flow': 'CASHFLOW',
                      'balance sheet': 'BALANCESHEET',
                      'income statement': 'INCOMESTMT',
-                     'megers': 'MEGER',
-                     'market condiction': 'CONDITION',
+                     'mergers': 'MEGER',
+                     'market condition': 'CONDITION',
                      'market indication': 'INDICATION',
                      'forward outlook': 'OUTLOOK',
-                     'acquisition': 'ACQUIRE'}
+                     'acquisitions': 'ACQUIRE',
+                     'patents': 'PATENT'}
 
     @classmethod
     def getKnownEntities(cls, chunkList):

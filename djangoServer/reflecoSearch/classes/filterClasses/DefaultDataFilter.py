@@ -30,14 +30,13 @@ class DefaultDataFilter(Filter):
                 if len(factItems):
                     boxList.append(TableBox.makeBox(factItems, factTitle, []))
 
-                """
                 if len(unstructuredItems):
                     for unstructured in unstructuredItems:
                         children = list()
                         include = False
                         for textBlock in unstructured[u'children']:
                             if textBlock[u'ftype'] == 'xbrl:unstructured:text':
-                                textBlock[u'value'] = extractPredicates(textBlock[u'value'])
+                                textBlock[u'value'] = set([y[0] for x,y in extractPredicates(textBlock[u'value']) if x == self.args.get('pred', False)])
                                 itemTitle = factTitle + "(" + unstructured[u'prettyLabel'][0] + ")"
                                 if len(textBlock[u'value']) > 0:
                                     include = True
@@ -48,7 +47,7 @@ class DefaultDataFilter(Filter):
                         unstructured[u'children'] = children
                         if (include):
                             boxList.append(TextBox.makeBox(unstructured, itemTitle))
-                """
+
         return boxList
 
 

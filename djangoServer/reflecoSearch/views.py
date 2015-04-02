@@ -45,7 +45,6 @@ def results(request, query=""):
             devLogger.info("Received query: " + query)
             queryList = list()
             try:
-
                 qt = QueryTagger(query)
                 queryOptions = qt.splitOnNer()
                 for opt in queryOptions:

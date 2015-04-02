@@ -8,7 +8,7 @@ class Filter(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(selfi, **kargs):
+    def __init__(self, **kargs):
         self.dataSet = '{}'
         self.args = kargs
 

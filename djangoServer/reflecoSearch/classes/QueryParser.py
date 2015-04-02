@@ -4,6 +4,7 @@ from reflecoSearch.classes.filterClasses.BalanceSheetFilter import BalanceSheetF
 from reflecoSearch.classes.filterClasses.IncomeStatementFilter import IncomeStatementFilter
 from reflecoSearch.classes.filterClasses.CashFlowFilter import CashFlowFilter
 from reflecoSearch.classes.filterClasses.DefaultDataFilter import DefaultDataFilter
+from reflecoSearch.classes.filterClasses.UnstructuredDataFilter import UnstructuredDataFilter
 from reflecoSearch.pyparsing.pyparsing import *
 from reflecoSearch.classes.DSLString import DSLString
 from django.conf import settings
@@ -122,11 +123,12 @@ class QueryParser(object):
     FORWARD = LBRACE + Literal('FORWARD') + OneOrMore(WRD) + RBRACE
     INDICATION = LBRACE + Literal('INDICATION') + OneOrMore(WRD) + RBRACE
     CONDITION = LBRACE + Literal('CONDITION') + OneOrMore(WRD) + RBRACE
+    PATENT = LBRACE + Literal('PATENT') + OneOrMore(WRD) + RBRACE
 
     CASHFLOW = LBRACE + Literal('') + OneOrMore(WRD) + RBRACE
     BALANCESHEET = LBRACE + Literal('BALANCESHEET') + OneOrMore(WRD) + RBRACE
     INCOMESTMT = LBRACE + Literal('INCOMESTMT') + OneOrMore(WRD) + RBRACE
-    REPORT = Group(LBRACE + Suppress(Literal('REPORT')) + (CASHFLOW ^ BALANCESHEET ^ INCOMESTMT ^ MERGER ^ ACQUIRE ^ FORWARD ^ INDICATION ^ CONDITION) + RBRACE)
+    REPORT = Group(LBRACE + Suppress(Literal('REPORT')) + (CASHFLOW ^ BALANCESHEET ^ INCOMESTMT ^ MERGER ^ ACQUIRE ^ FORWARD ^ INDICATION ^ CONDITION ^ PATENT) + RBRACE)
     DATE = Group(LBRACE + Literal('DATE') + WRD + RBRACE)
     RELATION = LBRACE + Suppress(Literal('RELATION')) + relation + RBRACE
     ATTRIBUTE = LBRACE + Suppress(Literal('ATTRIBUTE')) + attribute + RBRACE
@@ -229,7 +231,6 @@ class QueryParser(object):
                     if item[0] == 'DSLI':
                         dslStr.addDSLI(item[1:])
                 dslItems.append(dslStr)
-
         if len(filterObjects) < 1:
                 filterObjects = [DefaultDataFilter()]
 
@@ -249,10 +250,11 @@ class QueryParser(object):
                 'BALANCESHEET': BalanceSheetFilter(),
                 'INCOMESTMT': IncomeStatementFilter(),
                 'ACQUIRE': UnstructuredDataFilter(pred='ACQUIRE'),
-                'MERGER': UnstructuredDataFilter(pred='MEGER'),
+                'MERGER': UnstructuredDataFilter(pred='MERGER'),
                 'FORWARD': UnstructuredDataFilter(pred='FORWARD'),
                 'CONDITION': UnstructuredDataFilter(pred='CONDITION'),
                 'INDICATION': UnstructuredDataFilter(pred='INDICATION'),
+                'PATENT': UnstructuredDataFilter(pred='PATENT')
             }.get(x, False)
 
         return filterSwitch(parsedItem[1][0])

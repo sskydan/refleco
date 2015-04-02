@@ -12,14 +12,14 @@ class UnstructuredDataFilter(Filter):
         """
         boxList = []
         if len(self.dataSet):
-            for fact in [self.dataSet]:
+            for fact in self.dataSet:
                 factItems = []
                 factTitle = ""
                 try:
                     if fact[u'ftype'] == '10-K':
                         if len(fact[u'children']):
                             factItems = self.filterData(fact[u'children'], lambda e: "TextBlock" in e[u'id'])
-                            factTitle = fact[u'prettyLabel'] + " (" + fact[u'value'] + ")"
+                            factTitle = fact[u'prettyLabel'][0] + " (" + fact[u'value'] + ")"
                     elif fact[u'ftype'] == 'refleco:entity':
                         factItems = [fact]
                 except Exception as e:
@@ -31,7 +31,7 @@ class UnstructuredDataFilter(Filter):
                         include = False
                         for textBlock in item[u'children']:
                             if textBlock[u'ftype'] == 'xbrl:unstructured:text':
-                                textBlock[u'value'] = [if x == self.args.get('pred', False) y for x,y in extractPredicates(textBlock[u'value'])
+                                textBlock[u'value'] = set([y[0] for x,y in extractPredicates(textBlock[u'value']) if x == self.args.get('pred', False)])
                                 itemTitle = factTitle + "(" + item[u'prettyLabel'][0] + ")"
                                 if len(textBlock[u'value']) > 0:
                                     include = True

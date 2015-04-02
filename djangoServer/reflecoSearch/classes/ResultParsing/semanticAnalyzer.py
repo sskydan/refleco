@@ -20,6 +20,7 @@ def findIndsWithMatcher(matchers, tokens):
 
 def findMergerInds(tokens):
     return findIndsWithMatcher((['MERGER', (r"merg.*",)],
+                                ['PATENT', (r"patent.*",)],
                                 ['ACQUIRE', (r"aqui[r + s].*",)] ,),tokens)
 
 def findForwardInds(tokens):
