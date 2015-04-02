@@ -89,7 +89,7 @@ class CashFlowFilter(Filter):
                             elif "Abstract" in item:
                                 name = item.replace("Abstract", "")
                                 statementData.append({
-                                    u'prettyLabel': name,
+                                    u'prettyLabel': [name],
                                     u'value': None,
                                     u'ftype': "blah",
                                     u'id': "",

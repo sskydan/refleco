@@ -34,6 +34,9 @@ def search(request):
 
 def results(request, query=""):
     boxes = []
+    if len(query) < 6 and query.isupper():
+        return HttpResponseRedirect('/sandbox/'+query)
+
     if query:
         #logging queries
         queryLogger.info(QueryTagger.getClientIp(request) + " - " + query)
@@ -81,6 +84,9 @@ def signup(request):
     return HttpResponseRedirect('/')
 
 def sandbox(request, query=""):
+    if not query.isupper():
+        return HttpResponseRedirect('/results/'+query)
+
     from reflecoSearch.classes.tickerNewsHack.yahooTickerData import getTickerData
     from reflecoSearch.classes.boxClasses.GraphBox import GraphBox
     from reflecoSearch.classes.boxClasses.StatisticBox import makeStatsBox 
