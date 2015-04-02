@@ -3,7 +3,6 @@ from reflecoSearch.classes.boxClasses.Box import Box
 
 def makeStatsBox(dataFile):
 	data = {}
-	print(dataFile)
 	with open(dataFile, 'r') as csvFile:
 		reader = csv.DictReader(csvFile)
 		lastCl = None

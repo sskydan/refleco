@@ -30,6 +30,7 @@ class DefaultDataFilter(Filter):
                 if len(factItems):
                     boxList.append(TableBox.makeBox(factItems, factTitle, []))
 
+                """
                 if len(unstructuredItems):
                     for unstructured in unstructuredItems:
                         children = list()
@@ -47,6 +48,7 @@ class DefaultDataFilter(Filter):
                         unstructured[u'children'] = children
                         if (include):
                             boxList.append(TextBox.makeBox(unstructured, itemTitle))
+                """
         return boxList
 
 

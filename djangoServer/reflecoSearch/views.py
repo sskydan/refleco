@@ -48,7 +48,6 @@ def results(request, query=""):
 
                 qt = QueryTagger(query)
                 queryOptions = qt.splitOnNer()
-
                 for opt in queryOptions:
                     queryParse = QueryParser([c.toTuple() for c in opt])
                     dsl, filter = queryParse.parseAST()

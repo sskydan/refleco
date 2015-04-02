@@ -17,17 +17,25 @@ class ReportBuilder(object):
         :return List(Box()) resulting display boxes
         """
         boxList = list()
+        firstCompanyHit = False
         for dslString, filterList in queryList:
-            data = cls.__dataRequest(dslString[0])
-            if data != '{}':
-                for filter in filterList:
-                    try:
-                        if filter:
-                            filterObj = filter()
-                            filterObj.loadData(data)
-                            boxList.extend(filterObj.createBoxList())
-                    except Exception as e:
-                        devLogger.error("Could not create Filter object: " + str(e))
+            #just looking at single dsl queries for now
+            dslString = dslString[0]
+
+            if not firstCompanyHit:
+                firstCompanyHit = dslString.subject
+
+            if dslString.subject == firstCompanyHit:
+                data = cls.__dataRequest(dslString.getString())
+                if data != '{}':
+                    for filter in filterList:
+                        try:
+                            if filter:
+                                filterObj = filter()
+                                filterObj.loadData(data)
+                                boxList.extend(filterObj.createBoxList())
+                        except Exception as e:
+                            devLogger.error("Could not create Filter object: " + str(e))
         return boxList
 
     @classmethod

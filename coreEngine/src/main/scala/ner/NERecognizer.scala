@@ -40,7 +40,7 @@ case class NE(entity: String, genus: String, score: Double, raw: String) {
   }
 }
 case class NESentence(val row: Seq[NE], val whole: String, sc: Option[Double] = None) extends NERanker {
-  val score = sc getOrElse row.foldLeft(0.0)(_+_.score)
+  val score = sc getOrElse 0.0
   def updateScore(boost: Double => Double) = NESentence(row, whole, Some(boost(score)))
   
   lazy val rank: NESentence = rankers.foldLeft(this)( (s, ranker) => ranker(s) )    
@@ -58,10 +58,12 @@ class NERecognizer(chunk: String) extends StrictLogging {
   lazy val matrix: QLMatrix[NERNode] = {
     val words = chunk.trim.split(" ").map(_.trim).toSeq
     
-    val combinations = (1 to words.size) flatMap (words.combinations(_).toSeq)
-    val adjacentCombinations = combinations filter (subset => chunk contains (subset mkString " "))
+    val combinations = for {
+      i <- 0 to words.size
+      j <- 1 to words.size-i
+    } yield words.slice(i, i+j).zip(i to i+j)
     
-    val matrix = QLMatrix.fromSparse(adjacentCombinations, words, new NERNode(_))
+    val matrix = QLMatrix.fromSparse(combinations, words, new NERNode(_))
     
     // initialize the nodes with their row
     matrix.root.r.foreach[QuadHeader](_.r){ col =>
@@ -71,7 +73,7 @@ class NERecognizer(chunk: String) extends StrictLogging {
           val row = 
             if (!n.l.row.isEmpty) n.l.row
             else n.traverse[NERNode,NERNode](_.r)(x => x)
-            
+          
           n.row = row
         case _ =>
       }
@@ -86,7 +88,7 @@ class NERecognizer(chunk: String) extends StrictLogging {
     
     val sentences = structuredSentences flatMap (_.cartesianProduct map (NESentence(_, chunk).rank))
     
-    val topResults = sentences sortBy (- _.score) take 20
+    val topResults = sentences sortBy (- _.score) take 50
     
     topResults
   }
@@ -101,7 +103,7 @@ class NERecognizer(chunk: String) extends StrictLogging {
 				c.cover
 				
 				val solutions = c.traverseRemG(_.dn) { 
-			
+			  
 				  case r: NERNode if r.evaluationResults =>
 						r.foreachRem(_.r)(_.c.cover)
 						val subSolutions = search(root, r :: path)
@@ -138,7 +140,7 @@ object NERecognizer extends CEConfig {
   }
 
   def tryPENT(candidate: String): ListT[Future, NE] =
-    tryDisambiguation(candidate, "10-K", "company")
+    tryDisambiguation(candidate, "10-K", "company", 2.5)
    
   def tryENT(candidate: String): ListT[Future, NE] = 
     tryDisambiguation(candidate, "entity", "entity")

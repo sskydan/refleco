@@ -44,7 +44,7 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
       entry.\\[JsString]("uri").value,
       "refleco:result",
       FactNone,
-      entry.\\[JsArray]("sform").elements map (_.toString),
+      Seq(entry.\\[JsString]("sform").value),
       entry.\\[JsNumber]("_score").value.toDouble
     )
   
@@ -58,7 +58,7 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
     case (Success(doc: JsObject), _) if (doc \\~ "children") != Set() => 
       val fact = doc.convertTo[Fact]
         
-      val filterPaths = childFilter //map (filter => filter splitAt (filter indexOf "=")) // replaceFirst ("children.", ""))
+      val filterPaths = childFilter
       
       if (filterPaths.isEmpty) fact
       else
@@ -91,6 +91,7 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
       val esScore = entry.\\[JsNumber]("_score").value.toDouble
       val reflecoScore =
         entry.\\~[JsNumber]("interest").headOption.map(_.value.toDouble)
+      val realScore = if ((reflecoScore getOrElse 0) == 0) esScore else reflecoScore.get
       
       val prettyLabel = (fields get "prettyLabel") orElse (fields get "uri") collect {
         case JsArray(e:Vector[JsString] @unchecked) => e.toSeq map (_.value)
@@ -104,7 +105,7 @@ case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil
         "refleco:result",
         FactNone,
         prettyLabel,
-        reflecoScore getOrElse esScore,
+        realScore,
         Nil,
         Some(filteredFields.asJsObject)
       )

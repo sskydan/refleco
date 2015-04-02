@@ -31,7 +31,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
 
   type NameLookupResult = (String, String, Double)
   
-  val TIMEOUT = Duration(20, TimeUnit.SECONDS)
+  val TIMEOUT = Duration(60, TimeUnit.SECONDS)
   val HOST = config getString "dataServerHost"
   
   /** TODO fix result value
@@ -56,7 +56,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
           queryRootKeys = Some("sform"),
           queryRootVals = Some(query),
           doctypeParam = Some(doctype),
-          limParam = Some(10)
+          limParam = Some(50)
         )
       case _ =>
         CoreParams(
@@ -68,7 +68,7 @@ object LibraryConnector extends CEConfig with StrictLogging {
           postFilterVals = Some("NA;NA;NA"),
           //searchParam = Some(query), 
           //postFilter = Some("prettyLabel;interest;id"),
-          limParam = Some(10)
+          limParam = Some(20)
         )
   }}
   
@@ -132,11 +132,13 @@ object LibraryConnector extends CEConfig with StrictLogging {
    *  TODO ability to exclude children
    */
   def streamDocs(doctype: String, lim: Int = 500): Stream[Facts] = {
+    implicit val timeout = Timeout(1.hour)
     val libPipeline: HttpRequest => Future[Facts] = (
       sendReceive
       ~> decode(Gzip)
       ~> unmarshal[Facts]
-    )
+    )   
+
     def getPage(page: Int): Future[Facts] = libPipeline {
       logger.info(s"Retrieving results $page to ${page + lim} of $doctype")
 

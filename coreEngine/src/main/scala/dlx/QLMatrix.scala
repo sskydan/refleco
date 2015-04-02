@@ -20,22 +20,18 @@ class QLMatrix[T <: QuadNodeIntf[T]](val root: QuadHeader) {
 object QLMatrix {
   
   def fromSparse[T <: QuadNodeIntf[T]](
-    rows: Seq[Seq[String]],
+    rows: Seq[Seq[(String,Int)]],
     names: Seq[String],
     nodeBuilder: QuadHeader => T
   ): QLMatrix[T] = {
     
-    // we keep the name ordering so that element adjacency is preserved
-    val init = ListMap[String,Vector[Int]](names.map(_ -> Vector()): _*)
+    val matrix = for {
+      r <- rows
+      leftPadding = (1 to r.head._2) map (_ => 0)
+      rightPadding = (r.last._2 to names.size-2) map (_ => 0)
+    } yield leftPadding ++ (r map (_ => 1)) ++ rightPadding
     
-    val matrix = rows.foldLeft(init) {
-      case (matrix, row) => matrix map {
-        case (k,v) if row contains k => k -> (v :+ 1)
-        case (k,v) => k -> (v :+ 0)
-      }
-    }
-
-    QLMatrix(matrix.values.toList, names, nodeBuilder)
+    QLMatrix(matrix.transpose, names, nodeBuilder)
   }
   
   def apply[T <: QuadNodeIntf[T]](
