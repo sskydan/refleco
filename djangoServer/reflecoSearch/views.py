@@ -92,7 +92,10 @@ def sandbox(request, query=""):
     from reflecoSearch.classes.boxClasses.StatisticBox import makeStatsBox 
 
     fileName = getTickerData(query)
-    boxes = [GraphBox.makeBox(fileName, "Test"), makeStatsBox(fileName)]
+    boxes = []
+    if fileName:
+        boxes = [GraphBox.makeBox(fileName, "Test"), makeStatsBox(fileName)]
+
     return render_to_response("resultBoxes.html", {'query': query, 'results': boxes},  context_instance=RequestContext(request))
 
 def getArticlesByDate(request):

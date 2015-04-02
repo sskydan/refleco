@@ -22,14 +22,18 @@ def getTickerData(ticker):
     staticPart = "&ignore=.csv"
 
     url = base_url + ticker + tradingInterval + staticPart
+    fileName = False
+    try:
+        response = urllib.request.urlopen(url)
+        data = response.read()
+        fileName = "static/tickerData/%s.csv" % (ticker)
+        csvFile = open(fileName, 'w')
+        csvFile.write(data.decode("utf-8"))
+        csvFile.close()
+    except Exception as e:
+        print("error with yahoo: " + str(e))
 
-    response = urllib.request.urlopen(url)
-    data = response.read()
 
-    fileName = "static/tickerData/%s.csv" % (ticker)
-    csvFile = open(fileName, 'w')
-    csvFile.write(data.decode("utf-8"))
-    csvFile.close()
 
     print("%sWrote to file: %s%s%s" % (PASS, FAIL,fileName, NORM))
     return fileName
