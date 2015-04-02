@@ -20,7 +20,6 @@ resolvers ++= Seq(
     "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 )
 
-// shapeless conflict in spray vs. parboiled (?) - use spray-routing-shapeless2 ?
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
     "commons-net" % "commons-net" % "2.0",

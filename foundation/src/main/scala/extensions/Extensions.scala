@@ -64,7 +64,7 @@ object Extensions {
     /** produce the cartesian product of a matrix (2d seq)
      *  FIXME make lazy
      */
-    def cartesianProduct[B](implicit asTraversable: (T) => Traversable[B]): Seq[Seq[B]] =
+    def cartesianProduct[B](implicit asTraversable: T => Traversable[B]): Seq[Seq[B]] =
       xs.foldLeft(Seq(Seq.empty[B])) { 
         (ll, rr) => for (l <- ll; r <- asTraversable(rr)) yield l :+ r 
       }

@@ -7,8 +7,8 @@ import scalaz.Scalaz._
 import scalaz.Semigroup
 import utilities.XMLUtil._
 import com.typesafe.scalalogging.StrictLogging
+import facts._
 import scala.xml._
-import facts.Fact
 
 
 object DBPedia extends StrictLogging with UConfig {
@@ -18,7 +18,7 @@ object DBPedia extends StrictLogging with UConfig {
   val PROPERTIES_FILE = config getString "dbpPropertiesFile"
   val INFOBOX_FILE = config getString "dbpInfoboxFile"
   val TYPES_FILE = config getString "dbpTypesFile"
-  val OWL_FILE = config getString "dbpOWLFile"
+  val DBP_OWL_FILE = config getString "dbpOWLFile"
   // namespaces
   val RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   val RDFS_NS = "http://www.w3.org/2000/01/rdf-schema#"
@@ -79,12 +79,12 @@ object DBPedia extends StrictLogging with UConfig {
   }
   
   def parseOwl = {
-    val ontologyXML = openXML(OWL_FILE)
+    val ontologyXML = openXML(DBP_OWL_FILE)
         
     ontologyXML \ "_" flatMap {
       
       case clazz if clazz.label == "Class" => 
-//        Fact()
+        Fact(getSuperClass)
         ???
       
       case datatypeProp if datatypeProp.label == "DatatypeProperty" => ???
@@ -104,18 +104,18 @@ object DBPedia extends StrictLogging with UConfig {
     }
     val propertyType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"
     
-    def findResourceByLabel(elem: Node, label: String): String =
+    def resourceByLabel(elem: Node, label: String): String =
       (elem \ label \ s"@{$RDF_NS}resource").text
     
     // Class parsing methods
-    def getSubClass(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}subClassOf") 
-    def getEqClass(elem: Node): String = findResourceByLabel(elem, s"{$OWL_NS}equivalentClass")
-    def getDisjoint(elem: Node): String = findResourceByLabel(elem, s"{$OWL_NS}disjointWith")
+    def getSuperClass(elem: Node): String = resourceByLabel(elem, s"{$RDFS_NS}subClassOf") 
+    def getEqClass(elem: Node): String = resourceByLabel(elem, s"{$OWL_NS}equivalentClass")
+    def getDisjoint(elem: Node): String = resourceByLabel(elem, s"{$OWL_NS}disjointWith")
       
     // Property parsing methods
-    def getSubProperty(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}subPropertyOf")
-    def getDomain(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}domain")
-    def getRange(elem: Node): String = findResourceByLabel(elem, s"{$RDFS_NS}range")
+    def getSubProperty(elem: Node): String = resourceByLabel(elem, s"{$RDFS_NS}subPropertyOf")
+    def getDomain(elem: Node): String = resourceByLabel(elem, s"{$RDFS_NS}domain")
+    def getRange(elem: Node): String = resourceByLabel(elem, s"{$RDFS_NS}range")
     
       
     ???
