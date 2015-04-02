@@ -9,39 +9,37 @@ def findIndsWithMatcher(matchers, tokens):
     for mthrs in matchers:
         for tokenInd in range(len(tokens)):
             useInd = True 
-            for matchInd in range(len(mthrs)):
-                mthr = mthrs[matchInd]
+            mthType = mthrs[0]
+            for matchInd in range(len(mthrs[1])):
+                mthr = mthrs[1][matchInd]
                 if tokenInd + matchInd >= len(tokens) or not re.match(mthr, tokens[tokenInd + matchInd][0]):
                     useInd = False
             if useInd:
-                inds = inds + (tokenInd,)
+                inds = inds + ((tokenInd,mthType),)
     return inds
 
 def findMergerInds(tokens):
-    return findIndsWithMatcher(((r"merg.*",),
-                                (r"aqui[r + s].*",),
-                                (r"cease.*",),
-                                (r"creat.*",),
-                                (r"enter.*",),),tokens)
+    return findIndsWithMatcher((['MERGER', (r"merg.*",)],
+                                ['ACQUIRE', (r"aqui[r + s].*",)] ,),tokens)
 
 def findForwardInds(tokens):
-    return findIndsWithMatcher(((r"outlook.*",),
-                                (r"anticipate.*",),
-                                (r"demand.*",),), tokens)
+    return findIndsWithMatcher((['FORWARD', (r"outlook.*",)],
+                                ['FORWARD', (r"anticipate.*",)],
+                                ['FORWARD', (r"demand.*",)],), tokens)
 
 def findMarketInds(tokens):
-    return findIndsWithMatcher(((r"low.*", r"revenu.*"), 
-                                (r"adver.*.*", r"impact.*"), 
-                                (r"result.*", r"in"),), tokens)
+    return findIndsWithMatcher((['INDICATION', (r"low.*", r"revenu.*")], 
+                                ['INDICATION', (r"adver.*.*", r"impact.*")], 
+                                ['INDICATION', (r"result.*", r"in")],), tokens)
 
 def findMarketConditionInds(tokens):
-    return findIndsWithMatcher(((r"econ.*", r"condi.*"),
-                                (r"market.*", r"condi.*"),
-                                (r"cred.*", r"environ.*"),
-                                (r"indic.*",),
-                                (r"credit", r"spread.*"),
-                                (r"oil", r"spread.*"),
-                                (r"commodity.*", r"pric.*"),), tokens)
+    return findIndsWithMatcher((['CONDITION', (r"econ.*", r"condi.*")],
+                                ['CONDITION', (r"market.*", r"condi.*")],
+                                ['CONDITION', (r"cred.*", r"environ.*")],
+                                ['CONDITION', (r"indic.*",)],
+                                ['CONDITION', (r"credit", r"spread.*")],
+                                ['CONDITION', (r"oil", r"spread.*")],
+                                ['CONDITION', (r"commodity.*", r"pric.*")],), tokens)
 
 def extractNounInfoInd(ind, tokens, posType):
     ret = ()
@@ -69,31 +67,31 @@ def extractMergerInfo(tokens):
     ret = ()
     mergerInds = findMergerInds(tokens)
     for ind in mergerInds:
-        ret = ret + extractNounInfoInd(ind, tokens, NOUNS)
+        ret = ret + ( (ind[1], extractNounInfoInd(ind[0], tokens, NOUNS)) ,)
     return ret
 
 def extractForwardInfo(tokens):
     ret = ()
     mergerInds = findForwardInds(tokens)
     for ind in mergerInds:
-        ret = ret + extractNounInfoInd(ind, tokens, VERBS)
+        ret = ret + ( (ind[1], extractNounInfoInd(ind[0], tokens, VERBS)) ,)
     return ret
 
 def extractMarketInfo(tokens):
     ret = ()
     mergerInds = findMarketInds(tokens)
     for ind in mergerInds:
-        ret = ret + extractNounInfoInd(ind, tokens, NOUNS)
+        ret = ret + ( (ind[1], extractNounInfoInd(ind[0], tokens, NOUNS)) ,)
     return ret
 
 def extractMarketConditionInfo(tokens):
     ret = ()
     mergerInds = findMarketConditionInds(tokens)
     for ind in mergerInds:
-        ret = ret + extractNounInfoInd(ind, tokens, VERBS)
+        ret = ret + ( (ind[1], extractNounInfoInd(ind[0], tokens, VERBS)) ,)
     return ret
 
 def extractPredicates(queryString):
     posTokens = POSTagger.tagPOS(queryString)
     posTokens = [ (x[0].lower(), x[1]) for x in posTokens ]
-    return extractMarketConditionInfo(posTokens)
+    return extractMarketConditionInfo(posTokens) + extractMarketInfo(posTokens) + extractForwardInfo(posTokens) + extractMergerInfo(posTokens)

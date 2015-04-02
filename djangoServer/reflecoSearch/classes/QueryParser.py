@@ -116,9 +116,17 @@ class QueryParser(object):
     relation = LBRACE + Literal('relation') + OneOrMore(WRD) + RBRACE
     attribute = LBRACE + Literal('attribute') + OneOrMore(WRD) + RBRACE
     CASHFLOW = LBRACE + Literal('CASHFLOW') + OneOrMore(WRD) + RBRACE
+
+    ACQUIRE = LBRACE + Literal('ACQUIRE') + OneOrMore(WRD) + RBRACE
+    MERGER = LBRACE + Literal('MERGER') + OneOrMore(WRD) + RBRACE
+    FORWARD = LBRACE + Literal('FORWARD') + OneOrMore(WRD) + RBRACE
+    INDICATION = LBRACE + Literal('INDICATION') + OneOrMore(WRD) + RBRACE
+    CONDITION = LBRACE + Literal('CONDITION') + OneOrMore(WRD) + RBRACE
+
+    CASHFLOW = LBRACE + Literal('') + OneOrMore(WRD) + RBRACE
     BALANCESHEET = LBRACE + Literal('BALANCESHEET') + OneOrMore(WRD) + RBRACE
     INCOMESTMT = LBRACE + Literal('INCOMESTMT') + OneOrMore(WRD) + RBRACE
-    REPORT = Group(LBRACE + Suppress(Literal('REPORT')) + (CASHFLOW ^ BALANCESHEET ^ INCOMESTMT) + RBRACE)
+    REPORT = Group(LBRACE + Suppress(Literal('REPORT')) + (CASHFLOW ^ BALANCESHEET ^ INCOMESTMT ^ MERGER ^ ACQUIRE ^ FORWARD ^ INDICATION ^ CONDITION) + RBRACE)
     DATE = Group(LBRACE + Literal('DATE') + WRD + RBRACE)
     RELATION = LBRACE + Suppress(Literal('RELATION')) + relation + RBRACE
     ATTRIBUTE = LBRACE + Suppress(Literal('ATTRIBUTE')) + attribute + RBRACE
@@ -223,7 +231,7 @@ class QueryParser(object):
                 dslItems.append(dslStr)
 
         if len(filterObjects) < 1:
-                filterObjects = [DefaultDataFilter]
+                filterObjects = [DefaultDataFilter()]
 
         devLogger.info('DSL query list is: ' + str(dslItems))
         devLogger.info('Filter reference list is: ' + str(filterObjects))
@@ -237,9 +245,14 @@ class QueryParser(object):
         """
         def filterSwitch(x):
             return {
-                'CASHFLOW': CashFlowFilter,
-                'BALANCESHEET': BalanceSheetFilter,
-                'INCOMESTMT': IncomeStatementFilter,
+                'CASHFLOW': CashFlowFilter(),
+                'BALANCESHEET': BalanceSheetFilter(),
+                'INCOMESTMT': IncomeStatementFilter(),
+                'ACQUIRE': UnstructuredDataFilter(pred='ACQUIRE'),
+                'MERGER': UnstructuredDataFilter(pred='MEGER'),
+                'FORWARD': UnstructuredDataFilter(pred='FORWARD'),
+                'CONDITION': UnstructuredDataFilter(pred='CONDITION'),
+                'INDICATION': UnstructuredDataFilter(pred='INDICATION'),
             }.get(x, False)
 
         return filterSwitch(parsedItem[1][0])

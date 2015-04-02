@@ -31,8 +31,7 @@ class ReportBuilder(object):
                     for filter in filterList:
                         try:
                             if filter:
-                                filterObj = filter()
-                                filterObj.loadData(data)
+                                filter.loadData(data)
                                 boxList.extend(filterObj.createBoxList())
                         except Exception as e:
                             devLogger.error("Could not create Filter object: " + str(e))

@@ -31,7 +31,7 @@ class UnstructuredDataFilter(Filter):
                         include = False
                         for textBlock in item[u'children']:
                             if textBlock[u'ftype'] == 'xbrl:unstructured:text':
-                                textBlock[u'value'] = extractPredicates(textBlock[u'value'])
+                                textBlock[u'value'] = [if x == self.args.get('pred', False) y for x,y in extractPredicates(textBlock[u'value'])
                                 itemTitle = factTitle + "(" + item[u'prettyLabel'][0] + ")"
                                 if len(textBlock[u'value']) > 0:
                                     include = True
