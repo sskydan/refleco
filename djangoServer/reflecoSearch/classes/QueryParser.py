@@ -183,7 +183,7 @@ class QueryParser(object):
         try:
             syntaxTrees = self.CFGParser.parse(parseTokens)
             for tree in syntaxTrees:
-                ASTs.append(tree)
+                ASTs.append(str(tree))
                 devLogger.info("AST generated: " + str(tree))
             if not(len(ASTs)):
                 devLogger.warn("Did not generate any AST. AST list empty.")
@@ -219,7 +219,7 @@ class QueryParser(object):
 
         if astLimmited:
             try:
-                parsedAST = self.QUERY.parseString(astLimmited.pprint())
+                parsedAST = self.QUERY.parseString(astLimmited)
                 devLogger.info("Parsed AST: " + str(parsedAST))
             except Exception as e:
                 parsedAST = []
