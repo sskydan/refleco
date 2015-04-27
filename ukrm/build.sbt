@@ -23,9 +23,6 @@ resolvers ++= Seq(
 // shapeless conflict in spray vs. parboiled (?) - use spray-routing-shapeless2 ?
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
-//    "commons-net" % "commons-net" % "2.0",
-//    "org.json" % "json" % "20090211",
-//    "net.lingala.zip4j" % "zip4j" % "1.3.2",
     "com.typesafe.akka" %% "akka-actor" % "2.3.4",
     "com.typesafe.akka" %% "akka-contrib" % "2.3.4",
     "com.typesafe.akka" %% "akka-testkit" % "2.3.4",
@@ -38,8 +35,6 @@ libraryDependencies ++= Seq(
     "org.eclipse.jetty" % "jetty-plus"   % "8.1.14.v20131031" % "container",
 	  "org.scalatest" %% "scalatest" % "2.2.0" % "test",
 	  "com.github.nscala-time" %% "nscala-time" % "1.2.0",
-//    "org.scalanlp" %% "breeze" % "0.10",
-//    "org.parboiled" %% "parboiled" % "2.0.1",
     "org.scalaz" %% "scalaz-core" % "7.1.0",
     "javax.ws.rs" % "jsr311-api" % "1.1.1",
     "com.sun.jersey" % "jersey-core" % "1.18.3"

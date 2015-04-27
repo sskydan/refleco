@@ -30,24 +30,6 @@ import dlx.QLList
 import extensions.Extensions._
 
 
-/** represents a recognized named entity
- *  FIXME equals shouldn't be necessary once disticnt check is gone
- */
-case class NE(entity: String, genus: String, score: Double, raw: String) {
-  override def equals(any: Any) = any match {
-    case NE(e,g,_,r) => e==entity && g==genus && r==raw
-    case _ => false
-  }
-}
-case class NESentence(val row: Seq[NE], val whole: String, sc: Option[Double] = None) extends NERanker {
-  val score = sc getOrElse row.foldLeft(0.0)(_+_.score)
-  def updateScore(boost: Double => Double) = NESentence(row, whole, Some(boost(score)))
-  
-  lazy val rank: NESentence = rankers.foldLeft(this)( (s, ranker) => ranker(s) )    
-  
-  override def toString() = s"ROW ($score) --\n    ${row.mkString(",\n    ")}"
-}
-
 /** handles named entity recognition from a phrase
  */
 class NERecognizer(chunk: String) extends StrictLogging {
@@ -86,15 +68,15 @@ class NERecognizer(chunk: String) extends StrictLogging {
     
     val sentences = structuredSentences flatMap (_.cartesianProduct map (NESentence(_, chunk).rank))
     
-    val topResults = sentences sortBy (- _.score) take 20
+    val topResults = sentences sortBy (- _.scoreSum) take 20
     
     topResults
   }
   
+  /** custom DLX implementation for NER nodes
+   *  - evaluate node before iterating over it
+   */
   implicit val NERDLX = new DLX[NERNode] {
-  	/** custom DLX implementation for NER nodes
-  	 *  - evaluate node before iterating over it
-  	 */
   	override def search(root: QuadHeader, path: List[NERNode] = Nil): Seq[List[NERNode]] =
 			if (root.r != root) {
 				val c = chooseColumn(root)

@@ -17,21 +17,20 @@ import api.EntityIndex
 /** Interface for data-server communications
  */
 trait DataServerManager {
-  def initDS()
-  def updateDS(facts: Iterator[Fact]): Future[Boolean]
-  def uploadDS(payload: Iterator[Fact]): Future[Boolean]
-  def shutdownDS()
-  def lookupDS(params: LibSearchRequest): Future[DataServerReply]
-}
-
-trait BufferedDSManager extends DataServerManager {
-  val IDEAL_REQUEST_SIZE = 50
+	val IDEAL_REQUEST_SIZE = 50
+  
+  def init()
+  def lookup(params: LibSearchRequest): Future[DataServerReply]
+  private[dbdriver] def update(payload: Iterator[Fact], overwrite: Boolean): Future[Boolean]
+  def shutdown()
 
   /** Buffered upload method that batches the payload and minimizes upload operations
    *  TODO why on earth is GroupedIterator not an Iterator??
    */
-  abstract override def uploadDS(payload: Iterator[Fact]): Future[Boolean] = {
-    val parts = payload grouped(IDEAL_REQUEST_SIZE) map(x => super.uploadDS(x.toIterator))
+  def updateBatch(payload: Iterator[Fact], overwrite: Boolean = false): Future[Boolean] = {
+    val parts = payload grouped IDEAL_REQUEST_SIZE map (
+      x => update(x.toIterator, overwrite)
+    )
     Future.reduce(parts)(_ && _)
   }
 }

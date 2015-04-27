@@ -5,6 +5,9 @@ import java.util.concurrent.atomic.AtomicLong
 import Fact._
 
 /** Simple representation of a "fact" that provides some information about an entity
+ *  FIXME what happens when incrementAndGet rolls over
+ *  @note classType is used as the document type in elasticsearch persistence; should
+ *    not be empty
  *  FIXME FactVal should be a monad?
  *  FIXME lenses
  *  TODO should score be here?
@@ -27,8 +30,8 @@ case class Fact(
   value: FactVal = FactNone,
   children: Seq[Fact] = Nil,
   extra: Option[JsObject] = None,
-  id: Long = idSeq.incrementAndGet(),
-  uuid: String = java.util.UUID.randomUUID().toString(),
+  id: Long = 0,
+  uuid: String = java.util.UUID.randomUUID().toString,
   var score: Double = -1
 ) {
   
@@ -38,17 +41,27 @@ case class Fact(
     Fact(classType, superType, labels, value, children filter p, extra, id, uuid, score)
   
   /** compose two facts. -1 is the magic number to not override interest
-   *  FIXME deep concatenation of children + distinctness
-   *  FIXME updates with details
+   *  Concatenation of children is based on label equality; children are said to be
+   *    referring to the same concept when their labels are exactly the same. This
+   *    function does NOT try to resolve "similar" facts.
+   *  FIXME update with details
    */
   def combine(newf: Fact): Fact = {
     val newValue = if (newf.value != FactNone) newf.value else value
     val newLabels = (labels ++ newf.labels).distinct 
-    val newScore = if (newf.score != -1) newf.score else score 
-    val newChildren = children ++ newf.children
+    val newScore = if (newf.score != -1) newf.score else score
+    
+    val labelGroups = (children ++ newf.children) groupBy (_.children.headOption)
+    val newChildren = labelGroups.values.toSeq map (_ reduce (_ combine _))
     
     Fact(classType, superType, newLabels, newValue, newChildren, extra, id, uuid, newScore)
   }
+  
+  /** create a new id from the system id namespace
+   */
+  def index(): Fact =
+    Fact(classType, superType, labels, value, children, extra, 
+         idSeq.incrementAndGet(), uuid, score)
 }
 
 /** some extra utilities
@@ -57,7 +70,7 @@ case class Fact(
 object Fact {
   type Facts = Seq[Fact]
   
-  private val idSeq = new AtomicLong()
+  private val idSeq = new AtomicLong(1)
   def updateLongSeed(newFrom: Long) = idSeq set newFrom
   
   def createSelfRef(
@@ -65,12 +78,12 @@ object Fact {
     value: FactVal = FactNone,
     children: Seq[Fact] = Nil,
     extra: Option[JsObject] = None,
-    uuid: String = java.util.UUID.randomUUID().toString(),
+    uuid: String = java.util.UUID.randomUUID().toString,
     score: Double = -1
-  ) {
+  ) = {
     val id = idSeq.incrementAndGet()
     
-    Fact(id.toString(), None, labels, value, children, extra, id, uuid, score)
+    Fact(id.toString, None, labels, value, children, extra, id, uuid, score)
   }
   
 //  class FactsPimp(facts: Facts) {

@@ -2,25 +2,23 @@ package ner
 
 import extensions.Extensions._
 
-
 /** represents scoring rules on named entity sentences
  */
 trait BoostRule extends (NESentence => NESentence)
 
 /** boost a sentence based on if it matches a criteria
  */
-case class BooleanBoostRule(matcher: NESentence => Boolean, boost: Double => Double
-) extends BoostRule {
+case class BooleanBoostRule(matcher: NESentence => Boolean, boost: Double => Double)
+extends BoostRule {
   
   def apply(sentence: NESentence) =
     if (matcher(sentence)) sentence updateScore boost
     else sentence
 }
-
 /** boost a sentence based on how many times it matches a criteria
  */
-case class FindingBoostRule(matcher: NESentence => Int, boost: Double => Double => Double
-) extends BoostRule {
+case class FindingBoostRule(matcher: NESentence => Int, boost: Double => Double => Double)
+extends BoostRule {
   
   def apply(sentence: NESentence) = {
     val matchCount = matcher(sentence)
@@ -32,14 +30,14 @@ case class FindingBoostRule(matcher: NESentence => Int, boost: Double => Double 
 
 /** class that handles scoring of ne sentence possibilities
  */
-trait NERanker { self: NESentence =>
+trait SentenceRanker { self: NESentence =>
   
   val rankers: Seq[BoostRule] = Seq(
     // normalize the multi-word chunks scores
     FindingBoostRule( 
       sentence => sentence.row.foldLeft(0) { case (sum, chunk) => 
-      val chunkSizeBuff = chunk.raw.count(_ == ' ')
-      sum + chunkSizeBuff*chunkSizeBuff
+        val chunkSizeBuff = chunk.raw.count(_ == ' ')
+        sum + chunkSizeBuff*chunkSizeBuff
       },
       count => _ * count * 1.5
     ),
@@ -64,5 +62,4 @@ trait NERanker { self: NESentence =>
       count => _ + count*10
     )
   )
-  
 }

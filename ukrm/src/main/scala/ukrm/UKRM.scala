@@ -10,7 +10,7 @@ import facts.Fact
 /** interface for the vertex property to be used in the graph
  */
 trait Vertex
-/** simple vertex that just represents a simple reference
+/** vertex that represents a simple reference
  */
 case class VRef(val id: Long) extends Vertex
 

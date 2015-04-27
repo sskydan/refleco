@@ -9,7 +9,6 @@ import spray.http.MediaTypes._
 import spray.routing._
 import spray.http._
 import spray.httpx.SprayJsonSupport._
-import dbdriver.BufferedDSManager
 import dbdriver.DataServerManager
 import dbdriver.elasticsearch.ESManager
 import facts.Fact
@@ -32,7 +31,7 @@ object ServiceActor {
   def props() = Props(new ServiceActor())
 }
 
-class ServiceActor extends ESManager with BufferedDSManager with DatabaseService {
+class ServiceActor extends ESManager with DatabaseService {
   //TODO why not with val?
   override def system = context.system
 
@@ -51,7 +50,7 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
   protected implicit val excon = system.dispatcher
 
   //FIXME what a hack...
-  system registerOnTermination shutdownDS
+  system registerOnTermination shutdown
   
   val route =
     path("finbase") {
@@ -60,7 +59,7 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
             
           case "node" =>
             log.info("Http request for new node")
-            initDS
+            init
             complete("New server node started\n")
             
           case "fetch" =>
@@ -72,13 +71,19 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
             log.info(s"Http request for loading $lim $doctype files")
             val form = Form(doctype getOrElse "10-K")
             
-            val existingIds = lookupDS(LibParams(fieldParam=Some("_id"), doctypeParam=doctype, limParam=Some(1000000)).toRequest) map {
-              _.toFacts map(_.id)
-            } recover {
-              case _ => List()
-            }
+            val existingIds = 
+              lookup(
+                LibParams(
+                  fieldParam=Some("_id"), 
+                  doctypeParam=doctype, 
+                  limParam=Some(1000000)
+                ).toRequest) map (
+                  _.toFacts map (_.id.toString)
+              ) recover {
+                case _ => Nil
+              }
             
-            existingIds map (ReportManager.parse(form, lim, _)) foreach uploadDS
+            existingIds map (ReportManager.parse(form, lim, _)) foreach (updateBatch(_))
             
             complete("Loading started\n")
             
@@ -86,8 +91,7 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
             decompressRequest() { entity(as[Seq[Fact]]) { case docs =>
               log.info(s"Http request for putting to db: ${docs.size}")
 
-              //FIXME difference between updateDS and uploadDS
-              updateDS(docs.iterator)
+              updateBatch(docs.iterator)
             	complete("Update started\n")
             }}
             
@@ -147,14 +151,14 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
           log.info(s"Http request for search: ${sparams.prettyPrint}")
           
           compressResponse() (complete {
-            lookupDS(sparams.toRequest)
+            lookup(sparams.toRequest)
           })
         } ~
         // Get list of all company names
         // TODO cache
         compressResponse() (complete {
       	  log.info("Http request for company listing")
-          lookupDS(LibParams(doctypeParam=Some("company"),limParam=Some(1000)).toRequest)
+          lookup(LibParams(doctypeParam=Some("company"),limParam=Some(1000)).toRequest)
         })
       }
     } ~

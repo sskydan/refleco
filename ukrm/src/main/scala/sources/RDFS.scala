@@ -6,33 +6,33 @@ import utilities.XMLUtil._
 import extensions.Extensions._
 
 
-object OWL2 extends StrictLogging with UConfig {
+object RDFS extends StrictLogging with UConfig {
 
-  val OWL_FILE = config getString "dbpOWLFile"
+  val RDFS_FILE = config getString "rdfSchema"
 
-  def owlParser = {
-    val owlXML = openXML(OWL_FILE)
+  def parseFile = {
+    val rdfsXML = openXML(RDFS_FILE)
 
-    val text = (owlXML \ "http://www.w3.org/2002/07/owl").text
+    val text = (rdfsXML \ "http://www.w3.org/2000/01/rdf-schema#").text
     val entryText = text split '\n' drop 40 map (_ replaceAll (";","")) map (_.trim)
     
     val entries = entryText.toList splitFilter (_.isEmpty)
     entries map { entry => 
       val name = entry.head takeWhile (_ != ' ')
-      val classOf = entry.head dropWhile (_ != ' ') drop 3 
+      val classType = entry.head dropWhile (_ != ' ') drop 3 takeWhile (_ != ' ')
       val label = getByLabel(entry, "rdfs:label")
-      val superClass = getByLabel(entry, "rdfs:subClassOf")
+      val subClassOf = getByLabel(entry, "rdfs:subClassOf")
       val domain = getByLabel(entry, "rdfs:domain")
       val range = getByLabel(entry, "rdfs:range")
     
-      Fact(classOf, superClass)
+      
       
     }
     
     ???    
   }
   
-  def getByLabel(entry: List[String], label: String) = 
+  def getByLabel(entry: List[String], label: String): Option[String] = 
     entry find (_ startsWith label) map extractValue
     
   def extractValue(s: String) = 
