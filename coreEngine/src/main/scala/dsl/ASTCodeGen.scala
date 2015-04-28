@@ -32,10 +32,7 @@ object ASTCodeGen extends StrictLogging {
     
     root.qtype.value match {
       case "company" =>
-        val data = getUnstructuredData(root.paths, size) :: 
-                   getReportData(root.paths, size) :: 
-                   getRelationshipData(root.paths) :: 
-                   Nil
+        val data = getQueryData(root.paths, size) :: Nil
         Future.reduce(data)(_ ++ _) 
         
       case "entity" => 
@@ -45,6 +42,68 @@ object ASTCodeGen extends StrictLogging {
       case _ => throw new Exception(s"Unknown arguments in DSL query $root")
     }
   }
+    
+     
+    def getQueryData(paths: Seq[PathNode], lim: Option[Int] = None)(implicit system: ActorSystem) = {
+    if (isQueryRequested(paths)) {
+      implicit def ec = system.dispatcher
+      def reception = system.actorOf(Reception.props())
+      
+      
+      val (queryRootFuncs, queryRootKeys, queryRootVals) = getQueryRoot(paths).unzip3
+      val (queryFilterFuncs, queryFilterKeys, queryFilterVals) = getQueryFilters(paths).unzip3
+      val (postFilterFuncs, postFilterKeys, postFilterVals) = getPostFilters(paths).unzip3
+      
+      val reportReq = CoreParams(
+                        queryRootFuncs, 
+                        queryRootKeys, 
+                        queryRootVals,
+                        queryFilterFuncs, 
+                        queryFilterKeys, 
+                        queryFilterVals,
+                        postFilterFuncs,
+                        postFilterKeys,
+                        postFilterVals,
+                        None, 
+                        Some("10-K"), 
+                        lim, 
+                        None, 
+                        None)
+      logger info s"DSL search generated (reports): ${reportReq.prettyPrint}"
+      val reportRes = (reception ? SearchRequest(reportReq)).mapTo[Seq[Fact]]
+      
+      Future.reduce(reportRes :: Nil)(_ ++ _)
+    }
+    else Future.successful(Nil)
+  }
+    
+    
+  def isQueryRequested(paths: Seq[PathNode]) = paths exists {
+    case PathNode(_, Some(AttributeSelectorNode(_,_))) => true
+    case PathNode(_, Some(UnstructuredSelectorNode(_))) => true
+    case PathNode(_, None) => true
+    case _ => false
+  }
+    
+  def getQueryRoot(paths: Seq[PathNode]): Seq[(String, String, String)] = paths.head.root match {
+    case Some(all) if all == "*" => Nil
+    case Some(name) => Seq(("==", "prettyLabel", name.value))
+    case None => Nil
+  }
+  
+  def getQueryFilters(paths: Seq[PathNode]): Seq[(String, String, String)] = paths.collect {
+    case PathNode(_, Some(AttributeSelectorNode(field, fns))) if !fns.isEmpty =>
+      val key = field.value.toString
+      val values = fns.map(fn => (fn.fn.name, "children.prettyLabel." + key, fn.args.value.toString))
+      values
+    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => Seq(("==", "children.prettyLabel", field.value))
+  }.flatten
+  
+  def getPostFilters(paths: Seq[PathNode]): Seq[(String, String, String)] = paths collect {
+    case PathNode(_, Some(AttributeSelectorNode(field, Nil))) => ("==", "children.prettyLabel", field.value)
+    case PathNode(_, Some(UnstructuredSelectorNode(field))) => ("==", "children.value", field.value)
+  }
+  /*
     //--------------------------------------------------------------------------------------------
   
   def getUnstructuredData(paths: Seq[PathNode], lim: Option[Int] = None)(implicit system: ActorSystem) = 
@@ -129,9 +188,10 @@ object ASTCodeGen extends StrictLogging {
   def getSearchFilters(paths: Seq[PathNode]) = paths.collect {
     case PathNode(_, Some(AttributeSelectorNode(field, fns))) if !fns.isEmpty =>
       val key = "children."+field.value
-      val values = fns.map(fn => fn.fn.name + fn.args.value).mkString(",") 
+      val values = fns.map(fn => (fn.fn.name, fn.args.value)).mkString(",") 
       
-      key -> (REPORT_PREFIX + values)
+      key -> values
+
   }.toMap
   
   def getSearchFiltersCompany(paths: Seq[PathNode]) = paths.collect {
@@ -166,4 +226,7 @@ object ASTCodeGen extends StrictLogging {
   def getRelationshipFilters(paths: Seq[PathNode]) = paths collect {
     case PathNode(_, Some(RelationSelectorNode(field))) => Clue(field.value)
   }   
+    
+  //-------------------------------------------------------------------------------------------- 
+  */
 }

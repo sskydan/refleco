@@ -71,17 +71,15 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
             log.info(s"Http request for loading $lim $doctype files")
             val form = Form(doctype getOrElse "10-K")
             
-            val existingIds = 
-              lookup(
-                LibParams(
-                  fieldParam=Some("_id"), 
-                  doctypeParam=doctype, 
-                  limParam=Some(1000000)
-                ).toRequest) map (
-                  _.toFacts map (_.id.toString)
-              ) recover {
-                case _ => Nil
-              }
+            val existingIds = lookupDS(LibParams(postFilterFuncs=Some("field"),
+                                                 postFilterKeys=Some("_id"), 
+                                                 postFilterVals=Some("NA"),
+                                                 doctypeParam=doctype, 
+                                                 limParam=Some(1000000)).toRequest) map {
+              _.toFacts map(_.id)
+            } recover {
+              case _ => List()
+            }
             
             existingIds map (ReportManager.parse(form, lim, _)) foreach (updateBatch(_))
             

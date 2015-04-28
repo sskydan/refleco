@@ -1,21 +1,21 @@
 #! /bin/bash
 
+cd `dirname $0`  # This makes everything relative to mgmt/, no matter where you run your scripts from
+. defs.sh
+
 # This script just runs does an sbt compile & sets up the eclipse project
 
-green='\033[0;32m'
-NC='\033[0m'
-
-echo -e "\n\n ${green}REFRESHING foundation${NC}\n"
+echo -e "\n\n ${Green}REFRESHING foundation${Color_Off}\n"
 cd ../foundation
 sbt compile
 sbt eclipse
 
-echo -e "\n\n ${green}REFRESHING coreEngine${NC}\n"
+echo -e "\n\n ${Green}REFRESHING coreEngine${Color_Off}\n"
 cd ../coreEngine
 sbt compile
 sbt eclipse
 
-echo -e "\n\n ${green}REFRESHING library${NC}\n"
+echo -e "\n\n ${Green}REFRESHING library${Color_Off}\n"
 cd ../library
 sbt compile
 sbt eclipse

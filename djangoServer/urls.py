@@ -13,4 +13,6 @@ urlpatterns = patterns('',
     url(r'^search/', 'reflecoSearch.views.search', name='search'),
     url(r'^results/(?P<query>[\w|\W]*)$', 'reflecoSearch.views.results', name='results'),
     url(r'^signup/', 'reflecoSearch.views.signup', name='signup'),
+    url(r'^sandbox/(?P<query>[\w|\W]*)$', 'reflecoSearch.views.sandbox', name='sandbox'),
+    url(r'^getArticlesByDate/', 'reflecoSearch.views.getArticlesByDate', name='getArticlesByDate'),
 )

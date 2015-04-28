@@ -89,7 +89,7 @@ class CashFlowFilter(Filter):
                             elif "Abstract" in item:
                                 name = item.replace("Abstract", "")
                                 statementData.append({
-                                    u'prettyLabel': name,
+                                    u'prettyLabel': [name],
                                     u'value': None,
                                     u'ftype': "blah",
                                     u'id': "",
@@ -98,7 +98,7 @@ class CashFlowFilter(Filter):
                     devLogger.error("could not get a fact list for CashFlowFilter: " + str(e))
 
                 if len(statementData):
-                    statementTitle =  f[u'prettyLabel'] + " Cash Flow" + " (" + f[u'value'] + ")"
+                    statementTitle =  f[u'prettyLabel'][0] + " Cash Flow" + " (" + f[u'value'] + ")"
                     boxList.append(TableBox.makeBox(statementData, statementTitle, []))
         return boxList
 

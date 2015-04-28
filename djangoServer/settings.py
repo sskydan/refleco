@@ -50,6 +50,18 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
+DATABASES = {
+    'default': {
+        'NAME': PROJECT_DIR + "/article.db",
+        'ENGINE': 'django.db.backends.sqlite3',
+        'HOST': '',
+        'USER': '',
+        'PASSWORD': '',
+    }
+}
+
+DEFAULT_INDEX_TABLESPACE = 'article'
+
 ROOT_URLCONF = 'urls'
 
 WSGI_APPLICATION = 'wsgi.application'
@@ -118,10 +130,10 @@ LOGGING = {
         },
         'query_logfile': {
             'level': 'DEBUG',
-            'filters': ['require_debug_false'],
+            'filters': [],
             'class': 'logging.FileHandler',
             'filename':  LOG_DIR + 'query.log',
-            'formatter': 'simple'
+            'formatter': 'verbose'
         }
     },
     'loggers': {

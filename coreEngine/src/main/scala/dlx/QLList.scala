@@ -57,7 +57,7 @@ sealed abstract class QLList[N <: QLList[N]] { self: N =>
    */
   def foreachRem[T >: N <: QLList[_]](step: T => T)(fn: T => Unit): Unit = {
     var i = step(self)
-    while (i != self) {
+    while (i != this) {
       fn(i)
       i = step(i)
     }
@@ -123,7 +123,7 @@ class QuadHeader(val name: String) extends QLList[QuadHeader] {
       
       // loop across the subset elements
       i.foreachRem(_.r){ j =>
-            
+        
         j.dn.up = j.up
         j.up.dn = j.dn
         j.c.size = j.c.size - 1

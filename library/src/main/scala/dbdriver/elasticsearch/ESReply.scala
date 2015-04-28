@@ -22,7 +22,7 @@ import spray.json.JsNull
  * TODO filters
  * FIXME class is a mess
  */
-case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataServerReply {
+case class ESReply(raw: JsValue, childFilter: List[(String,String,String)] = Nil) extends DataServerReply {
   // this is the json array that represents the actual results returned
   private val results = raw.\\[JsArray]("hits").elements
   
@@ -44,7 +44,7 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
       entry.\\[JsString]("uri").value,
       "refleco:result",
       FactNone,
-      entry.\\[JsArray]("sform").elements map (_.toString),
+      Seq(entry.\\[JsString]("sform").value),
       entry.\\[JsNumber]("_score").value.toDouble
     )
   
@@ -58,21 +58,20 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
     case (Success(doc: JsObject), _) if (doc \\~ "children") != Set() => 
       val fact = doc.convertTo[Fact]
         
-      val filterPaths = childFilter map (filter => filter splitAt (filter indexOf "=")) // replaceFirst ("children.", ""))
+      val filterPaths = childFilter
       
       if (filterPaths.isEmpty) fact
       else
         fact innerFilter (f =>
-          filterPaths exists { case (path, value) =>
+          filterPaths exists { case (func, key, value) =>
             
-            if (path startsWith "children.prettylabel") 
+            if (key.toLowerCase startsWith "children.prettylabel") 
               f.prettyLabel map (_.toLowerCase) contains value.toLowerCase
               
-            else if (path startsWith "children.children.value")
+            else if (key.toLowerCase startsWith "children.value")
               f.children exists (
                 _.value.toString.toLowerCase contains value.toLowerCase
               )
-            
             else false
           }
         )
@@ -90,22 +89,23 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
       val id = entry.\\[JsString]("_id").value
       
       val esScore = entry.\\[JsNumber]("_score").value.toDouble
-      val reflechoScore =
+      val reflecoScore =
         entry.\\~[JsNumber]("interest").headOption.map(_.value.toDouble)
+      val realScore = if ((reflecoScore getOrElse 0) == 0) esScore else reflecoScore.get
       
       val prettyLabel = (fields get "prettyLabel") orElse (fields get "uri") collect {
-        case JsArray(e) => e.toSeq map (_.toString)
+        case JsArray(e:Vector[JsString] @unchecked) => e.toSeq map (_.value)
       } getOrElse Nil
-      
+            
       val cleanFields = JsObject(fields - ("prettyLabel", "interest"))
-      val filteredFields = cleanFields filterAll childFilter
-        
+      val filteredFields = cleanFields filterAll childFilter.map(t => (t._2, t._1, t._3).toString)
+      
       Fact(
         id,
         "refleco:result",
         FactNone,
         prettyLabel,
-        reflechoScore getOrElse esScore,
+        realScore,
         Nil,
         Some(filteredFields.asJsObject)
       )
@@ -115,4 +115,3 @@ case class ESReply(raw: JsValue, childFilter: List[String] = Nil) extends DataSe
   }
   
 }
-

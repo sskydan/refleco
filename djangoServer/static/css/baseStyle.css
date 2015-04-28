@@ -71,18 +71,13 @@
 -------------------------------------------------- */
 
 @font-face {
-    font-family: marcellus;
-    src: url(/static/fonts/Marcellus-Regular.ttf)
-}
-
-@font-face {
-    font-family: libreSaskerville;
-    src: url(/static/fonts/LibreBaskerville-Regular.ttf)
+    font-family: lato;
+    src: url(/static/fonts/lato/Lato-Medium.ttf)
 }
 
 html *{
-    font-size: 16px;
-    font-family: marcellus!important;
+    font-size: 12px;
+    font-family: lato!important;
 }
 
 /* MAIN CSS
@@ -547,6 +542,7 @@ footer{
     display: inline-block;
     vertical-align: top;
     float: left;
+    width: 550px;
 }
 
 .fake-report-box{
@@ -610,8 +606,19 @@ footer{
 -------------------------------------------------- */
 .graph-box{
     padding: 5px;
-    max-width: 600px;
-    background: #FEB81F;
+    background: rgb(35, 83, 138);
+    position: relative;
+    border: 2px solid #828282;
+    border-radius: 4px;
+}
+
+/*STOCK-GRAPH BOX CSS
+--------------------------------------------------
+--------------------------------------------------
+-------------------------------------------------- */
+.stock-graph{
+
+    margin: 0 auto
 }
 
 /*BOX CSS
@@ -634,7 +641,84 @@ footer{
 --------------------------------------------------
 --------------------------------------------------
 -------------------------------------------------- */
-
-.field-error{
-
+#news-links {
+    padding-top: 2px;
 }
+
+#load-more-news{
+}
+
+button#get-more-news {
+    display: block;
+    margin: auto;
+    margin-top: 5px;
+}
+
+.no-news{
+    text-align: center;
+    margin-top: 10px;
+    color: #ff9393;
+    font-weight: bolder;
+}
+
+.ticker-arrow-up-small{
+    width:28px;
+    height:17px;
+    background-image: url('/static/img/ticker-arrows.png');
+    display: inline-flex;
+    background-repeat: no-repeat;
+    background-position-y: 9px;
+    vertical-align: super;
+}
+
+.ticker-arrow-up-med{
+    width:28px;
+    height:17px;
+    background-image: url('/static/img/ticker-arrows.png');
+    display: inline-flex;
+    background-repeat: no-repeat;
+    background-position-y: 5px;
+}
+
+.ticker-arrow-up-large{
+    width:28px;
+    height:17px;
+    background-image: url('/static/img/ticker-arrows.png');
+    display: inline-flex;
+    background-repeat: no-repeat;
+    background-position-y: 0px;
+}
+
+
+
+.ticker-arrow-down-small{
+    width:28px;
+    height:17px;
+    background-image: url('/static/img/ticker-arrows.png');
+    background-position-x: -30px;
+    display: inline-flex;
+    background-repeat: no-repeat;
+    background-position-y: -9px;
+    vertical-align: sub;
+}
+
+.ticker-arrow-down-med{
+    width:28px;
+    height:17px;
+    background-image: url('/static/img/ticker-arrows.png');
+    background-position-x: -30px;
+    display: inline-flex;
+    background-repeat: no-repeat;
+    background-position-y: -5px;
+}
+
+.ticker-arrow-down-large{
+    width:28px;
+    height:17px;
+    background-image: url('/static/img/ticker-arrows.png');
+    background-position-x: -30px;
+    display: inline-flex;
+    background-repeat: no-repeat;
+    background-position-y: 0px;
+}
+

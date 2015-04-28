@@ -1,6 +1,12 @@
 from django.db import models
 
+class Article(models.Model):
+    date = models.IntegerField()
+    pageRank = models.IntegerField()
+    link = models.TextField()
 
-class dataMessage(models.Model):
-    name = models.CharField(max_length=50)
-    content = models.CharField(max_length=200)
+    def __str__(self):
+        return self.link
+
+    class Meta:
+        db_tablespace = "article"

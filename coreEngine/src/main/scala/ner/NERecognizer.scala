@@ -40,10 +40,12 @@ class NERecognizer(chunk: String) extends StrictLogging {
   lazy val matrix: QLMatrix[NERNode] = {
     val words = chunk.trim.split(" ").map(_.trim).toSeq
     
-    val combinations = (1 to words.size) flatMap (words.combinations(_).toSeq)
-    val adjacentCombinations = combinations filter (subset => chunk contains (subset mkString " "))
+    val combinations = for {
+      i <- 0 to words.size
+      j <- 1 to words.size-i
+    } yield words.slice(i, i+j).zip(i to i+j)
     
-    val matrix = QLMatrix.fromSparse(adjacentCombinations, words, new NERNode(_))
+    val matrix = QLMatrix.fromSparse(combinations, words, new NERNode(_))
     
     // initialize the nodes with their row
     matrix.root.r.foreach[QuadHeader](_.r){ col =>
@@ -68,7 +70,7 @@ class NERecognizer(chunk: String) extends StrictLogging {
     
     val sentences = structuredSentences flatMap (_.cartesianProduct map (NESentence(_, chunk).rank))
     
-    val topResults = sentences sortBy (- _.scoreSum) take 20
+    val topResults = sentences sortBy (- _.score) take 50
     
     topResults
   }
@@ -120,7 +122,7 @@ object NERecognizer extends CEConfig {
   }
 
   def tryPENT(candidate: String): ListT[Future, NE] =
-    tryDisambiguation(candidate, "10-K", "company")
+    tryDisambiguation(candidate, "10-K", "company", 2.5)
    
   def tryENT(candidate: String): ListT[Future, NE] = 
     tryDisambiguation(candidate, "entity", "entity")

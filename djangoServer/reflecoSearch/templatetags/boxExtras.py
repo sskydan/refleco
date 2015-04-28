@@ -1,4 +1,5 @@
 from django import template
+from reflecoSearch.classes.ResultParsing.totalValueExtractor import *
 register = template.Library()
 import logging
 devLogger = logging.getLogger('development')
@@ -14,10 +15,23 @@ def getFactName(fact):
         name = fact.get(u'prettyLabel', False)
         if not name:
             name = fact.get(u'id', "None(This is and error.)")
+        else:
+            name = name[0]
     except Exception as e:
         devLogger.error("there was a problem getting a fact name: " + e)
         name = ""
     return name
+
+@register.filter(name='getFactType')
+def getFactType(fact):
+    type = ""
+    try:
+        type = fact.get(u'ftype', False)
+        if not type:
+            type = fact.get(u'id', "None(This is and error.)")
+    except Exception as e:
+        devLogger.error("there was a problem getting a fact name: " + e)
+    return type
 
 @register.filter(name='isPeriodicFact')
 def isPeriodicFact(fact):
@@ -31,6 +45,19 @@ def isPeriodicFact(fact):
 def getPeriodicValues(fact):
     value = fact.get(u'value', [])
     return value.get(u'valList', [])
+
+@register.filter(name='getPeriodicTotals')
+def getPeriodicTotals(fact):
+    totals = getTotalsByDates(fact)
+    value = totals.get(u'value', [])
+    sortedValus = sorted( value.get(u'valList', []), key=lambda k: k['startDate'])
+    return sortedValus
+
+@register.filter(name='isPeriodicTotal')
+def isPeriodicTotal(value):
+    if value.get('facttype', '') == 'period:total':
+        return True
+    return False
 
 @register.filter(name='getPeriodValue')
 def getPeriodValue(period):
@@ -57,7 +84,9 @@ def getFactValue(fact):
         ftype = fact.get(u'ftype', "")
         if ftype == "analytic":
             value = "{:,.4f}".format(value)
-        elif "TextBlock" in fact.get(u'id', ""):
+        elif ftype == "xbrl:unstructured:text":
+            value = value
+        elif ftype == "xbrl:unstructured:table":
             value = value
         elif ftype == "xbrl":
             # Monetary value?

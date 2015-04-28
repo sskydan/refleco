@@ -4,6 +4,7 @@ from reflecoSearch.classes.filterClasses.BalanceSheetFilter import BalanceSheetF
 from reflecoSearch.classes.filterClasses.IncomeStatementFilter import IncomeStatementFilter
 from reflecoSearch.classes.filterClasses.CashFlowFilter import CashFlowFilter
 from reflecoSearch.classes.filterClasses.DefaultDataFilter import DefaultDataFilter
+from reflecoSearch.classes.filterClasses.UnstructuredDataFilter import UnstructuredDataFilter
 from reflecoSearch.pyparsing.pyparsing import *
 from reflecoSearch.classes.DSLString import DSLString
 from django.conf import settings
@@ -35,7 +36,7 @@ class QueryParser(object):
     #PYPARSING preterminal definitions
     LBRACE = Suppress(Literal('('))
     RBRACE = Suppress(Literal(')'))
-    WRD = Regex("[0-9a-zA-Z_\-\—\,\.\?\!\>\<\=\/\:\;\&\{\}\+]+")
+    WRD = Regex("[0-9a-zA-Z_\-\—\,\.\?\!\>\<\=\/\:\;\&\{\}\+\$]+")
     ABL = LBRACE + Suppress(Literal('ABL')) + WRD + RBRACE
     ABN = LBRACE + Suppress(Literal('ABN')) + WRD + RBRACE
     ABX = LBRACE + Suppress(Literal('ABX')) + WRD + RBRACE
@@ -116,9 +117,18 @@ class QueryParser(object):
     relation = LBRACE + Literal('relation') + OneOrMore(WRD) + RBRACE
     attribute = LBRACE + Literal('attribute') + OneOrMore(WRD) + RBRACE
     CASHFLOW = LBRACE + Literal('CASHFLOW') + OneOrMore(WRD) + RBRACE
+
+    ACQUIRE = LBRACE + Literal('ACQUIRE') + OneOrMore(WRD) + RBRACE
+    MERGER = LBRACE + Literal('MERGER') + OneOrMore(WRD) + RBRACE
+    FORWARD = LBRACE + Literal('FORWARD') + OneOrMore(WRD) + RBRACE
+    INDICATION = LBRACE + Literal('INDICATION') + OneOrMore(WRD) + RBRACE
+    CONDITION = LBRACE + Literal('CONDITION') + OneOrMore(WRD) + RBRACE
+    PATENT = LBRACE + Literal('PATENT') + OneOrMore(WRD) + RBRACE
+
+    CASHFLOW = LBRACE + Literal('') + OneOrMore(WRD) + RBRACE
     BALANCESHEET = LBRACE + Literal('BALANCESHEET') + OneOrMore(WRD) + RBRACE
     INCOMESTMT = LBRACE + Literal('INCOMESTMT') + OneOrMore(WRD) + RBRACE
-    REPORT = Group(LBRACE + Suppress(Literal('REPORT')) + (CASHFLOW ^ BALANCESHEET ^ INCOMESTMT) + RBRACE)
+    REPORT = Group(LBRACE + Suppress(Literal('REPORT')) + (CASHFLOW ^ BALANCESHEET ^ INCOMESTMT ^ MERGER ^ ACQUIRE ^ FORWARD ^ INDICATION ^ CONDITION ^ PATENT) + RBRACE)
     DATE = Group(LBRACE + Literal('DATE') + WRD + RBRACE)
     RELATION = LBRACE + Suppress(Literal('RELATION')) + relation + RBRACE
     ATTRIBUTE = LBRACE + Suppress(Literal('ATTRIBUTE')) + attribute + RBRACE
@@ -173,7 +183,7 @@ class QueryParser(object):
         try:
             syntaxTrees = self.CFGParser.parse(parseTokens)
             for tree in syntaxTrees:
-                ASTs.append(tree)
+                ASTs.append(str(tree))
                 devLogger.info("AST generated: " + str(tree))
             if not(len(ASTs)):
                 devLogger.warn("Did not generate any AST. AST list empty.")
@@ -209,7 +219,7 @@ class QueryParser(object):
 
         if astLimmited:
             try:
-                parsedAST = self.QUERY.parseString(astLimmited.pprint())
+                parsedAST = self.QUERY.parseString(astLimmited)
                 devLogger.info("Parsed AST: " + str(parsedAST))
             except Exception as e:
                 parsedAST = []
@@ -220,10 +230,9 @@ class QueryParser(object):
                 for item in parsed:
                     if item[0] == 'DSLI':
                         dslStr.addDSLI(item[1:])
-                dslItems.append(dslStr.getString())
-
+                dslItems.append(dslStr)
         if len(filterObjects) < 1:
-                filterObjects = [DefaultDataFilter]
+                filterObjects = [DefaultDataFilter()]
 
         devLogger.info('DSL query list is: ' + str(dslItems))
         devLogger.info('Filter reference list is: ' + str(filterObjects))
@@ -237,9 +246,15 @@ class QueryParser(object):
         """
         def filterSwitch(x):
             return {
-                'CASHFLOW': CashFlowFilter,
-                'BALANCESHEET': BalanceSheetFilter,
-                'INCOMESTMT': IncomeStatementFilter,
+                'CASHFLOW': CashFlowFilter(),
+                'BALANCESHEET': BalanceSheetFilter(),
+                'INCOMESTMT': IncomeStatementFilter(),
+                'ACQUIRE': UnstructuredDataFilter(pred='ACQUIRE'),
+                'MERGER': UnstructuredDataFilter(pred='MERGER'),
+                'FORWARD': UnstructuredDataFilter(pred='FORWARD'),
+                'CONDITION': UnstructuredDataFilter(pred='CONDITION'),
+                'INDICATION': UnstructuredDataFilter(pred='INDICATION'),
+                'PATENT': UnstructuredDataFilter(pred='PATENT')
             }.get(x, False)
 
         return filterSwitch(parsedItem[1][0])

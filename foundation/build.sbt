@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
       "io.spray" %% "spray-json" % "1.3.0",
       "org.scala-lang" % "scala-reflect" % "2.11.5",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      "com.github.nscala-time" %% "nscala-time" % "1.2.0"
+      "com.github.nscala-time" %% "nscala-time" % "1.2.0",
+	  "com.chuusai" %% "shapeless" % "2.1.0"
 ).map(_.excludeAll(
     ExclusionRule(organization = "org.slf4j"),
     ExclusionRule(organization = "log4j")

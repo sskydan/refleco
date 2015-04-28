@@ -26,6 +26,7 @@ import scala.concurrent.ExecutionContext
 /** Methods for interacting with the library
  */
 object LibraryConnector extends CEConfig with StrictLogging {
+<<<<<<< HEAD
 //  implicit val system: ActorSystem = ActorSystem()
 //  import system.dispatcher
 //
@@ -142,3 +143,132 @@ object LibraryConnector extends CEConfig with StrictLogging {
 //    Stream from (0, lim) map getPage map (Await.result(_, TIMEOUT)) takeWhile (!_.isEmpty)
 //  }
 }
+=======
+  implicit val system: ActorSystem = ActorSystem()
+  import system.dispatcher
+
+  type NameLookupResult = (String, String, Double)
+  
+  val TIMEOUT = Duration(60, TimeUnit.SECONDS)
+  val HOST = config getString "dataServerHost"
+  
+  /** TODO fix result value
+   */
+  def update(facts: Seq[Fact]): Future[Boolean] = {
+    val sendpipe = (encode(Gzip) ~> sendReceive)
+    logger info s"Updating fact ${facts.size}"
+    
+    sendpipe {
+      Post(Uri(HOST) withQuery "cmd"->"put", facts)
+    } map (_ => true)
+  }
+  
+  /** FIXME centralize
+   */
+  //TODO Not sure what to do here. not currently working for NER
+  def getQueryParams(query: String, doctype: String): CoreParams = {
+    doctype match {
+      case "relation" | "entity" | "attribute" =>
+        CoreParams(
+          queryRootFuncs = Some(""),
+          queryRootKeys = Some("sform"),
+          queryRootVals = Some(query),
+          doctypeParam = Some(doctype),
+          limParam = Some(50)
+        )
+      case _ =>
+        CoreParams(
+          queryRootFuncs = Some(""),
+          queryRootKeys = Some("prettyLabel"),
+          queryRootVals = Some(query),
+          postFilterFuncs =  Some("field;field;field"),
+          postFilterKeys = Some("prettyLabel;interest;id"),
+          postFilterVals = Some("NA;NA;NA"),
+          //searchParam = Some(query), 
+          //postFilter = Some("prettyLabel;interest;id"),
+          limParam = Some(20)
+        )
+  }}
+  
+  private def getNameLookupResult(doctype: String)(r: Fact): NameLookupResult = doctype match {
+    case "relation" | "entity" | "attribute" =>
+      logger.info(s"--> through [${r.prettyLabel}] got [${r.id}] with ${r.interest}")
+      (r.id, r.id, r.interest)
+
+    case _ =>
+      logger.info(s"--> [${r.prettyLabel}] with ${r.interest}")
+      (r.prettyLabel.head, r.id, r.interest)
+  }
+  
+  /** lookup a company name in a specific index
+   *  FIXME cleanup tyeps
+   */
+  def check(candidate: String, doctype: String = "10-K"): ListT[Future, NameLookupResult] = {
+    // otherwise, the default akka timeout kicks in. TODO make configurable
+    implicit val timeout = Timeout(1.hour)
+    val pipeline: HttpRequest => Future[Facts] = (
+      sendReceive
+      ~> decode(Gzip)
+      ~> unmarshal[Facts]
+    )
+      
+    val result = pipeline {
+      Get(Uri(HOST) withQuery getQueryParams(candidate, doctype).toParamsMap)
+    } map {
+      logger.info(s"Disambiguating [$candidate] as [$doctype]")
+      
+      _.toList map getNameLookupResult(doctype)
+    }
+
+    ListT(result)
+  }
+  
+  def checkScored(candidate: String, doctype: String = "10-K", cutoff: Double = 6.0)
+  : ListT[Future, NameLookupResult] = {
+    import scalaz.std.scalaFuture._
+    
+    check(candidate, doctype) filter (_._3 >= cutoff)
+  }
+  
+  /** TODO traverseM missing applicative for streams?
+   *  TODO name conflict??
+   */
+  def checkScoredAll(candidates: Seq[String], doctype: String = "10-K", cutoff: Double = 6.0)
+  : StreamT[Future,NameLookupResult] = {
+    import Scalaz._
+    
+    val stream = candidates.toStream traverse (
+      c => checkScored(c, doctype, cutoff).run
+    ) map (
+      _.flatten
+    )
+    
+    StreamT fromStream stream
+  }
+    
+  /** get a stream of all documents of a specific type from the library server
+   *  TODO ability to exclude children
+   */
+  def streamDocs(doctype: String, lim: Int = 500): Stream[Facts] = {
+    implicit val timeout = Timeout(1.hour)
+    val libPipeline: HttpRequest => Future[Facts] = (
+      sendReceive
+      ~> decode(Gzip)
+      ~> unmarshal[Facts]
+    )   
+
+    def getPage(page: Int): Future[Facts] = libPipeline {
+      logger.info(s"Retrieving results $page to ${page + lim} of $doctype")
+
+      val params = CoreParams(
+        doctypeParam = Some(doctype), 
+        limParam = Some(lim), 
+        pageParam = Some(page)
+      )
+      Get(Uri(HOST) withQuery params.toParamsMap)
+    }
+
+    Stream from (0, lim) map getPage map (Await.result(_, TIMEOUT)) takeWhile (!_.isEmpty)
+  }
+}
+>>>>>>> refs/heads/dataQueryRefactor

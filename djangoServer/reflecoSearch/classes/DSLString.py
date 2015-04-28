@@ -95,3 +95,9 @@ class DSLString(object):
                 self.filters.append(filterString)
         elif len(filterString) and not len(self.filterObjects):
             self.filters.append(filterString)
+
+    def pprint(self):
+        print("string: " + self.string)
+        print("subject: " + self.subject)
+        print("filters: " + self.filters)
+        print("filterObjects: " + self.filterObjects)
