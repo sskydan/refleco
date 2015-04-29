@@ -32,7 +32,7 @@ case class LibParams(
   override val pageParam: Option[Int] = None
 ) extends BaseParams with URIParamsAdapter[LibSearchRequest] {
   
-   override implicit def toRequest:LibSearchRequest = {
+   override implicit def toRequest: LibSearchRequest = {
     val base = super.toRequest
 
     LibSearchRequest(

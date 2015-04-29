@@ -148,16 +148,23 @@ object FactResolver extends UConfig with StrictLogging {
     val params = doctype match {
       case "relation" | "entity" | "attribute" =>
         new BaseParams(
-          keyParam = Some("sform"),
-          searchParam = Some(query), 
+          queryRootFuncs = Some(""),
+          queryRootKeys = Some("sform"),
+          queryRootVals = Some(query),
           doctypeParam = Some(doctype),
-          limParam = Some(100)
+          limParam = Some(50)
         )
       case _ =>
         new BaseParams(
-          searchParam = Some(query), 
-          fieldParam = Some("prettyLabel;interest;id"),
-          limParam = Some(100)
+          queryRootFuncs = Some(""),
+          queryRootKeys = Some("prettyLabel"),
+          queryRootVals = Some(query),
+          postFilterFuncs =  Some("field;field;field"),
+          postFilterKeys = Some("prettyLabel;interest;id"),
+          postFilterVals = Some("NA;NA;NA"),
+          //searchParam = Some(query), 
+          //postFilter = Some("prettyLabel;interest;id"),
+          limParam = Some(20)
         )
     }
         

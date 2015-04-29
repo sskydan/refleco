@@ -42,8 +42,8 @@ class NERecognizer(chunk: String) extends StrictLogging {
     
     val combinations = for {
       i <- 0 to words.size
-      j <- 1 to words.size-i
-    } yield words.slice(i, i+j).zip(i to i+j)
+      j <- 1 to words.size - i
+    } yield words slice(i, i+j) zip(i to i+j)
     
     val matrix = QLMatrix.fromSparse(combinations, words, new NERNode(_))
     

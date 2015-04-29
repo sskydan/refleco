@@ -33,21 +33,21 @@ case class FindingBoostRule(matcher: NESentence => Double, boost: Double => Doub
 /** class that handles scoring of ne sentence possibilities
  *  FIXME restructure; shouldn't be a NESentence?
  */
-trait NERanker { self: NESentence =>
+trait NESRanker { self: NESentence =>
   
   val rankers: Seq[BoostRule] = Seq(
-	  // boost exact-like matches
-	  FindingBoostRule(
-		  sentence => sentence.row.foldLeft(0.0) { case (sum, chunk) => 
-			  val rawWords = chunk.raw.count(c => c == ' ' || c == '-') + 1
-			  val matchWords = chunk.entity.count(c => c == ' ' || c == '-') + 1
+    // boost exact-like matches
+    FindingBoostRule(
+      sentence => sentence.row.foldLeft(0.0) { case (sum, chunk) => 
+        val rawWords = chunk.raw.count(c => c == ' ' || c == '-') + 1
+        val matchWords = chunk.entity.count(c => c == ' ' || c == '-') + 1
         
-			  val exactnessRatio = rawWords*rawWords*rawWords / matchWords
+        val exactnessRatio = rawWords*rawWords*rawWords / matchWords
         
-			  sum + (chunk.score * exactnessRatio)
-		  },
-		  count => _ + count
-	  ),
+        sum + (chunk.score * exactnessRatio)
+      },
+      count => _ + count
+    ),
     // boost longer matches
 //    FindingBoostRule( 
 //      sentence => sentence.row.foldLeft(0.0) { case (sum, chunk) =>
