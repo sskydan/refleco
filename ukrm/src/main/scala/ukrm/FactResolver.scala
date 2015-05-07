@@ -26,7 +26,17 @@ import scala.concurrent.ExecutionContext
 import utilities.UConfig
 import api.BaseParams
 
-/**
+
+case class FactCandidate(
+  className: String,
+  superName: Option[String],
+  labels: Seq[String] = Nil,
+  value: FactVal = FactNone,
+  children: Seq[Fact] = Nil,
+  extra: Option[JsObject] = None
+)
+
+/** module to handle fact integration and consolidation
  */
 object FactResolver extends UConfig with StrictLogging {
 	implicit val system: ActorSystem = ActorSystem()
@@ -40,42 +50,43 @@ object FactResolver extends UConfig with StrictLogging {
    */
   def resolveLabels(labels: String*): Seq[Fact] = ??? 
 
+  
+  def resolveLabelsWithLocal(labels: Seq[String], localFacts: Seq[FactCandidate]) =
+    localFacts find (_.labels contains labels.head) match {
+      case None => resolveLabels(labels:_*) 
+      case m => m.toSeq
+    }
+  
   /** integrate a fractured fact candidate into the global dataset. Tries to match the
    *    data to an existing fact by label analysis, and integrates the facts. Otherwise, this
    *    will kick off the creation of a new fact to the hierarchy
    */
-  def integrateFact(
-    className: String,
-    superName: String,
-    labels: Seq[String] = Nil,
-    value: FactVal = FactNone,
-    children: Seq[Fact] = Nil,
-    extra: Option[JsObject] = None
-  ): Fact = {
+  def integrateFact(fc: FactCandidate) = {
     
-    val normalizedLabels = labels.map(_.toLowerCase.trim).distinct
+    val normalizedLabels = fc.labels.map(_.toLowerCase.trim).distinct
     val checkExisting = resolveLabels(normalizedLabels:_*)
     
-    val classType = resolveLabels(className).headOption map (_.id.toString) getOrElse className 
-    val superType = resolveLabels(superName).headOption map (_.id) orElse {
-      logger error s"NOSUPER $superName"; None
-    }
-    
-    if (checkExisting.isEmpty && (labels contains className)) {
+    if (checkExisting.isEmpty && (fc.labels contains fc.className))
       Fact.createSelfRef(
         normalizedLabels,
-        value,
-        children,
-        extra
+        fc.value,
+        fc.children,
+        fc.extra
       )
-    } else {
+    else {
+      
+    	val classType = resolveLabels(fc.className).headOption map (_.id.toString) getOrElse fc.className 
+			val superType = resolveLabels(fc.superName.toSeq:_*).headOption map (_.id) orElse {
+    		logger error s"NOSUPER ${fc.superName}"; None
+    	}
+    	
       val newInfo = Fact(
         classType,
         superType,
         normalizedLabels,
-        value,
-        children,
-        extra
+        fc.value,
+        fc.children,
+        fc.extra
       )
       
       checkExisting.headOption map (_ combine newInfo) getOrElse newInfo.index()

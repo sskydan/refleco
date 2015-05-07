@@ -13,17 +13,17 @@ class SearchRequest(
    /** sequence of triples(func, key, value) where key is a variable to test and value is value to test against.
    *   func is the type of test (i.e. =, <, >, etc). Applies to main query parameters.
    */
-  val queryRoot:Seq[(String,String,String)] = Nil,
+  val queryRoot: Seq[(String,String,String)] = Nil,
   
   /** sequence of triples(func, key, value) where key is a variable to test and value is value to test against.
    *   func is the type of test (i.e. =, <, >, etc). Applies to main query filter parameters.
    */
-  val queryFilters:Seq[(String,String,String)] = Nil,
+  val queryFilters: Seq[(String,String,String)] = Nil,
    
   /** sequence of triples(func, key, value) where key is a variable to test and value is value to test against.
    *   func is the type of test (i.e. =, <, >, etc). Applies to post query filter parameters.
    */
-  val postFilters:Seq[(String,String,String)] = Nil,
+  val postFilters: Seq[(String,String,String)] = Nil,
   
   /** key on which to sort.
    *  TODO
@@ -64,15 +64,15 @@ object URIParamsAdapter {
  *  FIXME doctype should be Form not String
  */
 class BaseParams(
-  val queryRootFuncs:Option[String] = None,
-  val queryRootKeys:Option[String] = None,
-  val queryRootVals:Option[String] = None,
-  val queryFilterFuncs:Option[String] = None,
-  val queryFilterKeys:Option[String] = None,
-  val queryFilterVals:Option[String] = None,
-  val postFilterFuncs:Option[String] = None,
-  val postFilterKeys:Option[String] = None,
-  val postFilterVals:Option[String] = None,
+  val queryRootFuncs: Option[String] = None,
+  val queryRootKeys: Option[String] = None,
+  val queryRootVals: Option[String] = None,
+  val queryFilterFuncs: Option[String] = None,
+  val queryFilterKeys: Option[String] = None,
+  val queryFilterVals: Option[String] = None,
+  val postFilterFuncs: Option[String] = None,
+  val postFilterKeys: Option[String] = None,
+  val postFilterVals: Option[String] = None,
   val sortParam: Option[String] = None,
   val fieldParam: Option[String] = None,
   val doctypeParam: Option[String] = None,

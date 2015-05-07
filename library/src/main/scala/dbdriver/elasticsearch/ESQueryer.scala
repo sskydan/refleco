@@ -19,6 +19,14 @@ import server.LibParams
  */
 trait ESQueryer { self: ESBase =>
 
+  //TODO sort out all these prefix
+  //FIXME right now we only allow for one value path. We need a way
+  //to specify a correct (or many) file path(s)
+  val DEFAULT_PREFIX = "children.value.valList.inner"
+  val REPORT_PREFIX = DEFAULT_PREFIX + ".valDouble"
+  val COMPANY_STR_PREFIX = DEFAULT_PREFIX
+  val COMPANY_NUM_PREFIX = "valDouble."
+
   /** TODO error handling
    *  TODO search type: req.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
    *  TODO escape lucene special chars
@@ -29,69 +37,80 @@ trait ESQueryer { self: ESBase =>
    */ 
   def lookup(params: LibSearchRequest): Future[ESReply] = Future {
     logger info s"ES lookup: $params"
-    
-    val pf = PostFilters()
-    
+        
     val req =
       client.prepareSearch(ALL_INDICES:_*)
         .setTypes(params.doctype:_*)
         .setSize(params.lim getOrElse 2)
         .setFrom(params.page getOrElse 0)
 
-    //
-    // query string handling
-    //
-    val (nested, normal) = params.request partition { case (k, v) => k startsWith "children." }
-    
-    // handle nested queries
-    if (!nested.isEmpty) {
-      val nestedQ = nested map { case (k, v) => cleanQuery(k, v) }
-
-      if (normal.isEmpty && nestedQ.size < 2){
-        req setQuery QueryBuilders.nestedQuery("children", nestedQ.head)
-      }
-      else
-        nestedQ foreach (q => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb must q ))
-    }
-
-    // handle regular queries
-    if (normal.size > 1) logger error "Multiple regular(non-nested) queries not implemented"
-    normal foreach { case (k, v) => req setQuery cleanQuery(k, v) }
-
-    //
-    // select fields to be returned
-    //
-
-    val (postReplyFilters, esFilters) = params.fields partition (_ startsWith "children.")
-    val (ignoredFields, chosenFields) = esFilters partition (_ startsWith "-")
         
-    val docFilters = postReplyFilters map { f =>
-      val filterList = f split "="
-      val k = filterList.head
-      val v = filterList.tail.head
-      QueryBuilders.matchPhraseQuery(k, v)
+    val queryRoot = params.queryRoot
+    val queryFilters = params.queryFilters
+    val postFilters = params.postFilters
+    
+    val pf = PostFilters()
+    val q = Query(queryRoot)
+    
+    //TODO We only allow for certain AND / OR combinations. Need a way to specify
+    //  which sections are to be AND'd and which to be OR'd together. (i.e must and should cases)
+    //TODO Currently we are using the REPORT_PREFIX for all queries. This gives problems when looking
+    //  for fields with different value paths. 
+    //FIXME is there a way to make this less redundant?
+    val (nested, normal) = queryFilters partition { case (f, k, v) => k startsWith "children." }
+    
+    def buildQueryFilter(t: (String, String, String)): BoolQueryBuilder = {
+      val boolQuery = QueryBuilders.boolQuery()
+      val nameKey = t._2.reverse.takeWhile(_.toString != ".").reverse
+      val namePath = t._2.reverse.dropWhile(_.toString != ".").reverse.dropRight(1)
+      t match {
+        case (">", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).gt(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case ("<", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).lt(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case ("<<", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).lte(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case (">>", k, v) => {
+          boolQuery must QueryBuilders.rangeQuery(REPORT_PREFIX).gte(v)
+          boolQuery must QueryBuilders.matchPhraseQuery(namePath, nameKey)
+        }
+        case ("==", k, v) => {
+          boolQuery must QueryBuilders.matchPhraseQuery(k, v)
+        }
+      }
+      boolQuery
     }
     
-    if (normal.isEmpty & nested.isEmpty) 
-      req setQuery (QueryBuilders.nestedQuery("children", docFilters.head))
+    nested foreach { case (f,k,v) => {
+        val boolQuery = buildQueryFilter((f,k,v)) 
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.nestedFilter("children", boolQuery))
+      }
+    }
     
-    docFilters foreach (df => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb should df))
+    normal foreach { case (f,k,v) => {
+        val boolQuery = buildQueryFilter((f,k,v))
+        q.addQueryFilter((fb: BoolFilterBuilder) => fb must FilterBuilders.queryFilter(boolQuery))
+      }
+    }
     
-    if (pf.initialized)  req setPostFilter FilterBuilders.nestedFilter("children", pf.postFilter)
+    postFilters foreach {
+        case ("==", k, v) => pf.addQueryBuilder((qb: BoolQueryBuilder) => qb must QueryBuilders.matchPhraseQuery(k, v))
+        case _ =>
+    }
     
-    if (chosenFields.length > 0)
-      req addFields (chosenFields: _*)
-    else if (ignoredFields.length > 0)
-      req setFetchSource (
-        Array("*"),
-        ("details" +: ignoredFields).toArray map (_ replaceFirst ("-", ""))
-      )
-    else
-      req setFetchSource ("*", "details")
-
-    //
-    // handle sorts
-    //
+    val fields = postFilters collect {
+      case ("field", k, v) => k
+    }
+    if (fields.length > 0) req addFields (fields: _*)
+    else req setFetchSource ("*", "details")
+    
+    req setQuery q.buildQuery()
     params.sort foreach (req addSort (_, SortOrder.DESC))
 
     //
@@ -100,8 +119,8 @@ trait ESQueryer { self: ESBase =>
     logger info req.toString
     val rep = req.execute().actionGet()
 
-    logger info s"ES lookup ${params.request} with fields ${params.fields}, results ${rep.status()}"
-    ESReply(JsonParser(rep.toString()), postReplyFilters.toList)
+    //logger info s"ES lookup ${params.request} with fields ${params.fields}, results ${rep.status()}"
+    ESReply(JsonParser(rep.toString()), postFilters.toList)
   }
 
   
@@ -152,15 +171,48 @@ trait ESQueryer { self: ESBase =>
     
     QueryBuilders.boolQuery() must rangeQ must nameQ
   }
+}
 
-  case class PostFilters() {
-    var initialized = false 
-    val postFilter = QueryBuilders.boolQuery()
-    
-    def addQueryBuilder(fn: BoolQueryBuilder => BoolQueryBuilder) = {
-      fn(this.postFilter)
-      this.initialized = true
+case class Query(queryRoot: Seq[(String, String, String)]){
+  var qfInitialized = false
+  //TODO only looking at first query root for now. No cases where there are more
+  
+  val qRoot = {
+    if (queryRoot.length > 0) {
+      val rootBool = QueryBuilders.boolQuery()
+      queryRoot foreach {
+         case ("==", k, v) => rootBool must QueryBuilders.matchPhraseQuery(k, v) 
+         case (_,k,v) => rootBool must QueryBuilders.matchQuery(k, v)
+      }
+      rootBool
+    }
+    else {
+      QueryBuilders.matchAllQuery()
     }
   }
   
+  val qFilters = FilterBuilders.boolFilter()
+  
+  def addQueryFilter(fn: BoolFilterBuilder => BoolFilterBuilder) = {
+    this.qfInitialized = true
+    fn(this.qFilters)  
+  }
+  
+  def buildQuery(): QueryBuilder = {
+    if (this.qfInitialized)
+      QueryBuilders.filteredQuery(qRoot, this.qFilters)
+    else
+      qRoot
+  }
+
+}
+
+case class PostFilters(){
+  var initialized = false 
+  val postFilter = QueryBuilders.boolQuery()
+  
+  def addQueryBuilder(fn: BoolQueryBuilder => BoolQueryBuilder) = {
+    fn(this.postFilter)
+    this.initialized = true
+  }
 }

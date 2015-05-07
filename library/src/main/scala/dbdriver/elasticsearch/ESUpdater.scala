@@ -70,7 +70,7 @@ trait ESUpdater extends StrictLogging { self: ESQueryer with ESBase =>
       // perform the lookup
       lookup(
         LibSearchRequest(
-          request = Map("id" -> fact.id.toString), 
+          queryRoot = Seq(("", "id", fact.id.toString)), 
           doctype = Seq(fact.classType)
         )
         
@@ -80,46 +80,4 @@ trait ESUpdater extends StrictLogging { self: ESQueryer with ESBase =>
       )
     )
   )
-    
-//  def updateDS(facts: Iterator[Fact]): Future[Boolean] = try {
-//    logger info "ES updating fact batch"
-//    val bulkReq = client prepareBulk ()
-//
-//    val futures = facts map { fact => 
-//      val checkExisting = lookupDS(LibSearchRequest(
-//        request = Map("id" -> fact.id), 
-//        doctype = Seq(fact.ftype))
-//      )
-//      val newDoc = checkExisting map (
-//        _.toFacts find (_.interest >= 6.0) map (_ integrateFacts fact) getOrElse fact
-//      )
-//      
-//      newDoc map { fact =>
-//        val req = client.prepareIndex(MAIN_INDEX, fact.ftype, fact.id)
-//                        .setSource(fact.toJson.toString())
-//  
-//        // child documents need to reference their parent doc
-//        if (CHILD_TYPES contains fact.ftype) req setParent fact.id.takeWhile(_ != ':')
-//        
-//        bulkReq add req
-//      }
-//    }
-//    
-//    Future sequence futures map { _ =>
-//    
-//      // query execution
-//      val rep = bulkReq execute () actionGet ()
-//      val repFailure = rep hasFailures ()
-//          
-//      logger info s"ES uploading result error: ${repFailure.toString}"
-//      if (repFailure) logger error "ES uploading error: "+rep.buildFailureMessage()
-//      !repFailure
-//    }
-//
-//  } catch { case NonFatal(any) =>
-//    logger error any.getMessage
-//    logger error any.getStackTrace().mkString("\n")
-//    Future successful false
-//  }
-  
 }

@@ -48,12 +48,6 @@ class UKRMX(
 
 object UKRMXBuilders {
   
-  implicit def fromFacts[T](facts: Seq[T])(implicit ev: T => Fact): UKRMX = {
-    
-    
-    ???
-  }
-  
   implicit def fromTriples(triples: Seq[(String, String, String)]): UKRMX = {
     
     ???

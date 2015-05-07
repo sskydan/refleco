@@ -56,7 +56,6 @@ object DBPedia extends StrictLogging with UConfig {
 //           "(?<=[A-Za-z])(?=[^A-Za-z])"
 //         ), " ")
 //       .trim
-   
   
   
   /** parse the main, semi-cleaned dbp properties list
@@ -117,7 +116,7 @@ object DBPedia extends StrictLogging with UConfig {
     def getDomain(elem: Node): String = resourceByLabel(elem, s"{$RDFS_NS}domain")
     def getRange(elem: Node): String = resourceByLabel(elem, s"{$RDFS_NS}range")
     
-      
+    
     ???
   }
   

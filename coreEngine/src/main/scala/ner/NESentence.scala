@@ -4,7 +4,8 @@ package ner
 /** represents a chunk (sentence) formed out of recognized entities
  */
 case class NESentence(val row: Seq[NE], val whole: String, sc: Option[Double] = None)
-extends SentenceRanker {
+extends NESRanker {
+  
 	// the base score of this sentence
   val score = sc getOrElse 0.0
   
