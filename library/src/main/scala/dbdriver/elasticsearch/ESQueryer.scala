@@ -173,11 +173,13 @@ trait ESQueryer { self: ESBase =>
   }
 }
 
+//TODO only looking at first query root for now. No cases where there are more
 case class Query(queryRoot: Seq[(String, String, String)]){
   var qfInitialized = false
-  //TODO only looking at first query root for now. No cases where there are more
   
-  val qRoot = {
+  val qFilters = FilterBuilders.boolFilter()
+
+  val qRoot =
     if (queryRoot.length > 0) {
       val rootBool = QueryBuilders.boolQuery()
       queryRoot foreach {
@@ -186,12 +188,8 @@ case class Query(queryRoot: Seq[(String, String, String)]){
       }
       rootBool
     }
-    else {
-      QueryBuilders.matchAllQuery()
-    }
-  }
+    else QueryBuilders.matchAllQuery()
   
-  val qFilters = FilterBuilders.boolFilter()
   
   def addQueryFilter(fn: BoolFilterBuilder => BoolFilterBuilder) = {
     this.qfInitialized = true

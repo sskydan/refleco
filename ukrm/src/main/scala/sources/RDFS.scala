@@ -14,6 +14,7 @@ import scala.collection.mutable.ListBuffer
 import org.joda.time.DateTime
 import ukrm.FactCandidate
 
+
 object RDFS extends StrictLogging with UConfig {
 
   val RDFS_FILE = config getString "rdfSchema"
