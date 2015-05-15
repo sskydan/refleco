@@ -13,16 +13,29 @@ import ukrm.UKRM._
 import scala.collection.mutable.ListBuffer
 import org.joda.time.DateTime
 import ukrm.FactCandidate
+import scala.collection.immutable.HashMap
+import ukrm.FactResolver
 
 
-object RDFS extends StrictLogging with UConfig {
-
+object RDFS extends FactResolver with UConfig {
   val RDFS_FILE = config getString "rdfSchema"
 
   var factCandidates: ListBuffer[FactCandidate] = ListBuffer.empty 
   var edgeCandidates: ListBuffer[(String, String, String, Option[DateTime])] = ListBuffer.empty
+  var dependencies: HashMap[FactCandidate, Seq[FactCandidate]] = HashMap()
+  
+  /** main method to parse new information from this datasource and integrate it with our global corpus
+   */
+  def integrateDatasource() = {
+    extractData
+    buildDependencyMap
+    val facts = resolveOrderedData
 
-  /**
+    // facts ready for posting
+    ???
+  }
+  
+  /** extract the fact candidates and edge candidates that we recognize in this datasource
    */
   def extractData() = {
     val rdfsXML = openXML(RDFS_FILE)
@@ -45,14 +58,38 @@ object RDFS extends StrictLogging with UConfig {
     }
   }
   
-  def integrateData() = {
-    factCandidates map { candidate =>
-      // prioritize name lookups in the local dataset, as the naming is assumed to be exact
-      
-      
-      // else, try to dereference entities in the global dataset
+  /** build a dependency map from the list of fact candidates
+   */
+  def buildDependencyMap() =
+    dependencies = factCandidates.foldLeft(HashMap[FactCandidate, Seq[FactCandidate]]()) {
+      (dependencies, candidate) =>
+        val classRef = factCandidates filter (_.labels contains candidate.className)
+        val superRef = factCandidates filter (_.labels contains candidate.superName)
+        
+        dependencies + ((candidate, classRef++superRef))
+      }
+
+  /** iterates through a dependency map and tries to build a set of complete facts
+   */
+  def resolveOrderedData() = {
+    val it = new Iterator[FactCandidate] { 
+      def next() = 
+        dependencies collectFirst { case (k,v) if v.isEmpty => k } getOrElse Iterator.empty.next()
+      def hasNext = dependencies exists (_._2.isEmpty)
     }
+    
+    var localFacts = ListBuffer.empty[Fact]  
+    it foreach { next =>
+      
+      val nextFact = integrateFact(next, localFacts)
+      localFacts += nextFact
+      dependencies ++= (dependencies mapValues (_ diff Seq(next)))
+    }
+    
+    if (dependencies.nonEmpty) throw new Exception("Dependency parsing did not work fully")
+    else localFacts
   }
+  
   
   def getByLabel(entry: List[String], label: String): Option[String] = 
     entry find (_ startsWith label) map extractValue
@@ -60,5 +97,4 @@ object RDFS extends StrictLogging with UConfig {
   def extractValue(s: String) = 
     s.dropWhile(_ != " ").takeWhile(_ != " ")
     .replaceAll("<","").replaceAll(">","").replaceAll("\"","")
-  
 }
