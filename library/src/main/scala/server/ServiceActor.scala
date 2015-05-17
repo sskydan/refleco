@@ -55,41 +55,49 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
   val route =
     path("finbase") {
       post {
-        parameters('cmd, 'lim.as[Int].?, 'type.?) { (cmd, lim, doctype) => cmd match {
+        parameters(
+          'cmd, 
+          'lim.as[Int].?, 
+          'type.?, 
+          'overwrite.?.as[Boolean]
+        ) { (cmd, lim, doctype, ow) => cmd match {
             
           case "node" =>
-            log.info("Http request for new node")
+            log info "Http request for new node"
             init
             complete("New server node started\n")
             
           case "fetch" =>
-            log.info(s"Http request for fetching $lim new $doctype reports")
+            log info s"Http request for fetching $lim new $doctype reports"
             Future(ReportFetcher.fetch(lim, Form(doctype getOrElse "10-K"))(system))
             complete("XBRL retrieval started\n")
             
           case "load" =>
-            log.info(s"Http request for loading $lim $doctype files")
+            log info s"Http request for loading $lim $doctype files"
             val form = Form(doctype getOrElse "10-K")
             
-            val existingIds = lookupDS(LibParams(postFilterFuncs=Some("field"),
-                                                 postFilterKeys=Some("_id"), 
-                                                 postFilterVals=Some("NA"),
-                                                 doctypeParam=doctype, 
-                                                 limParam=Some(1000000)).toRequest) map {
-              _.toFacts map(_.id)
-            } recover {
-              case _ => List()
-            }
-            
-            existingIds map (ReportManager.parse(form, lim, _)) foreach (updateBatch(_))
+            lookup(LibParams(
+              postFilterFuncs = Some("field"),
+              postFilterKeys = Some("_id"), 
+              postFilterVals = Some("NA"),
+              doctypeParam = doctype, 
+              limParam = Some(1000000)).toRequest
+                
+            ) map {
+              _.toFacts map (???)
+            } map (
+              ReportManager.parse(form, lim, _)
+            ) foreach (
+              updateBatch(_)
+            )
             
             complete("Loading started\n")
             
           case "put" =>
             decompressRequest() { entity(as[Seq[Fact]]) { case docs =>
-              log.info(s"Http request for putting to db: ${docs.size}")
+              log info s"Http request for putting to db: ${docs.size}"
 
-              updateBatch(docs.iterator)
+              updateBatch(docs.iterator, ow)
             	complete("Update started\n")
             }}
             
@@ -120,7 +128,7 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
               complete("Loading dicts")
 
             case _ =>
-              log.info(s"Dumping 10K reports to spark file")
+              log info s"Dumping 10K reports to spark file"
               val conf = new SparkConf().setAppName("lib").setMaster("local[*]")
               conf.set("es.index.auto.create", "true")
               val sc = new SparkContext(conf)         
@@ -146,7 +154,7 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
             'lim.as[Int].?,
             'page.as[Int].?
           ).as(LibParams) { sparams =>
-          log.info(s"Http request for search: ${sparams.prettyPrint}")
+          log info s"Http request for search: ${sparams.prettyPrint}"
           
           compressResponse() (complete {
             lookup(sparams.toRequest)
@@ -155,7 +163,7 @@ trait DatabaseService extends Actor with HttpService with DataServerManager with
         // Get list of all company names
         // TODO cache
         compressResponse() (complete {
-      	  log.info("Http request for company listing")
+      	  log info "Http request for company listing"
           lookup(LibParams(doctypeParam=Some("company"),limParam=Some(1000)).toRequest)
         })
       }

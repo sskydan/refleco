@@ -27,14 +27,14 @@ object ReportManager extends LibConfig with StrictLogging {
   
   /** generate the fact reports which are candidates for uploading
    */
-  def parse(form:Form = R10K, lim:Option[Int] = None, except:Seq[String] = Nil): Iterator[Fact] = try {
-    logger.info(s"Total reports on filesystem: ${index.size}")
-    logger.info(s"Total reports of $form on filesystem: ${indexLookup(form).size}")
-    logger.info(s"Exception (already loaded) reports size: ${except.size}")
+  def parse(form: Form = R10K, lim: Option[Int] = None, except: Seq[String] = Nil): Iterator[Fact] = try {
+    logger info s"Total reports on filesystem: ${index.size}"
+    logger info s"Total reports of $form on filesystem: ${indexLookup(form).size}"
+    logger info s"Exception (already loaded) reports size: ${except.size}"
 
     // intersect uids of the reports index with the exception list
-    val reports = indexLookup(form) filter (doc => !except.contains(doc.uid)) map (_.toReport)
-    logger.info(s"New available matching reports size: ${reports.size}")
+    val reports = indexLookup(form) filterNot (doc => except contains doc.uid) map (_.toReport)
+    logger info s"New available matching reports size: ${reports.size}"
     
     val batch = reports.take(lim getOrElse reports.size).force
     
@@ -59,7 +59,7 @@ object ReportManager extends LibConfig with StrictLogging {
    *    single file containing the (serialized) known report summaries
    */
   def updateIndexFromFS:Stream[ReportSummary] = {
-    logger.info("Updating file index from FS")
+    logger info "Updating file index from FS"
     // first, read the current index for known files
     val index = Source.fromFile(REPORT_INDEX_FILE).getLines().toSet[String] map (ReportSummary(_))
     val indexPaths = index map (_.path)
@@ -84,16 +84,24 @@ object ReportManager extends LibConfig with StrictLogging {
 
 /** short class representing the serialized/packed represntation of reports
  */
-case class ReportSummary(doctype:String, uid:String, date:String, cik:String, cname:String, path:String) {
-  def toReport:Report = Report(new File(path)) getOrElse (throw new Exception("Unknown Report type from ReportSummary"))
+case class ReportSummary(
+  doctype: String, 
+  uid: String, 
+  date: String, 
+  cik: String, 
+  cname: String, 
+  path: String
+) {
+  def toReport = Report(new File(path)) getOrElse (throw new Exception("Unknown Report type from ReportSummary"))
   override def toString() = Seq(doctype, uid, date, cik, cname, path).reduce(_+" ~ "+_) +"\n"
 }
 
 object ReportSummary {
-  def apply(report:Report):Option[ReportSummary] = 
-    Try(ReportSummary(report.doctype, report.uid, report.date, report.cik, report.cname, report.file.getPath())).toOption
+  def apply(report: Report): Option[ReportSummary] = Try(
+    ReportSummary(report.doctype, report.uid, report.date, report.cik, report.cname, report.file.getPath())
+  ).toOption
     
-  def apply(str:String):ReportSummary = str.split(" ~ ").toSeq match {
+  def apply(str: String): ReportSummary = str.split(" ~ ").toSeq match {
     case Seq(dtype, uid, date, cik, cname, path) => ReportSummary(dtype, uid, date, cik, cname, path)
     case _ => throw new Exception("Couldn't parse the ReportSummary "+str)
   }
