@@ -1,0 +1,5382 @@
+openapi: 3.0.1
+info:
+  title: Athena
+  description: |-
+    Athena API REST documentation for Ritual ONE. With the following API you have the full ability to interact with the Athena backend.
+    ### Locales
+    The Open API docs do not provide the capability to have a global header setting. Its "Authorize" logic was overridden to achieve this. Please go to Authorize -> set locale -> Authorize to set the locale for your requests.
+    ### Guest User Session Info
+    Session info is stored in a cookie in your browser which allows your cart and orders to persist. To view/edit your session info (Chrome) you can go to Inspect -> Application -> Cookies -> docs url.
+  contact: {}
+  version: "17"
+servers:
+- url: https://sandbox-athena.ritual.co
+  description: Sandbox environment
+- url: https://qa-athena.ritual.co
+  description: QA environment
+- url: https://athena.ritual.co
+  description: Production
+tags:
+- name: branding
+  description: The branding API
+- name: current-user-cart
+  description: The current user cart API
+- name: delivery
+  description: The Delivery Status API
+- name: user
+  description: The User Data API
+- name: delivery-address
+  description: The user delivery address management API
+- name: payment
+  description: The Payment API
+- name: merchant
+  description: The merchant API
+- name: merchant-preview
+  description: The merchant preview API
+- name: menu
+  description: The Menu API
+- name: guest-order
+  description: The guest order API
+- name: order
+  description: The order API
+- name: cart
+  description: The Cart API
+- name: search
+  description: The Search API
+- name: campaign
+  description: The Campaign API
+- name: shareable
+  description: The Shareable API
+- name: promo-codes
+  description: The Promo Codes API
+paths:
+  /delivery-addresses:
+    get:
+      tags:
+      - delivery-address
+      summary: Returns a user's delivery addresses. This does not support guest users
+      operationId: getDeliveryAddresses
+      responses:
+        "200":
+          description: Successfully retrieved a list of addresses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDeliveryAddressResponse'
+        "400":
+          description: Invalid user. Expected response if guest users hit this endpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        "500":
+          description: Server error
+    post:
+      tags:
+      - delivery-address
+      summary: Create a new delivery address for a user
+      operationId: createDeliveryAddress
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeliveryAddressRequest'
+        required: true
+      responses:
+        "201":
+          description: Successfully created the delivery address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDeliveryAddressResponse'
+        "400":
+          description: Unable to save a delivery address for this user. Expected response
+            if guest users hit this endpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        "500":
+          description: Server error
+  /delivery-addresses/{addressId}:
+    delete:
+      tags:
+      - delivery-address
+      summary: Remove a user's saved delivery address
+      operationId: deleteDeliveryAddress
+      parameters:
+      - name: addressId
+        in: path
+        description: The ID of the address to be removed
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Successfully removed the delivery address
+        "404":
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        "500":
+          description: Server error
+  /v1/brands:
+    get:
+      tags:
+      - branding
+      summary: Retrieve the branding information given a merchant
+      operationId: getBrandMerchantData
+      parameters:
+      - name: externalId
+        in: query
+        description: External ID of the brand
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandData'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/cart/{merchantId}:
+    get:
+      tags:
+      - cart
+      summary: Retrieve a cart
+      operationId: getCart
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+    patch:
+      tags:
+      - cart
+      summary: Update individual properties of the Cart
+      operationId: updateCart
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartPropsRequest'
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "4XX":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/cart/{merchantId}/item:
+    post:
+      tags:
+      - cart
+      summary: Add item to cart
+      operationId: addItemToCart
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidCartItemErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/cart/{merchantId}/item/{cartItemId}:
+    put:
+      tags:
+      - cart
+      summary: Modify item in cart
+      operationId: modifyItemInCart
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: cartItemId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidCartItemErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+    delete:
+      tags:
+      - cart
+      summary: Remove item from cart
+      operationId: removeItemFromCart
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: cartItemId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/cart/{merchantId}/config:
+    put:
+      tags:
+      - cart
+      summary: Modify cart config
+      operationId: modifyCartConfig
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartConfigRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/cart/{merchantId}/incentives:
+    get:
+      tags:
+      - cart
+      summary: returns a list of applicable incentives (vouchers/marketing campaigns)
+        that can apply to the current cart. Considers user/merchant/cart totals.
+      operationId: getCartIncentives
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: cartCheckoutCode
+        in: query
+        description: optional param to support hidden (request only) marketing campaigns
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCartIncentivesResponse'
+        "404":
+          description: merchant or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+    patch:
+      tags:
+      - cart
+      summary: updates the list of selected incentives (vouchers/campaigns) in the
+        user cart
+      operationId: patchCartIncentives
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: cartCheckoutCode
+        in: query
+        description: optional param to support hidden (request only) marketing campaigns
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchCartIncentivesRequest'
+        required: true
+      responses:
+        "200":
+          description: successfuly updated selected incentives
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatchCartIncentivesResponse'
+        "400":
+          description: merchant or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        "404":
+          description: merchant or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/cart/{merchantId}/fulfillment:
+    put:
+      tags:
+      - cart
+      summary: Modify cart delivery information
+      operationId: modifyCartFulfillmentDetails
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartFulfillmentRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidUserAddressErrorResponse'
+  /v1/cart/{merchantId}/checkout-code:
+    put:
+      tags:
+      - cart
+      summary: Modify cart checkout codes
+      operationId: modifyCartCheckoutCodes
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartCheckoutCodeRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/cart/{merchantId}/scheduled-for-time:
+    put:
+      tags:
+      - cart
+      summary: Modify cart scheduled for time
+      operationId: modifyCartScheduledForTime
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartScheduledForTimeRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidScheduledForTimeErrorResponse'
+  /cart/{merchantId}/delivery-info:
+    get:
+      tags:
+      - cart
+      summary: Get delivery info based on the cart's fulfillment address
+      operationId: getCartDeliveryInfo
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartDeliveryInfoResponse'
+        "404":
+          description: Cart not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        "400":
+          description: Cart has an invalid or missing fulfillment address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+  /v1/incentive:
+    get:
+      tags:
+      - incentive
+      summary: returns a list of all applicable incentives for this user & merchant.
+        Returns all user incentives if merchant isn't specified
+      operationId: getIncentives
+      parameters:
+      - name: merchantId
+        in: query
+        description: the ID of the merchant
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: cartCheckoutCode
+        in: query
+        description: the checkout code for request only marketing campaigns
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIncentivesResponse'
+  /v1/order/{orderId}:
+    get:
+      tags:
+      - order
+      summary: Retrieves an order
+      operationId: getOrder
+      parameters:
+      - name: orderId
+        in: path
+        description: order ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 443495d209d44efabf918f6878e1dad4
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetOrderResponse'
+        "400":
+          description: Failed to get order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/order/token/{orderToken}:
+    get:
+      tags:
+      - order
+      summary: Retrieves an order with the temporary orderToken
+      operationId: getOrderWithToken
+      parameters:
+      - name: orderToken
+        in: path
+        description: order token
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 9007199254740991
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetOrderResponse'
+        "400":
+          description: Failed to get order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+  /v1/order/{orderId}/cancel:
+    patch:
+      tags:
+      - order
+      summary: Cancels an order that has just been placed.
+      operationId: cancelOrder
+      parameters:
+      - name: orderId
+        in: path
+        description: The order ID of the order the cancel
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 443495d209d44efabf918f6878e1dad4
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelOrderResponse'
+        "400":
+          description: Failed to cancel error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/order/{orderId}/continue:
+    patch:
+      tags:
+      - order
+      summary: Continues an order that is waiting for action.
+      operationId: continueOrder
+      parameters:
+      - name: orderId
+        in: path
+        description: The order ID of the order to continue
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 443495d209d44efabf918f6878e1dad4
+      responses:
+        "200":
+          description: Successful operation
+        "400":
+          description: Failed to cancel error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/order/token/{orderToken}/cancel:
+    patch:
+      tags:
+      - order
+      summary: Cancels an order that has just been placed with orderToken.
+      operationId: cancelOrderWithToken
+      parameters:
+      - name: orderToken
+        in: path
+        description: The temporary order token of the order to cancel
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 9007199254740991
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelOrderResponse'
+        "400":
+          description: Failed to cancel error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+  /v1/order/token/{orderToken}/continue:
+    patch:
+      tags:
+      - order
+      summary: Continues an order that is waiting for action.
+      operationId: continueOrderWithToken
+      parameters:
+      - name: orderToken
+        in: path
+        description: The temporary order token of the order to continue
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 443495d209d44efabf918f6878e1dad4
+      responses:
+        "200":
+          description: Successful operation
+        "400":
+          description: Failed to cancel error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+  /v1/order:
+    post:
+      tags:
+      - order
+      summary: Places an order
+      operationId: placeOrder
+      parameters:
+      - name: X-Ritual-Order-Source
+        in: header
+        description: Identifier representing the system from which the order was placed.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+          enum:
+          - RITUAL_APP
+          - RITUAL_ONE
+          - GOOGLE_FOOD
+          - ORGANIZATION
+      - name: X-Ritual-Order-Source-Id
+        in: header
+        description: The order source identifier.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOrderResponse'
+        "400":
+          description: Order failed to place
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/guest-order/cancel/{guestOrderToken}:
+    post:
+      tags:
+      - guest-order
+      summary: Cancel an order that has just been placed.
+      operationId: cancelGuestOrder
+      parameters:
+      - name: guestOrderToken
+        in: path
+        description: The guest order ID of the order the cancel
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 443495d209d44efabf918f6878e1dad4
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelGuestOrderResponse'
+        "400":
+          description: Failed to cancel error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+  /v1/guest-order:
+    post:
+      tags:
+      - guest-order
+      summary: Place a guest order
+      operationId: placeGuestOrder
+      parameters:
+      - name: X-Ritual-Order-Source
+        in: header
+        description: Identifier representing the system from which the order was placed.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+          enum:
+          - RITUAL_APP
+          - RITUAL_ONE
+          - GOOGLE_FOOD
+          - ORGANIZATION
+      - name: X-Ritual-Order-Source-Id
+        in: header
+        description: The order source identifier.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceGuestOrderRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceGuestOrderResponse'
+        "400":
+          description: Order failed to place
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+  /v1/guest-order/{guestOrderToken}:
+    get:
+      tags:
+      - guest-order
+      summary: Retrieve a guest order order
+      operationId: getGuestOrder
+      parameters:
+      - name: guestOrderToken
+        in: path
+        description: Guest order ID of the order
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 443495d209d44efabf918f6878e1dad4
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetGuestOrderResponse'
+        "400":
+          description: Failed to get order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderGenericErrorResponse'
+  /v1/menus:
+    get:
+      tags:
+      - menu
+      summary: Get a menu given search parameters
+      operationId: getMenuBySearch
+      parameters:
+      - name: merchantExternalId
+        in: query
+        description: external id of the merchant
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: a2b4
+      - name: dateTime
+        in: query
+        description: "Date and time filter for menu groups and items (no time zone,\
+          \ merchant time zone assumed)"
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+        example: 2020-12-08T15:30:00
+      - name: debug
+        in: query
+        description: whether the debug menu should be returned. True means the menu
+          is returned unfiltered (no time or availability filters enabled)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: menuDraftId
+        in: query
+        description: "the ID of the draft menu. If this is present, the endpoint returns\
+          \ the specified draft menu instead of the merchant's primary menu. If the\
+          \ menuDraftId is present then the debug param is expected to also be true,\
+          \ otherwise the request is invalid."
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: 01164d73adbd4d29b9bc0ac5d5724168
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        "400":
+          description: merchant was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/menu/{id}:
+    get:
+      tags:
+      - menu
+      summary: Get a menu
+      operationId: getMenu
+      parameters:
+      - name: id
+        in: path
+        description: id of the menu
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: 123
+      - name: dateTime
+        in: query
+        description: "Date and time filter for menu groups and items (no time zone,\
+          \ merchant time zone assumed)"
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+        example: 2020-12-08T15:30:00
+      - name: debug
+        in: query
+        description: whether the debug menu should be returned. True means the menu
+          is returned unfiltered (no time or availability filters enabled)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: menuDraftId
+        in: query
+        description: "the ID of the draft menu. If this is present, the endpoint returns\
+          \ the specified draft menu instead of the merchant's primary menu. If the\
+          \ menuDraftId is present then the debug param is expected to also be true,\
+          \ otherwise the request is invalid."
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: 01164d73adbd4d29b9bc0ac5d5724168
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        "400":
+          description: menu was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/merchants:
+    get:
+      tags:
+      - merchant
+      summary: Get a merchant
+      description: Returns the merchant data for a merchant by ID or external ID.
+        Callers must pass either `id` or `externalId`.
+      operationId: getMerchantByExternalId
+      parameters:
+      - name: externalId
+        in: query
+        description: The external ID of the merchant (corresponds to the merchant
+          shortcode)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: aa99
+      - name: id
+        in: query
+        description: The internal ID of the merchant
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: d0ab82a4e3cf4699b4e41a094f5f952b
+      - name: brandExternalId
+        in: query
+        description: The external ID of the brand to use if no custom theme is set
+          on the merchant
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: cartCheckoutCode
+        in: query
+        description: The cart checkout code of the campaign to load
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Merchant'
+        "400":
+          description: merchant was not found for the provided ID or external ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/merchants/user-preferences:
+    get:
+      tags:
+      - merchant
+      summary: Get the marketing preferences of a user for a given merchant
+      operationId: getUserMerchantMarketingPreferences
+      parameters:
+      - name: urlId
+        in: query
+        description: The external ID of the merchant (corresponds to the merchant
+          shortcode)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: 1234
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserMerchantMarketingPreferences'
+        "400":
+          description: merchant was not found for the provided external ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+    put:
+      tags:
+      - merchant
+      summary: Update the marketing preferences of a user for a given merchant
+      operationId: updateUserMerchantMarketingPreferences
+      parameters:
+      - name: urlId
+        in: query
+        description: The external ID of the merchant (corresponds to the merchant
+          shortcode)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: 1234
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserMerchantMarketingPreferences'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserMerchantMarketingPreferences'
+        "400":
+          description: merchant was not found for the provided external ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /merchants/{merchantId}/delivery-info:
+    get:
+      tags:
+      - merchant
+      summary: Get a merchant's estimated delivery info
+      operationId: getMerchantDeliveryInfo
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantDeliveryInfoResponse'
+        "404":
+          description: Merchant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        "400":
+          description: Merchant does not have delivery enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+  /v1/payment-options/{merchantId}:
+    get:
+      tags:
+      - payment
+      summary: Retrieves one time payments
+      operationId: getPaymentOptions
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentOptionResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /payment/setup-intent:
+    post:
+      tags:
+      - payment
+      summary: An authorzied Stripe specific endpoint that is responsible for three
+        things 1) creating a customer if not exists 2) instantiating a setupintent
+        3) returning the intent client secret
+      responses:
+        "201":
+          description: successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupIntentResponse'
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentErrorResponse'
+        "401":
+          description: unauthorized
+        "500":
+          description: internal server error
+  /payment/method:
+    get:
+      tags:
+      - payment
+      summary: An Authorized endpoint to retrieve payment methods by a ritualUserId
+        (extracted from the auth token)
+      parameters:
+      - name: paymentProcessor
+        in: query
+        description: An optional filter by paymentProcessor i.e BRAINTREE/STRIPE
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          description: The name of the payment processor i.e STRIPE/BRAINTREE
+          example: BRAINTREE
+          enum:
+          - STRIPE
+          - BRAINTREE
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentErrorResponse'
+        "401":
+          description: unauthorized
+        "500":
+          description: internal server error
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+    post:
+      tags:
+      - payment
+      summary: An Authorized endpoint to add a payment method to a payment user.  A
+        payment user is created if not exists.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethod'
+        required: true
+      responses:
+        "201":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodAddResponse'
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentErrorResponse'
+        "401":
+          description: unauthorized
+        "500":
+          description: internal server error
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+    delete:
+      tags:
+      - payment
+      summary: An Authorized endpoint to remove a payment method from a payment processor
+        (ritualUserId is extracted from the auth token)
+      parameters:
+      - name: paymentMethodId
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: successful operation
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentErrorResponse'
+        "401":
+          description: unauthorized
+        "500":
+          description: internal server error
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/merchantpreview/search:
+    post:
+      tags:
+      - merchant-preview
+      summary: Get a list of merchant preview search results given a name and address.
+      operationId: merchantPreviewSearch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantPreviewSearchParam'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MerchantPreviewSearchResult'
+  /v1/merchantpreview:
+    get:
+      tags:
+      - merchant-preview
+      summary: Get a merchants preview menu and merchant data.
+      operationId: merchantPreview
+      parameters:
+      - name: merchantPreviewId
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: countryCode
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantPreviewData'
+        "400":
+          description: merchant preview was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/image:
+    get:
+      tags:
+      - merchant-preview
+      summary: Get a new url for an external image.
+      operationId: imageRedirect
+      parameters:
+      - name: url
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: Image not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/search:
+    get:
+      tags:
+      - search
+      summary: Get search results given the query
+      operationId: search
+      parameters:
+      - name: metroId
+        in: query
+        description: Unique identifier of a metro
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: CA-TOR
+      - name: query
+        in: query
+        description: search query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: Burgers
+      - name: lat
+        in: query
+        description: user's latitude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: number
+          format: double
+        example: 43.64692
+      - name: lon
+        in: query
+        description: user's longitude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: number
+          format: double
+        example: -79.3950018
+      - name: showOpenPlaces
+        in: query
+        description: only show open places
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+        example: true
+      - name: campaignId
+        in: query
+        description: only show the merchants participating in this campaign
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: PaypalLA
+      - name: limit
+        in: query
+        description: limit the number of results
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+        example: 100
+      - name: showDelivery
+        in: query
+        description: only show merchants which support delivery
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+        example: true
+      - name: showPickup
+        in: query
+        description: only show merchants which support pickup
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+        example: true
+      - name: showDineIn
+        in: query
+        description: only show merchants which support dine-in
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+        example: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+  /v1/search/categories:
+    get:
+      tags:
+      - search
+      summary: Get a list of available search categories
+      operationId: searchCategories
+      parameters:
+      - name: lat
+        in: query
+        description: User's latitude (required alongside longitude parameter if metro
+          ID is not provided)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: number
+          format: double
+        example: 43.64692
+      - name: lon
+        in: query
+        description: User's longitude (required alongside latitude parameter if metro
+          ID is not provided)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: number
+          format: double
+        example: -79.3950018
+      - name: limit
+        in: query
+        description: limit the number of results
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+        example: 100
+      - name: metroId
+        in: query
+        description: Unique identifier of a metro (required if location coordinates
+          are not provided)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+        example: CA-TOR
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchCategoriesResponse'
+  /v1/campaign/redeem:
+    put:
+      tags:
+      - campaign
+      summary: Redeem a marketing campaign after the order is completed
+      operationId: redeemCampaign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignRedemptionRequest'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignRedemptionResponse'
+        "400":
+          description: Could not find the requested campaign to redeem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+  /v1/user:
+    get:
+      tags:
+      - user
+      summary: Data for the user
+      operationId: getUserData
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDataResponse'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+      - sandboxOAuth: []
+  /v1/delivery-status/{orderToken}:
+    get:
+      tags:
+      - delivery
+      summary: Retrieve the status of a delivery order
+      description: |
+        Deprecated by `GET /v1/delivery-status` where
+        `useToken=true` is equivalent to `orderIdentifierType=GUEST_TOKEN` and
+        `useToken=false` is equivalent to `orderIdentifierType=ID`
+      operationId: getDeliveryStatus
+      parameters:
+      - name: orderToken
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: useToken
+        in: query
+        description: useToken
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+        example: true
+      - name: restrictSimulator
+        in: query
+        description: restrictSimulator
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+        example: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryStatus'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      deprecated: true
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/delivery-status:
+    get:
+      tags:
+      - delivery
+      summary: Retrieve the status of a delivery order by query param
+      operationId: getDeliveryStatusByQuery
+      parameters:
+      - name: orderIdentifier
+        in: query
+        description: "The order ID, temporary order token, or the guest order token."
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+        examples:
+          GUEST_TOKEN:
+            value: b124320a758b43ce86659f681bb8fc95
+          ID:
+            value: b124320a758b43ce86659f681bb8fc95
+          TOKEN:
+            value: 9007199254740991
+      - name: orderIdentifierType
+        in: query
+        description: Determines which identifier type to use to look up the order.
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/OrderIdentifierType'
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryStatus'
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/users/current/cart/{merchantId}:
+    post:
+      tags:
+      - current-user-cart
+      summary: Copy a cart to a new cart for the current user
+      operationId: copyCart
+      parameters:
+      - name: merchantId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: sourceType
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - CURRENT_EXTERNAL_ID
+      responses:
+        "201":
+          description: successful operation
+        "400":
+          description: an error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+      security:
+      - sandboxOAuth: []
+      - qaOAuth: []
+  /v1/shareables/{promoCode}:
+    get:
+      tags:
+      - shareable
+      summary: "[DEPRECATED] Get a shareable for recipients display"
+      description: "[DEPRECATED] use `GET /promo-codes` operation instead."
+      operationId: getShareable
+      parameters:
+      - name: promoCode
+        in: path
+        description: The promo code associated with the shareable
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shareable'
+        "4XX":
+          description: An error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericErrorResponse'
+      deprecated: true
+  /promo-codes:
+    get:
+      tags:
+      - promo-codes
+      summary: Get information about one or more promo codes
+      operationId: getMultiplePromoCodes
+      parameters:
+      - name: promoCodes
+        in: query
+        description: List of one or more promo codes to query for
+        required: true
+        style: form
+        explode: false
+        schema:
+          minLength: 1
+          type: array
+          items:
+            minLength: 1
+            type: string
+        example: "FOODFEST,CURTIS31696-4EDE"
+      - name: nextPageToken
+        in: query
+        description: Pagination token for retrieving the next page
+        required: false
+        schema:
+          maxLength: 75
+          minLength: 6
+          type: string
+        example: YSBwYWdpbmF0aW9uVG9rZW4gZXhhbXBsZQ
+      - name: limit
+        in: query
+        description: A limit on the number of objects to be returned
+        required: false
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 10
+        example: 10
+      - name: Accept-Language
+        in: header
+        description: "The Accept-Language request HTTP header advertises which languages\
+          \ the client is able to understand, and which locale variant is preferred.\
+          \ If the language requested is not supported, a default language will be\
+          \ used. An IETF BCP 47 language tag."
+        required: false
+        schema:
+          type: string
+        example: en-US
+      responses:
+        "207":
+          description: At least one promo code was found. Promo code(s) information
+            is returned.
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMultiplePromoCodesResponse'
+  /promo-codes/{promoCode}:
+    get:
+      tags:
+      - promo-codes
+      summary: Get information about a promo code
+      operationId: getPromoCode
+      parameters:
+      - name: promoCode
+        in: path
+        description: Unique identifier of the promo code
+        required: true
+        style: simple
+        explode: false
+        schema:
+          minLength: 1
+          type: string
+        example: CURTIS31696-4EDE
+      - name: Accept-Language
+        in: header
+        description: "The Accept-Language request HTTP header advertises which languages\
+          \ the client is able to understand, and which locale variant is preferred.\
+          \ If the language requested is not supported, a default language will be\
+          \ used. An IETF BCP 47 language tag."
+        required: false
+        schema:
+          type: string
+        example: en-US
+      responses:
+        "200":
+          description: Promo code information is returned
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoCode'
+        "404":
+          description: Promo code was not found
+components:
+  schemas:
+    BrandData:
+      type: object
+      properties:
+        merchantDTOList:
+          type: array
+          items:
+            $ref: '#/components/schemas/MerchantData'
+        theme:
+          $ref: '#/components/schemas/Theme'
+      description: "Collection of merchant data for associated merchants, and a Theme"
+    FulfillmentType:
+      type: string
+      description: The fulfillment type from the user's perspective
+      example: IN_STORE
+      enum:
+      - CURBSIDE
+      - DELIVERY
+      - DINE_IN
+      - IN_STORE
+      - OUTPOST
+    MerchantDisplayMode:
+      type: string
+      description: |
+        Instructs UI to display merchants menu with specific order methods:
+        * `DEFAULT` - Display all order methods supported my merchant
+        * `DINE_IN` - Display dine-in order method in place of pickup
+        * `DELIVERY` - Display delivery only and hide pickup option (this will be ignored if the merchant does not support delivery)
+        * `ORDER_AHEAD` - Display scheduled order method only (this will be ignored if the merchant does not support scheduled orders)
+      example: DEFAULT
+      enum:
+      - DEFAULT
+      - DINE_IN
+      - DELIVERY
+      - ORDER_AHEAD
+    MerchantAuthMode:
+      type: string
+      description: |
+        Indicates which mode of authentication to use:
+        * `DEFAULT` - Users can create carts and checkout as guests, authentication is never forced or required
+        * `CHECKOUT_OTP` - Users can create guest carts, but must authenticate via OTP in order to checkout
+      example: DEFAULT
+      enum:
+      - DEFAULT
+      - CHECKOUT_OTP
+    LatLng:
+      required:
+      - latitude
+      - longitude
+      type: object
+      properties:
+        latitude:
+          type: number
+          description: Latitude
+          format: double
+          example: -0.01
+        longitude:
+          type: number
+          description: Longitude
+          format: double
+          example: 44.68
+      description: A point somewhere on Earth
+      example: "{12.00, -2.01}"
+    MerchantAddress:
+      required:
+      - city
+      - country
+      - defaultPhoneNumberCountryCode
+      - region
+      - streetAddress
+      type: object
+      properties:
+        streetAddress:
+          type: string
+          description: Translated address of the merchant
+          example: 123 Fake Street
+        intersection:
+          type: string
+          description: "Translated Intersection, empty if not available"
+          example: Fake St/Ruse Ave
+        postalCode:
+          type: string
+          description: Postal code of the merchant
+          example: H0H 0H0
+        city:
+          type: string
+          description: Translated city of the merchant
+          example: Toronto
+        region:
+          type: string
+          description: Translated region of the merchant
+          example: Ontario
+        country:
+          type: string
+          description: Translated  of the merchant
+          example: Canada
+        defaultPhoneNumberCountryCode:
+          type: string
+          description: The default phone number country code for the merchant
+          example: us
+      description: Address Information of the merchant
+    MerchantDisplayConfiguration:
+      required:
+      - displayMode
+      type: object
+      properties:
+        displayMode:
+          $ref: '#/components/schemas/MerchantDisplayMode'
+      description: Display configuration of the merchant
+    MerchantAuthConfiguration:
+      required:
+      - authMode
+      type: object
+      properties:
+        authMode:
+          $ref: '#/components/schemas/MerchantAuthMode'
+      description: Authentication configuration of the merchant
+    MerchantData:
+      required:
+      - authConfiguration
+      - categories
+      - displayConfiguration
+      - id
+      - imageUrl
+      - latLng
+      - menuItemGroupListId
+      - name
+      - openHours
+      - phoneNumber
+      - pickupInstructions
+      - state
+      - supportsDelivery
+      - supportsGroupOrdering
+      - supportsLoyaltyPlus
+      - supportsPickup
+      - todaysHours
+      - url
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the merchant
+          example: "333"
+        name:
+          type: string
+          description: Translated name of the merchant
+          example: Ritual Food Stall
+        url:
+          type: string
+          description: Url shortcode of the merchant
+          example: asfr
+        address:
+          $ref: '#/components/schemas/MerchantAddress'
+        phoneNumber:
+          type: string
+          description: Phone number of the merchant
+          example: "45555555555"
+        state:
+          type: string
+          description: State of the merchant
+          example: MERCHANT_DOWN_MANUAL
+        supportsDelivery:
+          type: boolean
+          description: Does this merchant offer delivery
+          example: false
+        supportsPickup:
+          type: boolean
+          description: Does this merchant offer pickup
+          example: false
+        supportsGroupOrdering:
+          type: boolean
+          description: Does this merchant support group orders
+          example: false
+        supportsLoyaltyPlus:
+          type: boolean
+          description: Does this merchant offer a loyalty program
+          example: false
+        latLng:
+          $ref: '#/components/schemas/LatLng'
+        displayConfiguration:
+          $ref: '#/components/schemas/MerchantDisplayConfiguration'
+        authConfiguration:
+          $ref: '#/components/schemas/MerchantAuthConfiguration'
+        openHours:
+          type: array
+          description: A list of merchant open hours for the next 7 days
+          example: "{WED, 12AM-2PM}"
+          items:
+            $ref: '#/components/schemas/MerchantHours'
+        todaysHours:
+          type: string
+          description: "Open hours of today, or when the merchant opens next"
+          example: "Open 12AM-2PM, Opens Wed 12PM"
+        imageUrl:
+          type: string
+          description: url of the merchants
+          example: example.com/picture.jpeg
+        squareImageUrl:
+          type: string
+          description: url of the merchants square image
+          example: example.com/picture.jpeg
+        menuItemGroupListId:
+          type: string
+          description: id of the menu for this merchant
+          example: "123"
+        categories:
+          type: array
+          description: visible categories of the merchant
+          example: BURGERS
+          items:
+            type: string
+            description: visible categories of the merchant
+            example: BURGERS
+        pickupInstructions:
+          type: string
+          description: instructions for the user to follow when picking up their food
+            from this merchant
+          example: Go to the second floor
+        timezone:
+          type: string
+          description: The merchants timezone
+          example: GMT
+        emailSubscriptionDefaultOn:
+          type: boolean
+          description: Whether or not email subscription widget is default on
+          example: true
+        currencyCode:
+          type: string
+          description: The merchants currency code
+          example: CAD
+        open:
+          type: boolean
+        scheduledOrderTimeSlots:
+          type: array
+          description: Date and time slots that orders can be scheduled for. Null
+            implies the merchant has scheduled ordering disabled
+          items:
+            $ref: '#/components/schemas/MerchantData_scheduledOrderTimeSlots'
+        highlightMessage:
+          type: string
+          description: A custom message displayed on the merchant's menu
+          example: All items on the menu can be customized
+      description: "Data for a merchant, such as hours, names, addresses, etc"
+    MerchantHours:
+      required:
+      - dayOfWeek
+      - durationList
+      type: object
+      properties:
+        dayOfWeek:
+          type: string
+          description: Id of the merchant
+          example: "333"
+        durationList:
+          type: array
+          description: "All open periods that day, or \"Closed\""
+          example: "[11AM-2PM, 5PM-11PM]"
+          items:
+            type: string
+            description: "All open periods that day, or \"Closed\""
+            example: "[11AM-2PM, 5PM-11PM]"
+      description: The times a merchant is open in a given day (day name translated)
+      example: "{WED, 12AM-2PM}"
+    MerchantDeliveryInfoResponse:
+      type: object
+      properties:
+        estimatedDeliveryTimeRange:
+          $ref: '#/components/schemas/EstimatedDeliveryTimeRange'
+        deliveryChargeMicro:
+          type: integer
+          description: The delivery charges on a delivery order (returns the minimum
+            value if it varies). Can be set to `0` for free delivery.
+          format: int64
+          nullable: true
+          example: 300000000
+        deliveryMinimumOrderValueMicro:
+          type: integer
+          description: The minimum subtotal of the cart in order to get eligible for
+            delivery. Can be unset if there is no minimum value for delivery eligibility.
+          format: int64
+          nullable: true
+          example: 200000000
+        freeDeliveryOrderValueMicro:
+          type: integer
+          description: "If the subtotal of the cart is more than this value, there\
+            \ will be no delivery charges. Can be unset if there is no free delivery\
+            \ over a specific value."
+          format: int64
+          nullable: true
+          example: 1500000000
+    Theme:
+      required:
+      - headerImageUrl
+      - iconUrl
+      - landingHeaderText
+      - primaryColorHex
+      - themeId
+      type: object
+      properties:
+        themeId:
+          type: string
+          description: Id of the theme
+          example: ASNKFGHO
+        iconUrl:
+          type: string
+          description: URL of the themes icon
+          example: https://lh3.googleusercontent.com/5LCvFp1mCFSiYNAY2JdB39f1V412_pwPcBkynhM0nv-_OOAB_CBYRulZ7xoB6km1iHs0_wpr-Cmyu-tt3pKCLw=s0
+        headerImageUrl:
+          type: string
+          description: Url of header image
+          example: https://lh3.googleusercontent.com/5LCvFp1mCFSiYNAY2JdB39f1V412_pwPcBkynhM0nv-_OOAB_CBYRulZ7xoB6km1iHs0_wpr-Cmyu-tt3pKCLw=s0
+        primaryColorHex:
+          type: string
+          description: Hec code of the primary color
+          example: "4278687425"
+        landingHeaderText:
+          type: string
+          description: Translated text for the page header
+          example: Food
+      description: "A theme object, to style pages with a color and images"
+    PaymentError:
+      required:
+      - errorType
+      - localizedErrorMessage
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: Localized error message. Is general for all object types.
+          example: The payment information provided was not valid.
+        errorBody:
+          $ref: '#/components/schemas/PaymentErrorBody'
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    PaymentErrorBody:
+      required:
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          description: Cause of Payment Error
+          example: PaymentFailureType Enum.
+          enum:
+          - INVALID_PAYMENT_INFO
+          - PAYMENT_INFO_NOT_FOUND
+          - PAYMENT_BELONGS_TO_ANOTHER_USER
+          - CLIENT_SETUP_INTENT_SECRET_NOT_FOUND
+    PaymentErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/PaymentError'
+    NotFoundError:
+      required:
+      - errorType
+      - localizedErrorMessage
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: Localized error message. Is general for all object types.
+          example: Object not found.
+        errorBody:
+          $ref: '#/components/schemas/NotFoundErrorBody'
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    NotFoundErrorBody:
+      required:
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          description: What could not be found
+          example: NotFoundObjectType Enum.
+          enum:
+          - BRAND
+          - CART
+          - MENU
+          - MENU_ITEM
+          - MERCHANT
+          - ORDER
+          - MERCHANT_PREVIEW
+          - USER
+          - PAYMENT
+    NotFoundErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/NotFoundError'
+    InvalidScheduledForTimeError:
+      required:
+      - errorType
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: Localized error message. Is general for all invalid scheduled
+            for time.
+          example: Provided scheduled for time was invalid.
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    InvalidScheduledForTimeErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/InvalidScheduledForTimeError'
+    CurrencyCode:
+      type: string
+      description: The currency code used for financial details on the cart
+      example: CAD
+      enum:
+      - UNKNOWN_CURRENCY_CODE
+      - AUD
+      - CAD
+      - EUR
+      - GBP
+      - HKD
+      - JPY
+      - NZD
+      - SGD
+      - USD
+    CartResponse:
+      required:
+      - cartChecksum
+      - cartItems
+      - currencyCode
+      - financialInfo
+      - fulfillmentType
+      - merchantId
+      - tipOptions
+      type: object
+      properties:
+        merchantId:
+          type: string
+          description: ID of the merchant
+          example: 8da416e84b2945f2a30d88ca18431e4c
+        cartChecksum:
+          type: string
+          description: The checksum on the cart to pass to the place order request
+          example: 7e706f179e0b4ea89e82d73dd4c1130d38ecbdedd5c9477ebb9377f9c0f5eddd
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+        cartItems:
+          type: array
+          description: The items in the cart
+          items:
+            $ref: '#/components/schemas/CartItem'
+        financialInfo:
+          $ref: '#/components/schemas/CartFinancialinfo'
+        tipOptions:
+          type: array
+          description: The options for the tip
+          items:
+            $ref: '#/components/schemas/CartTipOption'
+        selectedTipOptionId:
+          type: string
+          description: The currently selected option. null if not selected.
+          example: FixedTipOption_100000000
+        fulfillmentType:
+          $ref: '#/components/schemas/FulfillmentType'
+        userDeliveryAddressDetail:
+          $ref: '#/components/schemas/UserDeliveryAddressDetail'
+        userDeliveryAddressId:
+          $ref: '#/components/schemas/UserDeliveryAddressId'
+        cartCheckoutCodes:
+          type: array
+          description: checkout codes which are part of this cart
+          items:
+            $ref: '#/components/schemas/CartCheckoutCodeResponse'
+        pickupFulfillmentEstimate:
+          type: integer
+          description: Time in milliseconds on how long the pick up order will be
+            ready in
+          format: int64
+          example: 300000
+        scheduledForTime:
+          type: string
+          description: "Date and time of when the order will be scheduled for (no\
+            \ time zone, merchant time zone assumed)"
+          format: date-time
+        includeCutlery:
+          type: boolean
+          description: Whether the merchant should include cutlery with this order.
+            The option will be only be shown to users if property exists
+          example: false
+        fulfillmentId:
+          type: string
+          description: Fulfillment associated with the cart (`null` if there is no
+            fulfillment)
+          nullable: true
+        incentives:
+          type: array
+          description: a list of applied incentives
+          items:
+            $ref: '#/components/schemas/CartIncentive'
+      description: A user's cart at a merchant.
+    CartCheckoutCodeResponse:
+      required:
+      - checkoutCodeId
+      - checkoutCodeText
+      type: object
+      properties:
+        checkoutCodeText:
+          type: string
+          description: The displayable name of the checkout code on the cart
+          example: PIZZA
+        checkoutCodeId:
+          type: string
+          description: The id of the checkout code on the cart
+          example: sdfhsaethjq45aerdh2
+      description: Information of the checkout code on the cart
+    CartDeliveryInfoResponse:
+      type: object
+      properties:
+        estimatedDeliveryTimeRange:
+          $ref: '#/components/schemas/EstimatedDeliveryTimeRange'
+    CartFinancialinfo:
+      required:
+      - cartDiscounts
+      - itemSumMicro
+      - serviceChargeMicro
+      - serviceChargeTaxMicro
+      - serviceCharges
+      - subtotalMicro
+      - taxMicro
+      - taxRates
+      - tipMicro
+      - totalPayableMicro
+      type: object
+      properties:
+        itemSumMicro:
+          type: integer
+          description: The sum of the cart items' price micros
+          format: int64
+        tipMicro:
+          type: integer
+          description: The total tip on the order
+          format: int64
+          example: 300000000
+        subtotalMicro:
+          type: integer
+          description: "The subtotal of the cart before tax is applied. If item price\
+            \ includes tax, tax is removed from this value."
+          format: int64
+          example: 1600000000
+        deliveryChargeApplicableMicro:
+          type: integer
+          description: The order value when calculate delivery eligibility and delivery
+            pricing.
+          format: int64
+          example: 300000000
+        deliveryChargeMicro:
+          type: integer
+          description: The delivery charges on a delivery order
+          format: int64
+          example: 300000000
+        deliveryMinimumOrderValueMicro:
+          type: integer
+          description: The minimum subtotal of the cart in order to get eligible for
+            delivery.
+          format: int64
+          example: 200000000
+        freeDeliveryOrderValueMicro:
+          type: integer
+          description: "If the subtotal of the cart is more than this value, there\
+            \ will be no delivery charges."
+          format: int64
+          example: 1500000000
+        serviceChargeMicro:
+          type: integer
+          description: The total service charge on the order
+          format: int64
+          example: 100000000
+        serviceChargeTaxMicro:
+          type: integer
+          description: The total service charge on the order
+          format: int64
+          example: 100000000
+        taxMicro:
+          type: integer
+          description: The tax on the order
+          format: int64
+          example: 287000000
+        totalPayableMicro:
+          type: integer
+          description: The amount that is the sum of everything the user should be
+            paying
+          format: int64
+          example: 1999000000
+        taxRates:
+          type: array
+          description: Breakdown of the taxes applied to the cart
+          items:
+            $ref: '#/components/schemas/CartTaxRate'
+        serviceCharges:
+          type: array
+          description: Breakdown of the service charges applied to the cart
+          items:
+            $ref: '#/components/schemas/CartServiceCharge'
+        cartDiscounts:
+          type: array
+          description: Breakdown of the cart level discounts applied to the cart
+          items:
+            $ref: '#/components/schemas/CartOrderDiscount'
+        creditMicro:
+          type: integer
+          description: The amount of credits applied that will apply to the order
+          format: int64
+        merchantEligibleForLoyaltyPlus:
+          type: boolean
+      description: Financial information of the cart
+    CartItem:
+      required:
+      - cartItemId
+      - cartItemOptions
+      - description
+      - menuItemId
+      - priceMicro
+      - quantity
+      - title
+      type: object
+      properties:
+        cartItemId:
+          type: string
+          description: ID of the cart item
+          example: 8da416e84b2945f2a30d88ca18431e4c
+        menuItemId:
+          type: string
+          description: ID of the menu item associated with the cart item
+          example: "187198"
+        quantity:
+          type: integer
+          description: Number to be ordered
+          format: int32
+          example: 1
+        title:
+          type: string
+          description: Localized title  of the item
+          example: Halibut
+        description:
+          type: string
+          description: Localized description of the item
+          example: Tasty fish.
+        priceMicro:
+          type: integer
+          description: The price of the cart item
+          format: int64
+          example: 18000000000
+        note:
+          type: string
+          description: Any user notes on the cart item
+          example: Extra tartar sauce please! That stuff is amazing.
+        cartItemOptions:
+          type: array
+          description: The options selected for the cart
+          items:
+            $ref: '#/components/schemas/CartItemOption'
+        perk:
+          $ref: '#/components/schemas/MenuItemPerk'
+      description: An item in a cart
+    CartItemOption:
+      required:
+      - incrementCount
+      - menuItemOptionId
+      - priceMicro
+      - title
+      type: object
+      properties:
+        menuItemOptionId:
+          type: string
+          description: The option selected from the menu for the item
+          example: "18791"
+        title:
+          type: string
+          description: The title of the menu item option
+          example: Fries
+        priceMicro:
+          type: integer
+          description: The price of the menu item option
+          format: int64
+          example: 180000000
+        incrementCount:
+          type: integer
+          description: Increment count
+          format: int32
+          example: 3
+      description: A selected menu item option on a cart item
+    CartOrderDiscount:
+      required:
+      - appliedBeforeTax
+      - discountMicro
+      - displayName
+      - isDiscountAsPoints
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Localized display name of the order discount
+          example: Discount (50% off).
+        discountMicro:
+          type: integer
+          description: The amount the discount applied to the order
+          format: int64
+          example: 50000000
+        appliedBeforeTax:
+          type: boolean
+          description: True if the discount was applied before tax. False if the discount
+            was applied after tax.
+        isDiscountAsPoints:
+          type: boolean
+          description: True if display as a regular number and not as a currency value
+      description: An order level discount on a cart
+    CartServiceCharge:
+      required:
+      - displayName
+      - serviceChargeMicro
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Localized display name of the service charge
+          example: Plastic use fee.
+        serviceChargeMicro:
+          type: integer
+          description: The amount the service charge is applied on the order
+          format: int64
+          example: 50000000
+      description: A service charge on a cart
+    CartTaxRate:
+      required:
+      - displayName
+      - taxMicro
+      - taxRateId
+      - taxRatePercent
+      type: object
+      properties:
+        taxRateId:
+          type: string
+          description: The ID of the tax rate type
+          example: HST
+        taxRatePercent:
+          type: number
+          description: The tax rate as a percentage
+          format: double
+          example: 10
+        taxMicro:
+          type: integer
+          description: The amount the tax will be on the order
+          format: int64
+          example: 160000000
+        displayName:
+          type: string
+          description: The localized display name of the tax
+          example: HST
+      description: A tax applied to the cart
+    CartTipOption:
+      required:
+      - optionDisplayText
+      - optionId
+      type: object
+      properties:
+        optionId:
+          type: string
+          description: The option which is selected on the cart
+          example: FixedTipOption_100000000
+        optionDisplayText:
+          type: string
+          description: What to display for the tip option
+          example: 10%
+      description: Information of the tip on the cart
+    CreateDeliveryAddressRequest:
+      required:
+      - address
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/UserDeliveryAddressDetail'
+      description: Request body for saving a new delivery address
+    CreateDeliveryAddressResponse:
+      required:
+      - address
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/UserDeliveryAddress'
+      description: Response body for a newly created delivery address
+    GetDeliveryAddressResponse:
+      required:
+      - addresses
+      type: object
+      properties:
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserDeliveryAddress'
+      description: Response object containing a list of delivery addresses for authenticated
+        users
+    InvalidCartItemError:
+      required:
+      - errorType
+      - localizedErrorMessage
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: Localized error message. Is general for all invalid cart items.
+          example: Provided cart item was invalid.
+        errorBody:
+          type: object
+          additionalProperties:
+            type: object
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    InvalidCartItemErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/InvalidCartItemError'
+    CartPropsRequest:
+      type: object
+      properties:
+        includeCutlery:
+          type: boolean
+          description: Whether the merchant should include cutlery with the order.
+            The option will only be shown if the property exists.
+        fulfillmentId:
+          type: string
+          description: Fulfillment associated with this cart. This will effect what
+            incentives are available.
+      description: Payload for updating props of the cart
+    CartItemRequest:
+      required:
+      - menuItemId
+      - priceMicro
+      - quantity
+      - title
+      type: object
+      properties:
+        menuItemId:
+          type: string
+          description: ID of the menu item associated with the cart item
+          example: "187198"
+        quantity:
+          type: integer
+          description: Number to be ordered
+          format: int32
+          example: 1
+        title:
+          type: string
+          description: Title of the item. Used for validating the item hasn't been
+            updated.
+          example: Cheeseburger
+        priceMicro:
+          type: integer
+          description: The price of the cart item
+          format: int64
+          example: 18000000000
+        note:
+          type: string
+          description: Any user notes on the cart item
+          example: Extra cheese if you can! I love that stuff.
+        perkId:
+          type: string
+          description: The user's selected perk for this cart item
+          example: "123123"
+        removeConflictingPerks:
+          type: boolean
+          description: "Ignored if `perkId` is not set. If true, conflicting perks\
+            \ will be removed from the cart. If false, the request will respond with\
+            \ an error when conflicting perks are present."
+          example: false
+        cartItemOptions:
+          type: array
+          description: the user's selected options for this cart item
+          items:
+            $ref: '#/components/schemas/CartItemOptionRequest'
+      description: Payload for adding an item to a cart.
+    CartItemOptionRequest:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id for the menu item. Same as menuItemId in CartItemOption
+          example: "7869194"
+        incrementCount:
+          type: integer
+          description: the increment count of the item
+          format: int32
+          example: 1
+    CartConfigRequest:
+      type: object
+      properties:
+        selectedTipOptionId:
+          type: string
+          description: The tip option which was selected on the cart. null if none
+            selected.
+          example: FixedTipOption_100000000
+        customTipAmountMicro:
+          type: integer
+          description: "The custom tip amount for the order. If this is specified,\
+            \ `selectedTipOptionId` will be ignored"
+          format: int64
+          example: 100000000
+      description: Payload for modifying the configuration on a cart
+    InvalidUserAddressError:
+      required:
+      - errorType
+      - localizedErrorMessage
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: General description of what went wrong
+          example: Cart cannot be updated with provided address.
+        errorBody:
+          $ref: '#/components/schemas/InvalidUserAddressErrorBody'
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    InvalidUserAddressErrorBody:
+      required:
+      - reason
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Reason the address is invalid
+          example: OUT_OF_RANGE
+          enum:
+          - UNKNOWN
+          - OUT_OF_RANGE
+    InvalidUserAddressErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/InvalidUserAddressError'
+    CartFulfillmentRequest:
+      required:
+      - fulfillmentType
+      type: object
+      properties:
+        fulfillmentType:
+          $ref: '#/components/schemas/FulfillmentType'
+        userDeliveryAddressDetail:
+          $ref: '#/components/schemas/UserDeliveryAddressDetail'
+        userDeliveryAddressId:
+          $ref: '#/components/schemas/UserDeliveryAddressId'
+      description: Payload for modifying the fulfillment details of a cart
+    CartCheckoutCodeRequest:
+      type: object
+      properties:
+        checkoutCodeToAdd:
+          type: string
+          description: Checkout code to add to the cart
+        checkoutCodeToRemove:
+          type: string
+          description: Checkout code to remove to the cart
+        clearAll:
+          type: boolean
+      description: Payload for modifying the checkout codes in the cart
+    CartScheduledForTimeRequest:
+      type: object
+      properties:
+        scheduledForTime:
+          type: string
+          description: "Date and time the order is to be scheduled for (no time zone,\
+            \ merchant time zone assumed)"
+          format: date-time
+      description: Payload for modifying the scheduled for time of a cart
+    GetOrderResponse:
+      required:
+      - merchantUrl
+      - order
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/Order'
+        merchantUrl:
+          type: string
+          description: The URL for the merchant this order was placed at
+      description: Order information including progress and metadata
+    Order:
+      required:
+      - currencyCode
+      - merchantFulfillmentType
+      - orderItems
+      - orderReceipt
+      - orderStatus
+      type: object
+      properties:
+        currencyCode:
+          type: string
+          description: The currency the order is in
+          example: CAD
+        orderStatus:
+          $ref: '#/components/schemas/OrderStatus'
+        orderItems:
+          type: array
+          description: Data about the items and options on this order
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        orderReceipt:
+          $ref: '#/components/schemas/OrderReceipt'
+        merchantFulfillmentType:
+          $ref: '#/components/schemas/FulfillmentType'
+        userDeliveryAddressDetail:
+          $ref: '#/components/schemas/UserDeliveryAddressDetail'
+        userDeliveryAddressId:
+          $ref: '#/components/schemas/UserDeliveryAddressId'
+        orderDeliveryStatuses:
+          type: array
+          description: A list of delivery status updates for the order. Will be returned
+            in chronological order
+          items:
+            $ref: '#/components/schemas/OrderDeliveryStatuses'
+        orderRejectionNote:
+          type: string
+          description: The note provided by the merchant when rejecting the order.
+          example: Sorry these items are not available right now. Maybe you can get
+            something else?
+        includeCutlery:
+          type: boolean
+          description: Whether the merchant should include cutlery with this order.
+            The option will be only be shown to users if property exists
+          example: false
+        participatingFulfillmentId:
+          type: string
+          description: The fulfillment id that this order is participating in
+      description: Order information including progress and metadata
+    DeliveryStatusEnum:
+      type: string
+      description: The delivery status
+      example: DELIVERY_CREATED
+      enum:
+      - DELIVERY_CREATED
+      - COURIER_CONFIRMED
+      - COURIER_ENROUTE_PICKUP
+      - COURIER_CONFIRMED_STORE_ARRIVAL
+      - COURIER_PICKED_UP
+      - COURIER_ENROUTE_DROPOFF
+      - COURIER_CONFIRMED_CONSUMER_ARRIVAL
+      - COURIER_DROPPED_OFF
+      - DELIVERY_CANCELED
+    OrderDeliveryStatuses:
+      required:
+      - deliveryStatus
+      - deliveryStatusId
+      - updateTimeMS
+      type: object
+      properties:
+        deliveryStatusId:
+          type: string
+          description: The unqiue identifer for the delivery status
+        deliveryStatus:
+          $ref: '#/components/schemas/DeliveryStatusEnum'
+        updateTimeMS:
+          type: integer
+          description: "The time, in milliseconds, for when the event took place"
+          format: int64
+      description: Information about an item on an order
+    OrderDiscount:
+      required:
+      - appliedBeforeTax
+      - discountMicro
+      - displayName
+      - isDiscountAsPoints
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: The line item name for the discount
+        discountMicro:
+          type: integer
+          description: The amount being discounted
+          format: int64
+        appliedBeforeTax:
+          type: boolean
+          description: True if the discount was applied before tax
+        isDiscountAsPoints:
+          type: boolean
+          description: True if display as a regular number and not as a currency value
+      description: Specific information about order level discounts for an order
+    OrderItem:
+      required:
+      - itemOptions
+      - menuItemId
+      - notes
+      - orderItemId
+      - priceMicro
+      - quantity
+      - title
+      type: object
+      properties:
+        menuItemId:
+          type: string
+          description: ID for the menu item
+        orderItemId:
+          type: string
+          description: ID for the item on the order
+        title:
+          type: string
+          description: The item title
+        priceMicro:
+          type: integer
+          description: The base item price for a single item
+          format: int64
+        quantity:
+          type: integer
+          description: The number of items that were ordered
+          format: int32
+        notes:
+          type: string
+          description: User added notes at item level
+        itemOptions:
+          type: array
+          description: The options for the item
+          items:
+            $ref: '#/components/schemas/OrderItemOption'
+        wasRejected:
+          type: boolean
+          description: "Was this item rejected, should match the reason given in the\
+            \ order"
+        perk:
+          $ref: '#/components/schemas/MenuItemPerk'
+      description: Information about an item on an order
+    OrderItemOption:
+      required:
+      - menuItemOptionId
+      - orderItemOptionId
+      - priceMicro
+      - title
+      type: object
+      properties:
+        menuItemOptionId:
+          type: string
+          description: ID for the menu item option
+        orderItemOptionId:
+          type: string
+          description: ID for the item option on the order
+        title:
+          type: string
+          description: The title of the option
+        priceMicro:
+          type: integer
+          description: The additional price of the option
+          format: int64
+        wasRejected:
+          type: boolean
+          description: "Was this item rejected, should match the reason given in the\
+            \ order"
+    OrderReceipt:
+      required:
+      - orderDiscounts
+      - pointsEarned
+      - serviceCharges
+      - subtotalMicro
+      - taxRates
+      - tipMicro
+      - totalMicro
+      type: object
+      properties:
+        orderTicketNumber:
+          type: string
+          description: The user-readable identifier of the order
+        subtotalMicro:
+          type: integer
+          description: "The subtotal, before tax and service charges"
+          format: int64
+        totalMicro:
+          type: integer
+          description: "The total, including tax and service charges"
+          format: int64
+        pointsEarned:
+          type: integer
+          description: The number of points earned on the order
+          format: int64
+        tipMicro:
+          type: integer
+          description: The amount of tip applied to the order
+          format: int64
+        deliveryChargeMicro:
+          type: integer
+          description: The delivery charges on a delivery order
+          format: int64
+        loyaltyStampsCount:
+          type: integer
+          description: The number of Loyalty+ stamps collected
+          format: int32
+        taxRates:
+          type: array
+          description: The different taxes charged on the order
+          items:
+            $ref: '#/components/schemas/TaxRate'
+        serviceCharges:
+          type: array
+          description: The different service charges applied to the order
+          items:
+            $ref: '#/components/schemas/ServiceCharge'
+        orderDiscounts:
+          type: array
+          description: The different order level discounts applied to the order
+          items:
+            $ref: '#/components/schemas/OrderDiscount'
+        creditMicro:
+          type: integer
+          description: The amount of credits applied to the order
+          format: int64
+    OrderRejectionReason:
+      type: string
+      description: The reason an order or item was rejected
+      enum:
+      - DELIVERY_NOT_IN_RANGE
+      - GROUP_ORDER_MEMBER
+      - GROUP_ORDER_TIMEOUT
+      - ITEM_HOUR_RESTRICTION
+      - MERCHANT_HOUR_RESTRICTION
+      - MERCHANT_TEMPORARILY_UNAVAILABLE
+      - MERCHANT_OVER_CAPACITY
+      - OPS_REJECTION
+      - OPTION_OUT_OF_STOCK
+      - OUT_OF_STOCK
+      - OUT_OF_STOCK_120_MINUTES
+      - OUT_OF_STOCK_30_MINUTES
+      - OUT_OF_STOCK_60_MINUTES
+      - OUT_OF_STOCK_DAY
+      - OUT_OF_STOCK_FOREVER
+      - PHONE_ORDER_REJECT
+      - POS_INTEGRATION_GENERIC_ERROR
+      - POS_MAPPING_ERROR
+      - SERVER_TIMEOUT
+      - SERVER_RETRY_LIMIT
+      - SERVER_PHONE_ERROR
+      - UNKNOWN_REJECT_REASON
+      - USER_NOTE
+      - USER_REQUEST
+    OrderStatus:
+      required:
+      - isCancellable
+      - orderStatus
+      type: object
+      properties:
+        rejectionReason:
+          $ref: '#/components/schemas/OrderRejectionReason'
+        orderStatus:
+          type: string
+          description: The status of the order
+          enum:
+          - ACCEPTED
+          - CANCELLED
+          - IN_TRANSIT
+          - PLACED
+          - RECEIVED
+          - REJECTED
+          - SCHEDULED
+          - UNKNOWN_ORDER_STATUS
+        acceptTimestamp:
+          type: integer
+          description: The time the order was accepted in MS since epoch
+          format: int64
+        estimatedPrepTime:
+          type: integer
+          description: The estimated time until the order is readyin MS
+          format: int64
+        inTransitTimestamp:
+          type: integer
+          description: The timestamp where the order is in transit
+          format: int64
+        estimatedTransitTime:
+          type: integer
+          description: The amount of time in milliseconds where the order is estimated
+            to be in transit
+          format: int64
+        orderReadyAtTime:
+          type: integer
+          description: The amount of time in milliseconds for a delivery or pickup
+            order it takes to be ready
+          format: int64
+        scheduledForTime:
+          type: string
+          description: "Date and time of when the order was scheduled for (no time\
+            \ zone, merchant time zone assumed)"
+          format: date-time
+        rejectedOrderItemIds:
+          type: array
+          description: The ids of the items that were rejected
+          items:
+            type: string
+        isCancellable:
+          type: boolean
+          description: Whether or not this order is cancellable
+      description: Information about the current state of an order
+    OrderIdentifierType:
+      type: string
+      description: |
+        Determines which identifier type to use to look up the order:
+        * `GUEST_TOKEN` - The guest order token
+        * `ID` - The order ID
+        * `TOKEN` - A temporary order token
+      example: TOKEN
+      enum:
+      - GUEST_TOKEN
+      - ID
+      - TOKEN
+    ServiceCharge:
+      required:
+      - displayName
+      - serviceChargeMicro
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: The line item name for the service charge
+        serviceChargeMicro:
+          type: integer
+          description: The amount being charged
+          format: int64
+    TaxRate:
+      required:
+      - displayName
+      - taxMicro
+      - taxRate
+      - taxRateId
+      - taxableMicro
+      type: object
+      properties:
+        taxRateId:
+          type: string
+          description: The tax rate name. Eg HST
+          example: HST
+        taxRate:
+          type: number
+          description: The tax rate as a percentage
+          format: double
+          example: 10
+        taxableMicro:
+          type: integer
+          description: The amount that the tax applied to
+          format: int64
+          example: 160000000
+        taxMicro:
+          type: integer
+          description: The amount the tax will be on the order. This is the rate multiplied
+            by the taxable micro
+          format: int64
+          example: 160000000
+        displayName:
+          type: string
+          description: The localized display name of the tax
+          example: HST
+    OrderGenericError:
+      required:
+      - errorType
+      - localizedErrorMessage
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: Localized error message
+          example: Unable to process your order.
+        errorBody:
+          type: object
+          additionalProperties:
+            type: object
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    OrderGenericErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/OrderGenericError'
+    GenericError:
+      required:
+      - errorType
+      - localizedErrorMessage
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: Localized error message
+          example: Unable to update your cart settings.
+        errorBody:
+          type: object
+          additionalProperties:
+            type: object
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    GenericErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/GenericError'
+    PlaceOrderResponse:
+      required:
+      - orderId
+      type: object
+      properties:
+        orderId:
+          type: string
+          description: Reference for the order
+        placeOrderChallenge:
+          $ref: '#/components/schemas/PlaceOrderChallenge'
+      description: Order token client can use to fetch order data on a newly created
+        order or a challenge to answer
+    CancelOrderResponse:
+      required:
+      - merchantUrl
+      - order
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/Order'
+        merchantUrl:
+          type: string
+          description: The URL for the merchant this order was cancelled at
+      description: Order information for the order being cancelled
+    PlaceOrderChallenge:
+      type: object
+      properties:
+        stripeChallenge:
+          $ref: '#/components/schemas/StripeChallenge'
+        challengeMetadata:
+          type: string
+          description: A base 64 encoded string to be echode back with `challengeMetadataReplay`
+      description: A challenge issued when placing the order. Answer the challenge
+        and place a subsequent order request.
+    StripeChallenge:
+      type: object
+      properties:
+        clientSecret:
+          type: string
+          description: The client secret from a payment intent that can be used
+        apiKey:
+          type: string
+          description: The API key to use when resolving the Stripe challenge. This
+            key may be different than the one used to initially tokenize the payment.
+      description: The Stripe challenge to be answered
+    PlaceOrderChallengeAnswer:
+      type: object
+      properties:
+        stripeChallengeAnswer:
+          $ref: '#/components/schemas/StripeChallengeAnswer'
+        challengeMetadataReplay:
+          type: string
+          description: A base 64 encoded string value to replay.
+      description: A challenge answer when placing the order.
+    StripeChallengeAnswer:
+      type: object
+      properties:
+        stripeId:
+          type: string
+          description: The payment intent ID from the client after resolving a Stripe
+            challenge.
+      description: A challenge answer specific to Stripe
+    OneTimePayment:
+      required:
+      - oneTimeChargeToken
+      - oneTimePaymentSource
+      - paymentOptionType
+      type: object
+      properties:
+        oneTimePaymentSource:
+          type: string
+          description: The source of the one time payment token
+          example: STRIPE_TOKEN
+          enum:
+          - UNKNOWN_ONE_TIME_PAYMENT_SOURCE
+          - APPLE_PAY
+          - STRIPE_TOKEN
+          - GOOGLE_PAY
+          - STRIPE_THIRD_PARTY_SOURCE
+          - BRAINTREE_TOKEN
+        oneTimeChargeToken:
+          type: string
+          description: The token for the one time payment
+          example: tok_1Gg9jJFr6kal0f9l4GRZaOVB
+        paymentOptionType:
+          type: string
+          description: The type of payment being processed
+          example: PAYMENT_OPTION_TYPE_CREDIT_CARD
+          enum:
+          - PAYMENT_OPTION_TYPE_UNKNOWN
+          - PAYMENT_OPTION_TYPE_CREDIT_CARD
+          - PAYMENT_OPTION_TYPE_PAYPAL
+          - PAYMENT_OPTION_TYPE_APPLEPAY_CARD
+          - PAYMENT_OPTION_TYPE_EUROPE_BANK_CARD
+          - PAYMENT_OPTION_TYPE_ANDROIDPAY
+          - PAYMENT_OPTION_TYPE_IDEAL
+          - PAYMENT_OPTION_TYPE_GIROPAY
+      description: Authorized payment information from an external payment platform
+      example: An authorized Stripe payment payload.
+      deprecated: true
+    PaymentMethod:
+      required:
+      - paymentMethodIdentifier
+      - token
+      type: object
+      properties:
+        paymentMethodIdentifier:
+          $ref: '#/components/schemas/PaymentMethodIdentifier'
+        token:
+          type: string
+          description: The token for the payment
+          example: tok_1Gg9jJFr6kal0f9l4GRZaOVB
+        paymentMethodDisplayDetails:
+          $ref: '#/components/schemas/PaymentMethodDisplayDetails'
+      description: Authorized payment information from an external payment platform
+      example: An authorized Stripe payment payload.
+    PaymentMethodIdentifier:
+      required:
+      - paymentOptionType
+      - paymentProvider
+      type: object
+      properties:
+        paymentProvider:
+          type: string
+          description: The source of the payment
+          example: STRIPE
+          enum:
+          - UNKNOWN_PROCESSOR
+          - STRIPE
+          - BRAINTREE
+        paymentOptionType:
+          type: string
+          description: The type of payment being processed
+          example: APPLE_PAY
+          enum:
+          - UNKNOWN_TYPE
+          - CREDIT_CARD_VAULTED
+          - CREDIT_CARD_ONE_TIME
+          - APPLE_PAY
+          - GOOGLE_PAY
+          - IDEAL
+          - GIROPAY
+          - PAY_PAL
+          - VENMO
+        paymentOptionId:
+          type: string
+        paymentMethodSource:
+          type: string
+          description: Third party platform where payment method is stored
+          example: HQO
+          enum:
+          - HQO
+          - UNKNOWN
+      description: The information about source and type of payment
+    PaymentMethodDisplayDetails:
+      required:
+      - brand
+      - last4
+      type: object
+      properties:
+        brand:
+          type: string
+          description: The brand of a payment method i.e MasterCard/VISA
+        country:
+          type: string
+        last4:
+          type: string
+          description: The last 4 digits of a credit card
+      description: Payment method details intended for display purpose
+    PlaceOrderRequest:
+      required:
+      - clientCartChecksum
+      - merchantFulfillmentType
+      - merchantId
+      - subscribedToMerchantMarketingEmails
+      type: object
+      properties:
+        merchantId:
+          type: string
+          description: ID of the merchant where the order is being placed
+          example: 4881230b58cc437a25670e02b2ce488
+        clientCartChecksum:
+          type: string
+          description: The checksum for the client cart to ensure the order placed
+            matched the client's cart.
+          example: "1234"
+        oneTimePayment:
+          $ref: '#/components/schemas/OneTimePayment'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        subscribedToMerchantMarketingEmails:
+          type: boolean
+          description: Whether or not the user is subscribing to receive marketing
+            emails from the merchant.
+        merchantFulfillmentType:
+          $ref: '#/components/schemas/FulfillmentType'
+        poolId:
+          type: string
+          description: "The pool that this order is attempting to be a part of. Indicates\
+            \ to the system to attempt to place the order into the pool. Validates\
+            \ that the pool exists and is associated with the merchant. If the pool\
+            \ does not exist or is not associated to the merchant, the request will\
+            \ fail."
+          example: "12312340981"
+        joinFulfillmentId:
+          type: string
+          description: "The fulfillment that this order is attempting to be a part\
+            \ of. Indicates to the system to attempt to place the order into the fulfillment.\
+            \ Validates that the fulfillment exists and is associated with the merchant.\
+            \ If the fulfillment does not exist or is not associated to the merchant,\
+            \ the request will fail."
+          example: "1234"
+        dineInDescription:
+          type: string
+          description: Description for orders that have value DINE_IN for merchantFulfillmentType
+          example: Table 1
+        userDeliveryAddressDetail:
+          $ref: '#/components/schemas/UserDeliveryAddressDetail'
+        userDeliveryAddressId:
+          $ref: '#/components/schemas/UserDeliveryAddressId'
+        deliveryInstructions:
+          type: string
+          description: Delivery instructions for a delivery order
+          example: Please leave the food by my door.
+        orderNotes:
+          type: string
+          description: Special order notes submitted by the user
+          example: Salad dressing on the side please!
+        challengeAnswer:
+          $ref: '#/components/schemas/PlaceOrderChallengeAnswer'
+        scheduledForTime:
+          type: string
+          description: "Date and time of when the order will be scheduled for (no\
+            \ time zone, merchant time zone assumed)"
+          format: date-time
+        integrationMetadata:
+          $ref: '#/components/schemas/PlaceOrderRequest_integrationMetadata'
+      description: Main request body for a place order request
+    GetGuestOrderResponse:
+      required:
+      - guestOrder
+      - merchantUrl
+      type: object
+      properties:
+        guestOrder:
+          $ref: '#/components/schemas/Order'
+        merchantUrl:
+          type: string
+          description: The URL for the merchant this order was placed at
+      description: Guest order information including progress and metadata
+    CancelGuestOrderResponse:
+      required:
+      - guestOrder
+      - merchantUrl
+      type: object
+      properties:
+        guestOrder:
+          $ref: '#/components/schemas/Order'
+        merchantUrl:
+          type: string
+          description: The URL for the merchant this order was placed at
+      description: Guest order information including progress and metadata
+    PlaceGuestOrderResponse:
+      required:
+      - guestOrderToken
+      type: object
+      properties:
+        guestOrderToken:
+          type: string
+          description: Reference for the guest order
+        placeOrderChallenge:
+          $ref: '#/components/schemas/PlaceOrderChallenge'
+      description: Order token client can use to fetch order data on a newly created
+        order or a challenge
+    GuestProfile:
+      required:
+      - email
+      - firstName
+      - lastName
+      - phoneNumber
+      - phoneNumberCallingCode
+      - phoneNumberCountryCode
+      - subscribedToEmail
+      type: object
+      properties:
+        email:
+          type: string
+          description: The guest user's email
+          example: example@gmail.com
+        phoneNumber:
+          type: string
+          description: The guest user's phone number
+          example: 555-555-5555
+        phoneNumberCountryCode:
+          type: string
+          description: The guest user's phone number country code
+          example: CA
+        phoneNumberCallingCode:
+          type: string
+          description: The guest user's phone number calling code
+          example: "1"
+        firstName:
+          type: string
+          description: The guest user's first name
+          example: Louis
+        lastName:
+          type: string
+          description: The guest user's last name
+          example: Boileau
+        subscribedToEmail:
+          type: boolean
+          description: Whether or not the guest user subscribed to emails
+      description: Profile information for a guest order
+      example: "Email, phone number, name."
+    PlaceGuestOrderRequest:
+      required:
+      - clientCartChecksum
+      - guestProfile
+      - merchantFulfillmentType
+      - merchantId
+      type: object
+      properties:
+        merchantId:
+          type: string
+          description: ID of the merchant where the order is being placed
+          example: 4881230b58cc437a25670e02b2ce488
+        clientCartChecksum:
+          type: string
+          description: The checksum for the client cart to ensure the order placed
+            matched the client's cart.
+          example: "1234"
+        oneTimePayment:
+          $ref: '#/components/schemas/OneTimePayment'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        guestProfile:
+          $ref: '#/components/schemas/GuestProfile'
+        merchantFulfillmentType:
+          $ref: '#/components/schemas/FulfillmentType'
+        dineInDescription:
+          type: string
+          description: Description for orders that have value DINE_IN for merchantFulfillmentType
+          example: Table 1
+        userDeliveryAddressDetail:
+          $ref: '#/components/schemas/UserDeliveryAddressDetail'
+        deliveryInstructions:
+          type: string
+          description: Delivery instructions for a delivery order
+          example: Please leave the food by my door.
+        orderNotes:
+          type: string
+          description: Special order notes submitted by the user
+          example: Salad dressing on the side please!
+        challengeAnswer:
+          $ref: '#/components/schemas/PlaceOrderChallengeAnswer'
+        scheduledForTime:
+          type: string
+          description: "Date and time of when the order will be scheduled for (no\
+            \ time zone, merchant time zone assumed)"
+          format: date-time
+        integrationMetadata:
+          $ref: '#/components/schemas/PlaceOrderRequest_integrationMetadata'
+      description: Main request body for a place guest order request
+    Availability:
+      required:
+      - availabilityMetadata
+      - isAvailable
+      type: object
+      properties:
+        durations:
+          type: array
+          description: The durations of availability. If null than is always an available
+            time
+          items:
+            $ref: '#/components/schemas/Duration'
+        isAvailable:
+          type: boolean
+          description: True if it is currently within an availablity duration
+          example: true
+        availabilityMetadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: Additional metadata relating to availability
+            example: "{\"OVERRIDE\":\"OUT_OF_STOCK\"}"
+          description: Additional metadata relating to availability
+          example:
+            OVERRIDE: OUT_OF_STOCK
+      description: The availability of an option
+    DayOfTheWeek:
+      type: string
+      description: A day of the week
+      example: MONDAY
+      enum:
+      - MONDAY
+      - TUESDAY
+      - WEDNESDAY
+      - THURSDAY
+      - FRIDAY
+      - SATURDAY
+      - SUNDAY
+    DayAvailability:
+      required:
+      - availability
+      - dayOfTheWeek
+      type: object
+      properties:
+        dayOfTheWeek:
+          $ref: '#/components/schemas/DayOfTheWeek'
+        availability:
+          $ref: '#/components/schemas/Availability'
+      description: Hours of availability
+    Duration:
+      required:
+      - endTimeMs
+      - startTimeMs
+      type: object
+      properties:
+        startTimeMs:
+          type: integer
+          description: Start time of the duration
+          format: int64
+          example: 1587592012000
+        endTimeMs:
+          type: integer
+          description: Start time of the duration
+          format: int64
+          example: 1587592012000
+      description: The durations of availability. If null than is always an available
+        time
+    Menu:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the menu
+          example: "123"
+        defaultLocale:
+          type: string
+          description: "The default locale for the menu, in BCP 47 format"
+          example: en-US
+        supportedLocales:
+          type: array
+          description: Supported locales for the menu.
+          items:
+            type: string
+            description: A locale in BCP 47 format
+            example: en-CA
+        categoryIds:
+          type: array
+          items:
+            type: string
+        categories:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MenuCategory'
+          description: A map of categories with the category ID as the key.
+        items:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MenuItem'
+          description: A map of items with the item ID as the key
+        choices:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MenuChoice'
+          description: A map of choices with the choice ID as the key
+        options:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MenuItemOption'
+          description: A map of options with the option ID as the key
+      description: A menu
+    MenuCategory:
+      required:
+      - availabilityHours
+      - id
+      - itemIds
+      - title
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the menu category
+          example: "123"
+        title:
+          type: string
+          description: Title of the category
+          example: Salad
+        itemIds:
+          type: array
+          description: Ids of the items in the menu category
+          items:
+            type: string
+            description: Ids of the items in the menu category
+        availabilityHours:
+          type: array
+          description: Hours of availability
+          items:
+            $ref: '#/components/schemas/DayAvailability'
+      description: "A category of items. Ex: Salad, Pizza, Soup"
+    MenuChoice:
+      required:
+      - id
+      - optionIds
+      - title
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the item choice
+          example: "123"
+        title:
+          type: string
+          description: Title of the item choice
+          example: Select Dressing
+        minSelectable:
+          type: integer
+          description: Minimum amount of choices that have to be selected
+          format: int32
+          example: 1
+        maxSelectable:
+          type: integer
+          description: Maximum amount of choices that can to be selected
+          format: int32
+          example: 3
+        optionIds:
+          type: array
+          description: Ordered list of the ids of options within the choice
+          items:
+            type: string
+            description: Ordered list of the ids of options within the choice
+      description: "A menu choice. Essentially an identifier for a group of options.\
+        \ Ex: Select Dressing"
+    MenuItemPerk:
+      required:
+      - discountedPriceMicro
+      - displayHint
+      - originalPriceMicro
+      - perkType
+      - savingsMicro
+      type: object
+      properties:
+        perkId:
+          type: string
+          description: Unique identifier of the perk
+          example: "123123"
+        originalPriceMicro:
+          type: integer
+          description: The item's original display price
+          format: int64
+          example: 345000000
+        savingsMicro:
+          type: integer
+          description: Amount the user will save (off the original price)
+          format: int64
+          example: 245000000
+        discountedPriceMicro:
+          type: integer
+          description: The price the user will pay with this perk
+          format: int64
+          example: 100000000
+        percentOff:
+          maximum: 100
+          minimum: 0
+          type: number
+          description: Percent off of the item price. Only applicable for `PERCENT_OFF`
+            and `PERCENT_OFF_BASE` perks.
+          format: double
+          example: 10
+        perkType:
+          type: string
+          enum:
+          - AMOUNT_OFF
+          - PERCENT_OFF
+          - PERCENT_OFF_BASE
+          - FIXED_PRICE
+          - FIXED_PRICE_BASE
+        displayHint:
+          type: string
+          description: |
+            Indicates how the UI should display the discount.
+
+            `GENERIC_DISCOUNT` - shows discounted price and how much user will save with the discount. Example: _$10.00 (save $5.00)_
+
+            `EMPLOYEE_PRICING` - shows crossed out regular price and discounted employee price. Example: _~$15.00~ $10.00 (Employee Pricing)_
+          enum:
+          - GENERIC_DISCOUNT
+          - EMPLOYEE_PRICING
+        fundingSource:
+          type: string
+          description: Describes who is providing this perk
+          example: Ritual
+        menuHighlightMessage:
+          type: string
+          description: Message to be displayed alongside the item price in the menu
+          example: Employee Pricing
+        primaryMessage:
+          type: string
+          description: Primary message to be displayed in the item product detail
+            page
+          example: Apply Employee Pricing
+        secondaryMessage:
+          type: string
+          description: Secondary message to be displayed in the item product detail
+            page
+          example: Limit one per customer
+        isSelected:
+          type: boolean
+          description: Whether or not the perk is selected
+          example: false
+      description: A discount that applies to a single menu item. This field will
+        be null if there is no available perk for the menu item.
+    MenuItem:
+      required:
+      - availability
+      - choiceIds
+      - description
+      - hasNotesOption
+      - id
+      - imageUrl
+      - priceMicro
+      - title
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the menu
+          example: "333"
+        title:
+          type: string
+          description: title of the item
+          example: Waldorf Salad
+        description:
+          type: string
+          description: description of the item
+          example: "First presented at the Waldorf Astoria Hotel in 1893. Includes\
+            \ chopped apples, celery, grapes, and toasted walnuts"
+        priceMicro:
+          type: integer
+          description: "The price of the that should be used for display item. For\
+            \ example, if the item price is 0 and when a user orders it the price\
+            \ is comprised solely of the price of the options, this will be equal\
+            \ to the price of the first item choice's, default selected option"
+          format: int64
+          example: 300000000
+        displayPriceMicro:
+          type: integer
+          format: int64
+          example: 300000000
+        maxAmountPerOrder:
+          type: integer
+          description: The minimum amount of this that can be ordered
+          format: int32
+          example: 4
+        availability:
+          $ref: '#/components/schemas/Availability'
+        dayAvailability:
+          type: array
+          description: the days this item is available. null indicates the item is
+            always available
+          items:
+            $ref: '#/components/schemas/DayAvailability'
+        imageUrl:
+          type: string
+          description: url for an image of the item
+          example: https://en.wikipedia.org/FAKE.jpg
+        estimatedPrepTimeMillis:
+          type: integer
+          description: Amount of milliseconds it takes for a restaurant to prepare
+            this item
+          format: int32
+          example: 180000
+        choiceIds:
+          type: array
+          description: ids of the choices this item has
+          items:
+            type: string
+            description: ids of the choices this item has
+        hasNotesOption:
+          type: boolean
+          description: Whether or not this item supports notes
+        perk:
+          $ref: '#/components/schemas/MenuItemPerk'
+      description: "A menu item. Ex: Waldorf Salad"
+    MenuItemOption:
+      required:
+      - availability
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the option
+          example: "444"
+        title:
+          type: string
+          description: Title of the option
+          example: Dressing on the side
+        priceMicro:
+          type: integer
+          description: Price of the option in micros
+          format: int64
+          example: 25000000
+        availability:
+          $ref: '#/components/schemas/Availability'
+        isDefault:
+          type: boolean
+          description: "If true then the option is the default option. ie: should\
+            \ be selected by default for the user"
+        subchoiceIds:
+          type: array
+          description: "The option's subchoices, if any"
+          items:
+            type: string
+            description: "The option's subchoices, if any"
+        minIncrementCount:
+          type: integer
+          description: Minimum increment count
+          format: int32
+          example: 0
+        maxIncrementCount:
+          type: integer
+          description: Maximum increment count
+          format: int32
+          example: 4
+        defaultIncrementCount:
+          type: integer
+          description: Default increment count
+          format: int32
+          example: 0
+        incrementNumerator:
+          type: integer
+          description: Increment numerator
+          format: int32
+          example: 1
+        incrementDenominator:
+          type: integer
+          description: Increment denominator
+          format: int32
+          example: 2
+      description: "An option that can be selected for an item. Ex: Dressing on the\
+        \ side"
+    UserMerchantMarketingPreferences:
+      type: object
+      properties:
+        allowMerchantMarketingEmails:
+          type: boolean
+          description: Is merchant allowed to send users marketing emails
+      description: Data for merchant marketing emails
+    MarketingData:
+      type: object
+      properties:
+        campaignId:
+          type: string
+          description: ID of the marketing campaign
+        discountCode:
+          $ref: '#/components/schemas/MarketingDiscountCode'
+        marketingMenuHighlight:
+          $ref: '#/components/schemas/MarketingMenuHighlight'
+      description: Marketing data for a merchant
+    MarketingDiscountCode:
+      required:
+      - discountCode
+      type: object
+      properties:
+        discountCode:
+          type: string
+          description: The code used to claim this discount
+          example: PIZZA
+        title:
+          type: string
+          description: "Title of the code, for display in a selector"
+          example: Free pizza day
+        terms:
+          type: array
+          description: A list of T&C to present to the user
+          example: "[Wednesday only]"
+          items:
+            type: string
+            description: A list of T&C to present to the user
+            example: "[Wednesday only]"
+        externalLinkUrl:
+          type: string
+          description: Url to an outside term page for more info
+          example: foo.com
+        discountAppliedText:
+          type: string
+          description: Url to an outside term page for more info
+          example: Free Delivery
+      description: Data to present a discount code to a user
+    MarketingMenuHighlight:
+      type: object
+      properties:
+        menuHighlightText:
+          type: string
+          description: Highligh text for the menu page itself
+          example: Free pizza this week
+        menuPopUp:
+          $ref: '#/components/schemas/MarketingMenuPopUp'
+        suppressPopupOnLoad:
+          type: boolean
+          description: Should the popup be blocked on the initial load of the page
+      description: A pop up and menu highlight object
+    MarketingMenuPopUp:
+      type: object
+      properties:
+        primaryImageUrl:
+          type: string
+          description: URL of an image to display
+          example: foo.com
+        primaryText:
+          type: string
+          description: Primary text of the popup modal
+          example: Free pizza
+        secondaryText:
+          type: string
+          description: Secondary text of the modal
+          example: Want free pizza? you should
+        ctaText:
+          type: string
+          description: Text for the main CTA button
+          example: LETS GO
+      description: A pop up and menu highlight object
+    Merchant:
+      required:
+      - merchantData
+      - theme
+      type: object
+      properties:
+        merchantData:
+          $ref: '#/components/schemas/MerchantData'
+        theme:
+          $ref: '#/components/schemas/Theme'
+        marketingDataList:
+          type: array
+          description: a list of marketing data objects to apply to this merchant
+          items:
+            $ref: '#/components/schemas/MarketingData'
+        userStampCardProgress:
+          $ref: '#/components/schemas/StampCardProgress'
+      description: Combination of merchant data and theme
+    StampDetails:
+      type: object
+      properties:
+        bankedPoints:
+          type: integer
+          description: bankedPoints
+          format: int32
+        createdAtTimeStamp:
+          type: integer
+          description: createdAtTimeStamp
+          format: int64
+    StampCardProgress:
+      type: object
+      properties:
+        stampCardId:
+          type: string
+          description: stampCardId
+          example: b2fe5420-13a1-4a3c-8942-238213fd3697
+        stampDetails:
+          type: array
+          description: list of stamp details
+          items:
+            $ref: '#/components/schemas/StampDetails'
+        merchantIds:
+          type: array
+          description: list of merchant ids
+          example:
+          - b2fe5420-13a1-4a3c-8942-238213fd3697
+          items:
+            type: string
+            description: merchant ids
+            example: b2fe5420-13a1-4a3c-8942-238213fd3697
+        bankedPoints:
+          type: integer
+          description: number of points this user has banked in the stamp card
+          format: int32
+        totalStampsCollected:
+          type: integer
+          description: total stamps the user has collected in this card
+          format: int32
+        earlyRedemptionStep:
+          type: integer
+          description: what step early redemption becomes available on this card
+          format: int32
+        numPotentialStamps:
+          type: integer
+          description: how many steps the user can get on this order
+          format: int32
+        isEnabled:
+          type: boolean
+          description: is this stamp card enabled
+        numAccelerators:
+          type: integer
+          description: number of accelerators possible on this order
+          format: int32
+        minimumUserValueMicro:
+          type: integer
+          description: "minimum value to the user, in micros"
+          format: int64
+        pointsMultiplier:
+          type: number
+          description: points multiplier
+          format: double
+        expiryDays:
+          type: integer
+          description: '?'
+          format: int32
+        daysTillExpiry:
+          type: integer
+          description: days until this card expires
+          format: int32
+        isChurning:
+          type: boolean
+          description: is this card below the threshold to warn the user about its
+            expiry
+        millisSinceLastOrder:
+          type: integer
+          description: how long it has been since the users last order at this merchant
+          format: int64
+        stampCardLength:
+          type: integer
+          description: total number of steps for this card
+          format: int32
+        pointsEarlyRedeemFraction:
+          type: number
+          description: what percent of the total card points the user can get by redeeming
+            early
+          format: double
+      description: Details regarding the users stamp card progress
+    ErrorType:
+      type: string
+      description: Validation error type
+      example: VALIDATION_ERROR
+      enum:
+      - INVALID_CART_ITEM
+      - INVALID_CART_ITEM_PERK
+      - INVALID_USER_ADDRESS
+      - NOT_FOUND
+      - ORDER_CREATION
+      - ORDER_GENERIC_ERROR
+      - ORDER_GUEST_ORDER
+      - ORDER_GUEST_PROFILE
+      - ORDER_NOT_CANCELLABLE
+      - ORDER_USER_RECORD
+      - ORDER_USER_SUSPENDED
+      - PROMOTION_ELIGIBILITY_ERROR
+      - UNEXPECTED_ERROR
+      - VALIDATION_ERROR
+      - PAYMENT_ERROR
+      - INVALID_SCHEDULED_FOR_TIME_ERROR
+    ValidationError:
+      required:
+      - errorType
+      - localizedErrorMessage
+      type: object
+      properties:
+        localizedErrorMessage:
+          type: string
+          description: Localized error message. Is general for all validation types.
+          example: The request arguments were invalid.
+        errorBody:
+          $ref: '#/components/schemas/ValidationErrorBody'
+        errorType:
+          $ref: '#/components/schemas/ErrorType'
+    ValidationErrorBody:
+      required:
+      - invalidParams
+      type: object
+      properties:
+        invalidParams:
+          type: array
+          description: Paths of the fields which were invalid
+          example:
+          - "menus,1,menuId"
+          items:
+            type: string
+            description: Paths of the fields which were invalid
+            example: "[\"menus,1,menuId\"]"
+    PaymentOption:
+      required:
+      - paymentOptionType
+      - title
+      type: object
+      properties:
+        paymentOptionType:
+          type: string
+          description: The payment option type
+          example: GOOGLE_PAY
+          enum:
+          - CARD
+          - CARD_ONE_TIME
+          - APPLE_PAY
+          - GOOGLE_PAY
+          - IDEAL
+          - GIROPAY
+          - PAY_PAL
+          - RITUAL_CARD
+        paymentProcessor:
+          type: string
+          description: The type of payment processor
+          example: BRAINTREE
+          enum:
+          - STRIPE
+          - BRAINTREE
+      description: Payment option information
+    PaymentOptionResponse:
+      required:
+      - paymentOptions
+      type: object
+      properties:
+        paymentOptions:
+          type: array
+          description: The list of one time payment options
+          items:
+            $ref: '#/components/schemas/PaymentOption'
+      description: The response contains Payment Option information
+    SetupIntentResponse:
+      required:
+      - setupIntentClientSecret
+      type: object
+      properties:
+        setupIntentClientSecret:
+          type: string
+          description: the setup intent client secret to be used at add payment methods
+            client-side
+    PaymentMethodAddResponse:
+      required:
+      - paymentMethodId
+      type: object
+      properties:
+        paymentMethodId:
+          type: string
+          description: id of successfully saved payment method
+    MerchantPreviewSearchResult:
+      required:
+      - merchantPreviewId
+      type: object
+      properties:
+        merchantPreviewId:
+          type: string
+          description: The merchant preview ID
+          example: 4881230b58cc437a25670e02b2ce488
+      description: A resulting match from a merchant preview search
+    Address:
+      required:
+      - addressLine1
+      - city
+      - country
+      - lat
+      - lng
+      - province
+      type: object
+      properties:
+        addressLine1:
+          type: string
+          description: Address line 1
+          example: 82 peter st.
+        addressLine2:
+          type: string
+          description: Address line 2
+          example: 3rd floor.
+        city:
+          type: string
+          description: city name
+          example: Toronto
+        province:
+          type: string
+          description: province name
+          example: Ontario
+        country:
+          type: string
+          description: country name
+          example: Canada
+        cityCode:
+          type: string
+          description: city code
+          example: CA-TOR
+        countryCode:
+          type: string
+          description: country code
+          example: CA
+        postalCode:
+          type: string
+          description: postal code
+          example: M5J 0E1
+        lat:
+          type: number
+          description: Address latitude
+          format: double
+          example: 43.646927
+        lng:
+          type: number
+          description: Address longitude
+          format: double
+          example: -79.3950018
+        googlePlaceId:
+          type: string
+          description: The google place ID of a google place search lookup
+          example: ChIJYZ-z3940K4gRVees-8SsFlY
+      description: Address Information for a merchant preview search
+    MerchantPreviewSearchParam:
+      required:
+      - merchantAddress
+      - merchantName
+      type: object
+      properties:
+        merchantName:
+          type: string
+          description: The merchants name
+          example: Lou's Eatery
+        merchantAddress:
+          $ref: '#/components/schemas/Address'
+      description: Main request body for a merchant preview search request.
+    MerchantPreviewData:
+      required:
+      - exampleCart
+      - menu
+      - merchantData
+      - theme
+      type: object
+      properties:
+        merchantData:
+          $ref: '#/components/schemas/MerchantData'
+        theme:
+          $ref: '#/components/schemas/Theme'
+        menu:
+          $ref: '#/components/schemas/Menu'
+        exampleCart:
+          $ref: '#/components/schemas/CartResponse'
+      description: Combination of merchant data and theme
+    SearchResponse:
+      type: object
+      properties:
+        searchResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResultsData'
+      description: Collection of search results
+    SearchResultsData:
+      required:
+      - address
+      - distanceInMeter
+      - id
+      - imageUrl
+      - name
+      - open
+      - state
+      - supportsDelivery
+      - supportsPickup
+      - todaysHours
+      - url
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the merchant
+          example: "333"
+        name:
+          type: string
+          description: Translated name of the merchant
+          example: Ritual Food Stall
+        url:
+          type: string
+          description: Normalized URL of the merchant
+          example: /menu/salad-bar-by-sally-toronto/1d3c
+        address:
+          $ref: '#/components/schemas/MerchantAddress'
+        state:
+          type: string
+          description: State of the merchant
+          example: MERCHANT_DOWN_MANUAL
+        supportsDelivery:
+          type: boolean
+          description: Does this merchant offer delivery
+          example: false
+        supportsPickup:
+          type: boolean
+          description: Does this merchant offer pickup
+          example: false
+        todaysHours:
+          type: string
+          description: "Open hours of today, or when the merchant opens next"
+          example: "Open 12AM-2PM, Opens Wed 12PM"
+        imageUrl:
+          type: string
+          description: URL of the merchants
+          example: https://example.com/picture.jpeg
+        distanceInMeter:
+          type: string
+          description: merchant's distance in meter
+          example: "2000"
+        open:
+          type: boolean
+          description: Indicates whether this this merchant is open
+          example: true
+      description: "Search Result Entity object which includes hours, names, addresses,\
+        \ etc. for a merchant"
+    SearchCategoriesResponse:
+      type: object
+      properties:
+        searchCategoriesResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchCategoriesResultsData'
+      description: Collection of search results for available categories
+    SearchCategoriesResultsData:
+      required:
+      - id
+      - imageUrl
+      - merchantsInCategory
+      - name
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the category
+          example: "333"
+        name:
+          type: string
+          description: Translated name of the category
+          example: Pizza
+        imageUrl:
+          type: string
+          description: URL of the categories image
+          example: https://example.com/picture.jpeg
+        merchantsInCategory:
+          type: integer
+          description: number of merchants in the category
+          format: int64
+          example: 10
+      description: "Category search result entity which includes name, image, etc."
+    CampaignRedemptionRequest:
+      required:
+      - campaignCode
+      type: object
+      properties:
+        campaignCode:
+          type: string
+          description: The checkout code of the campaign to redeem
+          example: FREEFOOD
+        phoneNumber:
+          type: string
+          description: The user's phone number
+          example: 555-555-5555
+        phoneNumberCountryCode:
+          type: string
+          description: The user's phone number country code
+          example: CA
+        phoneNumberCallingCode:
+          type: string
+          description: The user's phone number calling code
+          example: "1"
+      description: Main request body for a campaign redemption
+    CampaignRedemptionResponse:
+      required:
+      - amountRedeemedMicro
+      - currencyCode
+      - merchantName
+      type: object
+      properties:
+        merchantName:
+          type: string
+          description: Name of the merchant the order was in
+          example: Lachlan's Awesome Lattes
+        amountRedeemedMicro:
+          type: integer
+          description: Micros given to the user
+          format: int64
+          example: 54673368
+        currencyCode:
+          type: string
+          description: The currency code of the redemption
+          example: CAD
+      description: Information about the redemption the user requested
+    UserTeamInfo:
+      type: object
+      properties:
+        defaultTeamId:
+          type: string
+          description: ID of user's default team (null if user has not joined any
+            teams)
+          example: "301068230"
+        latestPendingTeamId:
+          type: string
+          description: ID of team the user has most recently begun the email verification
+            process for but has not yet joined (null if user has no pending teams)
+          example: "301068230"
+      description: Information about what teams the current user is associated with
+    UserDataResponse:
+      required:
+      - creditMap
+      - email
+      - firstName
+      - lastName
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: Users first name
+        lastName:
+          type: string
+          description: Users last name
+        email:
+          type: string
+          description: Users email
+        creditMap:
+          type: object
+          additionalProperties:
+            type: integer
+            description: "The credits the user can access, keyed by currency"
+            format: int64
+          description: "The credits the user can access, keyed by currency"
+        externalId:
+          type: string
+          description: the user's external ID
+        points:
+          type: integer
+          description: the user's current reward point balance
+          format: int64
+          example: 30000
+        teamInfo:
+          $ref: '#/components/schemas/UserTeamInfo'
+      description: Data about the user
+    DeliveryAddress:
+      required:
+      - location
+      type: object
+      properties:
+        street:
+          type: string
+          description: Street number
+          example: 123 Fake Street
+        unit:
+          type: string
+          description: unit number
+          example: Apartment -2
+        city:
+          type: string
+          description: Localised city name
+          example: Springfield
+        state:
+          type: string
+          description: Localised state name
+          example: '?'
+        country:
+          type: string
+          description: Localised state name
+          example: United States
+        zipCode:
+          type: string
+          description: Postal code
+          example: M4R 1M9
+        location:
+          $ref: '#/components/schemas/DeliveryLatLng'
+      description: "Address associated with a delivery, can be restaurant or customer"
+    DeliveryDriver:
+      required:
+      - firstName
+      - lastName
+      - phoneNumber
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: Drivers first name
+          example: Tim
+        lastName:
+          type: string
+          description: Drivers last name
+          example: O'Malley
+        phoneNumber:
+          type: string
+          description: Drivers contact number
+          example: "5555555555"
+        location:
+          $ref: '#/components/schemas/DeliveryLatLng'
+      description: Information about the delivery driver
+    DeliveryLatLng:
+      required:
+      - lat
+      - lng
+      type: object
+      properties:
+        lat:
+          type: number
+          description: Latitude
+          format: double
+          example: 54.673368
+        lng:
+          type: number
+          description: Longitude
+          format: double
+          example: 54.673368
+      description: LatLng for delivery use
+    DeliveryStatus:
+      required:
+      - deliveryStatus
+      type: object
+      properties:
+        deliveryStatus:
+          type: string
+          description: The currency code of the redemption
+          example: DELIVERED
+        estimatedPickupTime:
+          type: integer
+          description: When we think the driver will pick up the order
+          format: int64
+        actualPickupTime:
+          type: integer
+          description: When it got picked up
+          format: int64
+        estimatedDeliveryTime:
+          type: integer
+          description: When we think the driver will drop off the order
+          format: int64
+        actualDeliveryTime:
+          type: integer
+          description: When it got dropped off
+          format: int64
+        merchantAddress:
+          $ref: '#/components/schemas/DeliveryAddress'
+        dropOffAddress:
+          $ref: '#/components/schemas/DeliveryAddress'
+        driver:
+          $ref: '#/components/schemas/DeliveryDriver'
+        deliveryInstructions:
+          type: string
+          description: Delivery Instructions
+        deliveryProviderName:
+          type: string
+          description: Name of the company doing the delivery
+      description: Information about the delivery
+    EstimatedDeliveryTimeRange:
+      required:
+      - maximum
+      - minimum
+      type: object
+      properties:
+        minimum:
+          type: integer
+          description: The estimated minimum amount of time (in milliseconds) it will
+            take for an order to be delivered
+          format: int64
+          example: 1800000
+        maximum:
+          type: integer
+          description: The estimated maximum amount of time (in milliseconds) it will
+            take for an order to be delivered
+          format: int64
+          example: 2400000
+      description: The estimated time range (in milliseconds) it will take for an
+        order to be delivered
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ValidationError'
+    GetCartIncentivesResponse:
+      required:
+      - incentiveGroups
+      type: object
+      properties:
+        incentiveGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncentiveGroup'
+      description: Response from getting the cart incentives. Contains a list of incentives
+        grouped by type
+    GetIncentivesResponse:
+      required:
+      - incentiveGroups
+      type: object
+      properties:
+        incentiveGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncentiveGroup'
+      description: response for getting the list of all user's incentives
+    IncentiveGroup:
+      required:
+      - incentives
+      type: object
+      properties:
+        title:
+          type: string
+          description: the heading of the incentive group
+          example: gift vouchers
+        description:
+          type: string
+          description: the details of the incentive group
+          example: limit 1 per order
+        canSelectMultiple:
+          type: boolean
+          description: determines if multiple incentives can be simultaneously selected
+            from this group
+        incentives:
+          type: array
+          items:
+            $ref: '#/components/schemas/Incentive'
+      description: a list of all applicable incentives (vouchers/marketing campaigns)
+        for a merchant & user.
+    Incentive:
+      required:
+      - incentiveId
+      - incentiveType
+      type: object
+      properties:
+        incentiveId:
+          type: string
+          description: the id of this incentive
+          example: 08c526a5f5544bdab606a5f2e47f5f9e
+        incentiveType:
+          $ref: '#/components/schemas/IncentiveType'
+        title:
+          type: string
+          description: the user friendly heading for the incentive
+          example: $5 off your order
+        terms:
+          type: array
+          description: a list of details about the incentive
+          example:
+          - order must include a milkshake
+          - order must be above $5
+          items:
+            type: string
+        selected:
+          type: boolean
+          description: determines whether or not this incentive is being applied to
+            the order
+        modifiable:
+          type: boolean
+          description: determines whether or not the user can select/unselect this
+            incentive
+        valid:
+          type: boolean
+          description: determines if this incentive can actually apply to the user's
+            current order
+        fundingSource:
+          type: string
+          description: who is offering this incentive
+          example: RITUAL
+        errorText:
+          type: string
+          description: additional details about incentive validity. Only applies to
+            invalid incentives.
+          example: add more items to your cart for this discount
+        expirationTimestamp:
+          type: integer
+          description: when does the incentive expire. ms since epoch
+          format: int64
+        activationTimestamp:
+          type: integer
+          description: when does the incentive become active. ms since epoch
+          format: int64
+      description: the details of an incentive/promotion/campaign
+    IncentiveType:
+      type: string
+      description: the type of incentive (voucher/campaign)
+      enum:
+      - VOUCHER
+      - MARKETING_CAMPAIGN
+    CartIncentive:
+      required:
+      - incentiveId
+      - incentiveType
+      type: object
+      properties:
+        incentiveId:
+          type: string
+          description: the id of this incentive
+          example: 08c526a5f5544bdab606a5f2e47f5f9e
+        incentiveType:
+          $ref: '#/components/schemas/IncentiveType'
+        selected:
+          type: boolean
+          description: Is this incentive applied to the cart. Either user selected
+            or auto applied.
+        valid:
+          type: boolean
+          description: Are the conditions for this incentive met
+      description: represents an incentive in the Cart payload. Contains a subset
+        of Incentive fields
+    PatchCartIncentive:
+      required:
+      - incentiveId
+      - incentiveType
+      type: object
+      properties:
+        incentiveId:
+          type: string
+          description: the id of this incentive
+          example: 08c526a5f5544bdab606a5f2e47f5f9e
+        incentiveType:
+          $ref: '#/components/schemas/IncentiveType'
+        valid:
+          type: boolean
+          description: "is the incentive valid. This isn't required on the request,\
+            \ only sent in server response."
+      description: represents an incentive sent from the client. Only needs a subset
+        of the usual incentive fields since server validates all other fields
+    PatchCartIncentivesRequest:
+      required:
+      - incentives
+      type: object
+      properties:
+        incentives:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatchCartIncentive'
+      description: updates the user's chosen incentives for this orde
+    PatchCartIncentivesResponse:
+      required:
+      - incentives
+      type: object
+      properties:
+        incentives:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatchCartIncentive'
+      description: Response from PatchCartIncentivesRequest. contains all incentives
+        that were applied to the cart & their validity.
+    Shareable:
+      required:
+      - currencyCode
+      - expirationTimestamp
+      - giftFixedAmountMicro
+      - id
+      - locale
+      - senderName
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the shareable
+          example: "75475687"
+        merchantName:
+          type: string
+          description: The name of the merchant for the shareable
+          example: What a Bagel
+        locale:
+          type: string
+          description: The locale for the shareable
+          example: en-CA
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+        senderName:
+          type: string
+          description: The display name of the sender of the shareable
+          example: Curtis L
+        giftFixedAmountMicro:
+          type: integer
+          description: The amount that is being gifted
+          format: int64
+          example: 500000000
+        expirationTimestamp:
+          type: integer
+          description: The expiration date of the shareable (ms since epoch)
+          format: int64
+      description: Represents a gift recieved from another Ritual User
+    Promo:
+      required:
+      - currencyCode
+      - id
+      - locale
+      - localizedMessage
+      - totalValueMicro
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the promo
+          example: a1b2c3d4e5
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+        itemizedValueMicros:
+          type: array
+          description: List of values of each part of the offer (for promos with multiple
+            parts)
+          items:
+            type: integer
+            format: int64
+        locale:
+          type: string
+          description: The locale for the shareable
+          example: en-CA
+        localizedMessage:
+          type: string
+          description: Localized description of the offer
+          example: $5 off your first two orders
+        localizedOffers:
+          type: array
+          description: List of localized descriptions of each part of the offer (for
+            promos with multiple parts)
+          items:
+            type: string
+            example: "[$10 off your first order, $5 off your first order ]"
+        subjectName:
+          type: string
+          description: The name of the merchant for the shareable
+          example: What a Bagel
+        subjectImageUrl:
+          type: string
+          description: The URL for an image representing the merchant
+          example: https://lh3.googleusercontent.com/feKxw36tEjOVba8dUKMaP7pZ6g0mTpCZHpyDiH1ooy_ocU2bvm4HprKN8S3XteJc09j5QPGVYILKb5IfD00ArEy6YvNhewyi9PqewXJA=s1920
+        totalValueMicro:
+          type: integer
+          description: The amount that is being gifted
+          format: int64
+          example: 1500000000
+      description: Represents a promo code
+    MerchantData_scheduledOrderTimeSlots:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        firstAvailableTime:
+          maximum: 86400000
+          exclusiveMaximum: true
+          minimum: 0
+          type: integer
+          description: Earliest time in milliseconds since beginning of the day (12AM)
+            that an order can be scheduled for
+          format: int64
+          example: 32400000
+        lastAvailableTime:
+          maximum: 86400000
+          exclusiveMaximum: true
+          minimum: 0
+          type: integer
+          description: Latest time in milliseconds since beginning of the day (12AM)
+            that an order can be scheduled for
+          format: int64
+          example: 61200000
+        intervalMillis:
+          type: integer
+          description: Milliseconds between each available time slot
+          format: int64
+          example: 900000
+    PlaceOrderRequest_integrationMetadata:
+      type: object
+      properties:
+        sessionTokenJwt:
+          type: string
+          description: A JWT-format session token that will be made available to order
+            analytics events
+      description: A metadata object for integrations
+    GetMultiplePromoCodesResponse:
+      required:
+      - data
+      type: object
+      properties:
+        data:
+          minLength: 1
+          type: array
+          description: List of promo code query results
+          items:
+            $ref: '#/components/schemas/GetPromoCodeResult'
+        paginationToken:
+          $ref: '#/components/schemas/PaginationToken'
+        hasNextPage:
+          $ref: '#/components/schemas/HasNextPage'
+      description: Provides a list of results for the promo code queries
+    GetPromoCodeResult:
+      required:
+      - isSuccessful
+      - promoCode
+      type: object
+      properties:
+        promoCode:
+          minLength: 1
+          type: string
+          description: Promo code input value that the client queried for in the request
+          example: CURTIS31696-4EDE
+        isSuccessful:
+          type: boolean
+          description: "Indicates whether this query request was successful. If the\
+            \ value if `false`, the error field would provide an explanation."
+        data:
+          $ref: '#/components/schemas/PromoCode'
+        error:
+          $ref: '#/components/schemas/PromoCodeQueryError'
+      description: Result of a promo code query operation. Fields `data` and `error`
+        are mutually-exclusive and only one of them is set depeneding on the success
+        of this operation.
+    PromoCode:
+      required:
+      - promoCode
+      - type
+      type: object
+      properties:
+        promoCode:
+          minLength: 1
+          type: string
+          example: CURTIS31696-4EDE
+        type:
+          $ref: '#/components/schemas/PromoCodeType'
+        shareableGift:
+          $ref: '#/components/schemas/Shareable'
+        promo:
+          $ref: '#/components/schemas/Promo'
+        terms:
+          type: array
+          description: A list of terms that apply to this promo code
+          items:
+            type: string
+    PromoCodeType:
+      type: string
+      description: |
+        Constant schema type codes that can be consumed programmatically to determine the type of promo code. One of:
+          * `SHAREABLE_GIFT` - Shareable gift
+      enum:
+      - SHAREABLE_GIFT
+      - REFERRAL
+      - CORPORATE
+      - CAMPAIGN
+      - CART_CHANNEL
+      - TEAMS_COMPANY
+      - UNIFIED
+      - DROP_CHANNEL
+      - MERCHANT_REFERRAL
+      - VERIFIED_EMAIL_CAMPAIGN
+      - WORKSPACE_MEMBER_INVITE
+      - ORDER_POOL
+    PromoCodeQueryError:
+      allOf:
+      - $ref: '#/components/schemas/RitualApiError'
+      - required:
+        - code
+        type: object
+        properties:
+          code:
+            $ref: '#/components/schemas/PromoCodeQueryErrorCode'
+    PromoCodeQueryErrorCode:
+      type: string
+      description: |
+        Constant schema type codes that can be consumed programmatically to determine the type of promo code. One of:
+          * `NOT_FOUND` - Promo code was not found
+      enum:
+      - NOT_FOUND
+    UserDeliveryAddressDetail:
+      required:
+      - lat
+      - lng
+      type: object
+      properties:
+        lat:
+          type: number
+          description: User delivery address latitude
+          format: double
+          example: 43.646927
+        lng:
+          type: number
+          description: User delivery address longitude
+          format: double
+          example: -79.3950018
+        userDeliveryAddressExtraInfoDetail:
+          $ref: '#/components/schemas/userDeliveryAddressExtraInfoDetail'
+        deliveryInstructions:
+          type: string
+          description: User's instructions for delivering to this address
+          example: "Door code is 1234, leave items downstairs please."
+      description: User delivery address details
+    userDeliveryAddressExtraInfoDetail:
+      required:
+      - addressLine1
+      - city
+      - country
+      - province
+      type: object
+      properties:
+        addressLine1:
+          type: string
+          description: Address line 1
+          example: 82 peter st.
+        addressLine2:
+          type: string
+          description: Address line 2
+          example: 3rd floor.
+        city:
+          type: string
+          description: city name
+          example: Toronto
+        province:
+          type: string
+          description: province name
+          example: Ontario
+        provinceCode:
+          type: string
+          description: province code
+          example: "true"
+        country:
+          type: string
+          description: country name
+          example: Canada
+        cityCode:
+          type: string
+          description: city code
+          example: CA-TOR
+        countryCode:
+          type: string
+          description: country code
+          example: CA
+        callingCode:
+          type: string
+          description: calling code
+          example: "1"
+        callingCountryCode:
+          type: string
+          description: calling country code
+          example: CA
+        postalCode:
+          type: string
+          description: postal code
+          example: M5J 0E1
+        googlePlaceId:
+          type: string
+          description: Google Place ID of the delivery address
+          example: ChIJpQthnkCuEmsREGKGz3sn_Es
+        formattedAddress:
+          type: string
+          description: Full formatted address
+          readOnly: true
+          example: "82 Peter St, Toronto, ON M5V 2G5, Canada"
+      description: user delivery address extra information
+    UserDeliveryAddressId:
+      type: string
+      description: ID of the stored user address
+      example: "3157596641747289866"
+    UserDeliveryAddress:
+      required:
+      - createdAt
+      - deliveryAddressDetail
+      - deliveryAddressId
+      type: object
+      properties:
+        deliveryAddressId:
+          $ref: '#/components/schemas/UserDeliveryAddressId'
+        deliveryAddressDetail:
+          $ref: '#/components/schemas/UserDeliveryAddressDetail'
+        createdAt:
+          type: string
+          description: Creation time of the delivery address
+          format: date-time
+          example: 2021-12-21T12:34:56Z
+        lastUsedAt:
+          type: string
+          description: Last time a delivery order was placed using the address. Null
+            if the address has never been used for an order
+          format: date-time
+          nullable: true
+          example: 2022-01-21T11:59:59Z
+      description: A user's saved delivery address
+    PaginationToken:
+      type: string
+      description: Pagination token used in retrieving another page of items
+      example: CKrI4CEYBiAFMPej2JAG
+    HasNextPage:
+      type: boolean
+      description: Whether there are more items in the next page
+      example: true
+    RitualApiError:
+      required:
+      - code
+      - id
+      type: object
+      properties:
+        id:
+          minLength: 1
+          type: string
+          description: Unique identifier of the error used in reporting issues to
+            the Ritual Support team
+          example: 13d9f8d4c03c650490c8080b31c28b6d
+        code:
+          minLength: 1
+          type: string
+          description: Constant error code that can be consumed programmatically
+        message:
+          minLength: 1
+          type: string
+          description: User-friendly localized error message that can be displayed
+            to the end user
+          example: Le commerçant est temporairement indisponible. Veuillez réessayer
+            dans 10 minutes.
+        details:
+          minLength: 1
+          type: string
+          description: Technical details about the error in English targetted at the
+            API client developers
+          example: check for merchant’s availability before performing this operation
+        parameter:
+          minLength: 1
+          type: string
+          description: Name of the request parameter causing the error
+          example: isAvailableNow
+  parameters:
+    NextPageToken:
+      name: nextPageToken
+      in: query
+      description: Pagination token for retrieving the next page
+      required: false
+      schema:
+        maxLength: 75
+        minLength: 6
+        type: string
+      example: YSBwYWdpbmF0aW9uVG9rZW4gZXhhbXBsZQ
+    Limit:
+      name: limit
+      in: query
+      description: A limit on the number of objects to be returned
+      required: false
+      schema:
+        maximum: 100
+        minimum: 1
+        type: integer
+        format: int32
+        default: 10
+      example: 10
+    Accept-Language:
+      name: Accept-Language
+      in: header
+      description: "The Accept-Language request HTTP header advertises which languages\
+        \ the client is able to understand, and which locale variant is preferred.\
+        \ If the language requested is not supported, a default language will be used.\
+        \ An IETF BCP 47 language tag."
+      required: false
+      schema:
+        type: string
+      example: en-US
+  headers:
+    Content-Language:
+      description: The language intended for the audience.  An IETF BCP 47 language
+        tag.
+      schema:
+        type: string
+  securitySchemes:
+    locale:
+      type: apiKey
+      name: ACCEPT-LANGUAGE
+      in: header
+    sandboxOAuth:
+      type: oauth2
+      description: OAuth 2 client credentials grant for sandbox server
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sandbox.ritual.co/auth/realms/ritual-customer/protocol/openid-connect/token
+          scopes: {}
+          x-authorizationUrl: https://account.sandbox.ritual.co/auth/realms/ritual-customer/protocol/openid-connect/auth
+    qaOAuth:
+      type: oauth2
+      description: OAuth 2 client credentials grant for qa server
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.qa.ritual.co/auth/realms/ritual-customer/protocol/openid-connect/token
+          scopes: {}
+          x-authorizationUrl: https://account.qa.ritual.co/auth/realms/ritual-customer/protocol/openid-connect/auth
